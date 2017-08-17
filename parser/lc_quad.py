@@ -22,6 +22,7 @@ class LC_Qaud:
 			print item
 			print ""
 
+
 class LC_QaudParser:
 	def parse_question(self, raw_question):
 		return raw_question

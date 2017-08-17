@@ -43,7 +43,7 @@ class QaldParser:
 				if len(raw_answers[0]["head"]["vars"]) > 0:
 					answer_type = raw_answers[0]["head"]["vars"][0]
 					for raw_answer in raw_answers[0]["results"]["bindings"]:
-						answers.append(Answer(answer_type, raw_answer, self.parse_answer))				
+						answers.append(Answer(answer_type, raw_answer, self.parse_answer))
 				return answers
 		else:
 			return []
