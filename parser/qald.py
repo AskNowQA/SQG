@@ -23,6 +23,7 @@ class Qald:
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
 			print item
+			print ""
 
 class QaldParser:
 	def parse_question(self, raw_question):
@@ -42,8 +43,10 @@ class QaldParser:
 				if len(raw_answers[0]["head"]["vars"]) > 0:
 					answer_type = raw_answers[0]["head"]["vars"][0]
 					for raw_answer in raw_answers[0]["results"]["bindings"]:
-						answers.append(Answer(answer_type, raw_answer, self.parse_answer))
+						answers.append(Answer(answer_type, raw_answer, self.parse_answer))				
 				return answers
+		else:
+			return []
 
 	def parse_answer(self, answer_type, raw_answer):
 		if answer_type == "boolean":

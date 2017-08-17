@@ -4,4 +4,4 @@ class SPARQL:
 		self.query = parser(raw_query)
 
 	def __str__(self):
-		return self.query
+		return self.query.encode("ascii","ignore")
