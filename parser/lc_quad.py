@@ -1,6 +1,7 @@
-import json
+import json, re
 from qapair import QApair
 from answer import Answer
+from uri import Uri
 
 class LC_Qaud:	
 	def __init__(self, path = "/home/hamid/workspace/query_generation/data/LC-QUAD/data_v8.json"):
@@ -28,10 +29,22 @@ class LC_QaudParser:
 		return raw_question
 
 	def parse_sparql(self, raw_query):
-		return raw_query
+		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('<[^>]*>',raw_query)]
+
+		return raw_query, True, uris
 
 	def parse_answers(self, raw_answers):		
 			return []
 
 	def parse_answer(self, answer_type, raw_answer):
 		return "",""
+
+	def parse_uri(self, raw_uri):
+		if raw_uri.find("/resource/") >= 0:
+			return "?s", raw_uri
+		elif raw_uri.find("/ontology/") >= 0 or raw_uri.find("/property/") >= 0:
+			return "?p", raw_uri
+		elif raw_uri.find("rdf-syntax-ns#type") >= 0:
+			return "?t", raw_uri
+		else:
+			return "?u", raw_uri

@@ -1,6 +1,7 @@
-import json
+import json, re
 from qapair import QApair
 from answer import Answer
+from uri import Uri
 
 class Qald:
 	qald_6 = "/home/hamid/workspace/query_generation/data/QALD/6/data/qald-6-train-multilingual.json"
@@ -32,7 +33,10 @@ class QaldParser:
 				return q["string"]
 
 	def parse_sparql(self, raw_query):
-		return raw_query["sparql"] if "sparql" in raw_query else ""
+		raw_query = raw_query["sparql"] if "sparql" in raw_query else ""
+		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(<[^>]*>|\?[^ ])',raw_query)]
+		supported = not any(substring in raw_query for substring in ["UNION", "FILTER", "OFFSET", "HAVING", "LIMIT"])
+		return raw_query, supported, uris
 
 	def parse_answers(self, raw_answers):
 		if len(raw_answers) > 0:
@@ -55,3 +59,13 @@ class QaldParser:
 			if not answer_type in raw_answer:
 				answer_type = "\"{}\"".format(answer_type)
 			return raw_answer[answer_type]["type"], raw_answer[answer_type]["value"]
+
+	def parse_uri(self, raw_uri):
+		if raw_uri.find("/resource/") >= 0:
+			return "?s", raw_uri
+		elif raw_uri.find("/ontology/") >= 0 or raw_uri.find("/property/") >= 0:
+			return "?p", raw_uri
+		elif raw_uri.find("rdf-syntax-ns#type") >= 0:
+			return "?t", raw_uri
+		else:
+			return "?u", raw_uri

@@ -1,6 +1,7 @@
 import json, re, operator
 from parser.lc_quad import LC_Qaud
 from parser.qald import Qald
+from parser.webqsp import WebQSP
 
 
 def prepare_dataset(ds):
@@ -27,28 +28,39 @@ def split_triples(triples):
 			idx = findnth(template, " ", 2)
 		yield template
 
-def get_type(uri):
-	if uri.find("/resource/") >= 0:
-		return "?s"
-	elif uri.find("/ontology/") >= 0 or uri.find("/property/") >= 0:
-		return "?p"
-	elif uri.find("rdf-syntax-ns#type") >= 0:
-		return "?t"
-	else:
-		print uri
-		return "?u"
+
+# def get_type(uri):
+# 	if uri.find("ns:m.") >= 0:
+# 		return "?s"
+# 	elif uri.find("ns:") >= 0:
+# 		return "?p"
+# 	# elif uri.find("rdf-syntax-ns#type") >= 0:
+# 	# 	return "?t"
+# 	else:
+# 		# print uri
+# 		return "?u"
+
 
 if __name__ == "__main__":	
 	WHERE = "WHERE"
 	total = 0
 	templates = {}
-	# Qald LC_Qaud
+	# Qald(Qald.qald_6) LC_Qaud WebQSP
 	for item in prepare_dataset(Qald(Qald.qald_6)).qapairs:
+		if not item.sparql.supported:
+			continue
+
 		sparql_query = item.sparql.query
-		all_uris = re.findall('<[^>]*>',sparql_query)
-		for uri in all_uris:
-			# print uri
-			sparql_query = sparql_query.replace(uri, get_type(uri))
+		for uri in item.sparql.uris:
+			sparql_query = sparql_query.replace(uri.uri, uri.type)
+
+
+		# if "?uri" in sparql_query:
+		# 	print item.sparql.raw_query
+		# 	print item.sparql.query
+		# 	print [(u.uri, u.type) for u in item.sparql.uris]
+
+
 		idx = sparql_query.find(WHERE)
 
 		where_clause = ' '.join(sparql_query[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
@@ -69,8 +81,8 @@ if __name__ == "__main__":
 		for triple in split_triples(template):
 			triples[triple] = 1 + (triples[triple] if triple in triples else 0)
 
-	for triple in triples:
-		print triple
+	# for triple in triples:
+	# 	print triple
 
 
 

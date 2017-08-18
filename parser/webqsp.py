@@ -1,6 +1,7 @@
-import json
+import json, re
 from qapair import QApair
 from answer import Answer
+from uri import Uri
 
 class WebQSP:
 	def __init__(self, path = "/home/hamid/workspace/query_generation/data/WebQuestionsSP/WebQSP.train.json"):
@@ -19,7 +20,7 @@ class WebQSP:
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
-			print item
+			print item.sparql
 			print ""
 
 class QaldParser:
@@ -27,9 +28,13 @@ class QaldParser:
 		return raw_question
 
 	def parse_sparql(self, raw_query):
-		# if len(raw_query)>1:
-		# 	print raw_query
-		return raw_query[0]["Sparql"] if "Sparql" in raw_query[0] else ""
+		raw_query = raw_query[0]["Sparql"] if "Sparql" in raw_query[0] else ""
+		raw_query = " ".join(raw_query.split("\n")[5:-2])
+
+		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(ns:[^ ]*|\?[^ ])', raw_query)]
+
+		
+		return raw_query, True, uris
 
 	def parse_answers(self, raw_answers):
 		answers = []
@@ -43,3 +48,12 @@ class QaldParser:
 		else:
 			return answer_type, raw_answer["EntityName"]
 
+	def parse_uri(self, raw_uri):
+		if raw_uri.find("ns:m.") >= 0:
+			return "?s", raw_uri
+		elif raw_uri.find("ns:") >= 0:
+			return "?p", raw_uri
+		# elif raw_uri.find("rdf-syntax-ns#type") >= 0:
+		# 	return "?t", raw_uri
+		else:
+			return "?u", raw_uri
