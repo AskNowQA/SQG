@@ -4,7 +4,7 @@ from answer import Answer
 from uri import Uri
 
 class WebQSP:
-	def __init__(self, path = "/home/hamid/workspace/query_generation/data/WebQuestionsSP/WebQSP.train.json"):
+	def __init__(self, path = "./data/WebQuestionsSP/WebQSP.train.json"):
 		self.raw_data = []
 		self.qapairs = []
 		self.path = path

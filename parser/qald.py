@@ -4,8 +4,8 @@ from answer import Answer
 from uri import Uri
 
 class Qald:
-	qald_6 = "/home/hamid/workspace/query_generation/data/QALD/6/data/qald-6-train-multilingual.json"
-	qald_8 = "/home/hamid/workspace/query_generation/data/QALD/8/data/wikidata-train-7.json"
+	qald_6 = "./data/QALD/6/data/qald-6-train-multilingual.json"
+	qald_8 = "./data/QALD/8/data/wikidata-train-7.json"
 
 	def __init__(self, path):
 		self.raw_data = []
