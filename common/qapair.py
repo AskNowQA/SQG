@@ -3,7 +3,8 @@ from answers import Answers
 from sparql import SPARQL
 
 class QApair:
-	def __init__(self, raw_question, raw_answers, raw_query, parser):
+	def __init__(self, raw_question, raw_answers, raw_query, raw_row, parser):
+		self.raw_row = raw_row
 		self.question = []
 		self.answers = []
 		self.sparql = []
