@@ -16,7 +16,7 @@ class LC_Qaud:
 	def parse(self):
 		parser = LC_QaudParser()
 		for raw_row in self.raw_data:
-			self.qapairs.append(QApair(raw_row["corrected_question"], "", raw_row["sparql_query"], parser))
+			self.qapairs.append(QApair(raw_row["corrected_question"], "", raw_row["sparql_query"], raw_row, parser))
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
