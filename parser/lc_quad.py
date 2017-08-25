@@ -1,7 +1,7 @@
 import json, re
-from qapair import QApair
-from answer import Answer
-from uri import Uri
+from common.qapair import QApair
+from common.answer import Answer
+from common.uri import Uri
 
 class LC_Qaud:	
 	def __init__(self, path = "./data/LC-QUAD/data_v8.json"):

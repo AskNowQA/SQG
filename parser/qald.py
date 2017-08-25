@@ -1,7 +1,7 @@
 import json, re
-from qapair import QApair
-from answer import Answer
-from uri import Uri
+from common.qapair import QApair
+from common.answer import Answer
+from common.uri import Uri
 
 class Qald:
 	qald_6 = "./data/QALD/6/data/qald-6-train-multilingual.json"
