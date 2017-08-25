@@ -29,41 +29,25 @@ def split_triples(triples):
 		yield template
 
 
-# def get_type(uri):
-# 	if uri.find("ns:m.") >= 0:
-# 		return "?s"
-# 	elif uri.find("ns:") >= 0:
-# 		return "?p"
-# 	# elif uri.find("rdf-syntax-ns#type") >= 0:
-# 	# 	return "?t"
-# 	else:
-# 		# print uri
-# 		return "?u"
-
-
 if __name__ == "__main__":	
 	WHERE = "WHERE"
 	total = 0
 	templates = {}
 	# Qald(Qald.qald_6) LC_Qaud WebQSP
-	for item in prepare_dataset(Qald(Qald.qald_6)).qapairs:
+	for item in prepare_dataset(LC_Qaud()).qapairs:
 		if not item.sparql.supported:
 			continue
 
-		sparql_query = item.sparql.query
+		sparql_query = item.sparql.query.strip(" {};\t")
 		for uri in item.sparql.uris:
 			sparql_query = sparql_query.replace(uri.uri, uri.type)
 
 
-		# if "?uri" in sparql_query:
-		# 	print item.sparql.raw_query
-		# 	print item.sparql.query
-		# 	print [(u.uri, u.type) for u in item.sparql.uris]
-
-
 		idx = sparql_query.find(WHERE)
+		where_clause = ' '.join(sparql_query.split())
+		if idx >= 0:
+			where_clause = ' '.join(where_clause[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
 
-		where_clause = ' '.join(sparql_query[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
 		templates[where_clause] = 1 + (templates[where_clause] if where_clause in templates else 0)
 
 		total += 1
