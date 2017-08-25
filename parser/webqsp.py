@@ -29,12 +29,14 @@ class QaldParser:
 
 	def parse_sparql(self, raw_query):
 		raw_query = raw_query[0]["Sparql"] if "Sparql" in raw_query[0] else ""
-		raw_query = " ".join(raw_query.split("\n")[5:-2])
-
-		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(ns:[^ ]*|\?[^ ])', raw_query)]
-
-		
-		return raw_query, True, uris
+		raw_query = " ".join(raw_query.split("\n")[5:])
+		raw_query = raw_query[:raw_query.rfind("}")]
+		#remove comments from the sparql query
+		for t in re.findall("\#[^\n]*", raw_query):
+			raw_query = raw_query.replace(t, " ")
+		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(ns:[^ ]*|\?[^ ]*)', raw_query)]
+		supported = not any(substring in raw_query.upper() for substring in ["EXISTS", "UNION", "FILTER"])
+		return raw_query, supported, uris
 
 	def parse_answers(self, raw_answers):
 		answers = []
@@ -53,7 +55,5 @@ class QaldParser:
 			return "?s", raw_uri
 		elif raw_uri.find("ns:") >= 0:
 			return "?p", raw_uri
-		# elif raw_uri.find("rdf-syntax-ns#type") >= 0:
-		# 	return "?t", raw_uri
 		else:
-			return "?u", raw_uri
+			return raw_uri, raw_uri

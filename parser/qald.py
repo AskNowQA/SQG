@@ -34,7 +34,7 @@ class QaldParser:
 
 	def parse_sparql(self, raw_query):
 		raw_query = raw_query["sparql"] if "sparql" in raw_query else ""
-		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(<[^>]*>|\?[^ ])',raw_query)]
+		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(<[^>]*>|\?[^ ]*)',raw_query)]
 		supported = not any(substring in raw_query for substring in ["UNION", "FILTER", "OFFSET", "HAVING", "LIMIT"])
 		return raw_query, supported, uris
 
