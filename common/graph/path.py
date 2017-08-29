@@ -12,8 +12,14 @@ class Path:
         return u"{} --> {} --> {}".format(self.source_node.__str__(), self.edge.__str__(), self.dest_node.__str__()).encode("ascii", "ignore")
 
     @staticmethod
-    def create_path(source_uri, edge_uri, dest_uri):
-        source_node = Node(source_uri)
-        dest_node = Node(dest_uri)
-        edge = Edge(source_node, edge_uri, dest_node)
-        return Path(source_node, edge, dest_node)
+    def create_path(uris):
+        if len(uris) == 3:
+            source_node = Node(uris[0])
+            dest_node = Node(uris[2])
+            edge = Edge(source_node, uris[1], dest_node)
+            return Path(source_node, edge, dest_node)
+        else:
+            source_node = Node(uris[0])
+            dest_node = Path.create_path(uris[2:])
+            edge = Edge(source_node, uris[1], dest_node)
+            return Path(source_node, edge, dest_node)
