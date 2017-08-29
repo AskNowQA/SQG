@@ -1,3 +1,4 @@
+import itertools
 from common.linkeditem import LinkedItem
 from common.uri import Uri
 
@@ -7,7 +8,7 @@ class Jerrl:
 
 	def do(self, qapair):
 		items = []
-		for raw_item in qapair.raw_row["predicate mapping"]:
+		for raw_item in itertools.chain(qapair.raw_row["predicate mapping"], qapair.raw_row["entity mapping"]):
 			items.append(LinkedItem(raw_item, self.parse_linkeditem))
 		return items
 
