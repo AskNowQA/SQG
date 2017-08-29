@@ -37,16 +37,7 @@ if __name__ == "__main__":
 		if not item.sparql.supported:
 			continue
 
-		sparql_query = item.sparql.query.strip(" {};\t")
-		for uri in item.sparql.uris:
-			sparql_query = sparql_query.replace(uri.uri, uri.type)
-
-
-		idx = sparql_query.find(WHERE)
-		where_clause = ' '.join(sparql_query.split())
-		if idx >= 0:
-			where_clause = ' '.join(where_clause[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
-
+		where_clause = item.sparql.where_clause
 		templates[where_clause] = 1 + (templates[where_clause] if where_clause in templates else 0)
 
 		total += 1
@@ -64,8 +55,8 @@ if __name__ == "__main__":
 		for triple in split_triples(template):
 			triples[triple] = 1 + (triples[triple] if triple in triples else 0)
 
-	# for triple in triples:
-	# 	print triple
+	for triple in triples:
+		print triple
 
 
 
