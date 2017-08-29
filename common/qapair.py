@@ -13,5 +13,13 @@ class QApair:
 		self.answers = Answers(raw_answers, parser.parse_answers)
 		self.sparql = SPARQL(raw_query, parser.parse_sparql)
 
+	def question_template(self, entity_relation_list):
+		question = self.question.text.lower()
+		for item in entity_relation_list:
+			question = question.replace(item.label.lower(), item.uri.type)
+
+		return question
+
+
 	def __str__(self):		
 		return "{}\n{}\n{}".format(self.question, self.answers, self.sparql)
