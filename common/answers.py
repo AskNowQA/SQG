@@ -11,6 +11,8 @@ class Answers:
 			print parser(raw_answers)
 			q = 1/0 
 
+	def __len__(self):
+		return len(self.answers)
 	def __str__(self):
 		try:
 			return "\n".join(str(a) for a in self.answers)
