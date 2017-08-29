@@ -1,7 +1,7 @@
 import json, re
 from common.qapair import QApair
-from common.answer import Answer
 from common.uri import Uri
+from dbpedia.dbpedia import DBpedia
 
 class LC_Qaud:	
 	def __init__(self, path = "./data/LC-QUAD/data_v8.json"):
@@ -29,7 +29,7 @@ class LC_QaudParser:
 		return raw_question
 
 	def parse_sparql(self, raw_query):
-		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('<[^>]*>',raw_query)]
+		uris = [Uri(raw_uri, DBpedia.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
 
 		return raw_query, True, uris
 
@@ -39,12 +39,3 @@ class LC_QaudParser:
 	def parse_answer(self, answer_type, raw_answer):
 		return "",""
 
-	def parse_uri(self, raw_uri):
-		if raw_uri.find("/resource/") >= 0:
-			return "?s", raw_uri
-		elif raw_uri.find("/ontology/") >= 0 or raw_uri.find("/property/") >= 0:
-			return "?p", raw_uri
-		elif raw_uri.find("rdf-syntax-ns#type") >= 0:
-			return "?t", raw_uri
-		else:
-			return "?u", raw_uri
