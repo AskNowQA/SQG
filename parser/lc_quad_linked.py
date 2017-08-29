@@ -8,15 +8,15 @@ class LC_Qaud_Linked:
 		self.raw_data = []
 		self.qapairs = []
 		self.path = path
+		self.parser = LC_Qaud_LinkedParser()
 
 	def load(self):
 		with open(self.path) as data_file:	
 			self.raw_data = json.load(data_file)
 
-	def parse(self):
-		parser = LC_QaudParser()
+	def parse(self):		
 		for raw_row in self.raw_data:
-			self.qapairs.append(QApair(raw_row["question"], "", raw_row["sparql_query"], raw_row, parser))
+			self.qapairs.append(QApair(raw_row["question"], raw_row.get("answers"), raw_row["sparql_query"], raw_row, self.parser))
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
@@ -24,7 +24,7 @@ class LC_Qaud_Linked:
 			print ""
 
 
-class LC_QaudParser:
+class LC_Qaud_LinkedParser:
 	def parse_question(self, raw_question):
 		return raw_question
 
@@ -33,11 +33,21 @@ class LC_QaudParser:
 
 		return raw_query, True, uris
 
-	def parse_answers(self, raw_answers):		
+	def parse_answers(self, raw_answers):
+		if raw_answers is None:
 			return []
+		answers = []
+		if "boolean" in raw_answers:
+			return [Answer("boolean", raw_answers["boolean"], self.parse_answer)]
+		if "results" in raw_answers and "bindings" in raw_answers["results"] and len(raw_answers["results"]["bindings"]) > 0:
+			for raw_ans in raw_answers["results"]["bindings"]:
+				for var_id in raw_ans:
+					answers.append(Answer(raw_ans[var_id]["type"], raw_ans[var_id]["value"], self.parse_answer))
+
+		return answers
 
 	def parse_answer(self, answer_type, raw_answer):
-		return "",""
+		return answer_type, raw_answer
 
 	def parse_uri(self, raw_uri):
 		if raw_uri.find("/resource/") >= 0:
