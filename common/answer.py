@@ -4,4 +4,6 @@ class Answer:
 		self.type, self.text = parser(answer_type, raw_answer)
 
 	def __str__(self):
+		if type(self.text) is bool:
+			return str(self.text)
 		return self.text.encode("ascii","ignore")
