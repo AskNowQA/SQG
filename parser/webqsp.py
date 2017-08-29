@@ -16,7 +16,7 @@ class WebQSP:
 	def parse(self):
 		parser = QaldParser()
 		for raw_row in self.raw_data["Questions"]:
-			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], parser))
+			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], raw_row, parser))
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
