@@ -8,12 +8,12 @@ class SPARQL:
 		WHERE = "WHERE"
 		sparql_query = self.query.strip(" {};\t")
 		for uri in self.uris:
-			sparql_query = sparql_query.replace(uri.uri, uri.type)
+			sparql_query = sparql_query.replace(uri.uri, uri.uri_type)
 
 		idx = sparql_query.find(WHERE)
 		self.where_clause = ' '.join(sparql_query.split())
 		if idx >= 0:
-			 self.where_clause= ' '.join(self.where_clause[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
+			self.where_clause= ' '.join(self.where_clause[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
 
 
 	def __str__(self):
