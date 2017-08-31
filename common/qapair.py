@@ -1,5 +1,5 @@
 from question import Question
-from answers import Answers
+from answerset import AnswerSet
 from sparql import SPARQL
 
 class QApair:
@@ -10,7 +10,7 @@ class QApair:
 		self.sparql = []
 		
 		self.question = Question(raw_question, parser.parse_question)
-		self.answers = Answers(raw_answers, parser.parse_answers)
+		self.answers = AnswerSet(raw_answers, parser.parse_answers)
 		self.sparql = SPARQL(raw_query, parser.parse_sparql)
 
 	def question_template(self, entity_relation_list):
