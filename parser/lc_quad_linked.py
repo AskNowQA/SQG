@@ -31,22 +31,24 @@ class LC_Qaud_LinkedParser:
 		return raw_question
 
 	def parse_sparql(self, raw_query):
-		uris = [Uri(raw_uri, DBpedia.parse_uri) for raw_uri in re.findall('<[^>]*>',raw_query)]
+		uris = [Uri(raw_uri, DBpedia.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
 
 		return raw_query, True, uris
 
 	def parse_answers(self, raw_answers):
 		if raw_answers is None:
 			return []
-		answers = []
+		answers_set = []
 		if "boolean" in raw_answers:
-			return [Answer("boolean", raw_answers["boolean"], self.parse_answer)]
+			return [[Answer("bool", raw_answers["boolean"], lambda at, ra: (at, ra))]]
 		if "results" in raw_answers and "bindings" in raw_answers["results"] and len(raw_answers["results"]["bindings"]) > 0:
 			for raw_ans in raw_answers["results"]["bindings"]:
+				answers = []
 				for var_id in raw_ans:
 					answers.append(Answer(raw_ans[var_id]["type"], raw_ans[var_id]["value"], self.parse_answer))
+				answers_set.append(answers)
 
-		return answers
+		return answers_set
 
 	def parse_answer(self, answer_type, raw_answer):
 		return answer_type, Uri(raw_answer, DBpedia.parse_uri)
