@@ -57,14 +57,14 @@ class Path:
         :param var_num:
         :return:
         """
-        for answers in answers_set.answers:
-            for answer in answers:
+        for answer_row in answers_set.answer_rows:
+            for answer in answer_row.answers:
                 if self.source_node.uri == answer.answer:
                     self.source_node.uri = Uri.generic_uri(var_num)
                     var_num += 1
         if isinstance(self.dest_node, Node):
-            for answers in answers_set.answers:
-                for answer in answers:
+            for answer_row in answers_set.answer_rows:
+                for answer in answer_row.answers:
                     if self.dest_node.uri == answer.answer:
                         self.dest_node.uri = Uri.generic_uri(var_num)
                         var_num += 1

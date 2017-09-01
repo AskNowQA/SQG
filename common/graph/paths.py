@@ -12,7 +12,6 @@ class Paths:
                         del self.paths[i]
                 k += 1
 
-
     def add_path(self, new_path):
         """
         Add or merge the new path into the existing paths
@@ -35,8 +34,8 @@ class Paths:
         to_be_removed = []
         for path in self.paths:
             should_remove = True
-            for answers in answers_set.answers:
-                if path.contains_answers(answers):
+            for answer_row in answers_set.answer_rows:
+                if path.contains_answers(answer_row.answers):
                     should_remove = False
                     break
             if should_remove:
