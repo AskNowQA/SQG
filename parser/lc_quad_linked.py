@@ -1,12 +1,13 @@
 import json, re
 from common.qapair import QApair
 from common.answer import Answer
+from common.answerrow import AnswerRow
 from common.uri import Uri
 from dbpedia.dbpedia import DBpedia
 
 
 class LC_Qaud_Linked:	
-	def __init__(self, path = "./data/LC-QUAD/linked.json"):
+	def __init__(self, path="./data/LC-QUAD/linked.json"):
 		self.raw_data = []
 		self.qapairs = []
 		self.path = path
@@ -32,23 +33,25 @@ class LC_Qaud_LinkedParser:
 
 	def parse_sparql(self, raw_query):
 		uris = [Uri(raw_uri, DBpedia.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
-
 		return raw_query, True, uris
 
-	def parse_answers(self, raw_answers):
-		if raw_answers is None:
-			return []
-		answers_set = []
-		if "boolean" in raw_answers:
-			return [[Answer("bool", raw_answers["boolean"], lambda at, ra: (at, ra))]]
-		if "results" in raw_answers and "bindings" in raw_answers["results"] and len(raw_answers["results"]["bindings"]) > 0:
-			for raw_ans in raw_answers["results"]["bindings"]:
-				answers = []
-				for var_id in raw_ans:
-					answers.append(Answer(raw_ans[var_id]["type"], raw_ans[var_id]["value"], self.parse_answer))
-				answers_set.append(answers)
+	def parse_answerset(self, raw_answerset):
+		answer_rows = []
+		if raw_answerset is None:
+			return answer_rows
+		if "boolean" in raw_answerset:
+			return [AnswerRow(raw_answerset, lambda x: [Answer("bool", raw_answerset["boolean"], lambda at, ra: (at, ra))])]
+		if "results" in raw_answerset and "bindings" in raw_answerset["results"] \
+				and len(raw_answerset["results"]["bindings"]) > 0:
+			for raw_answerrow in raw_answerset["results"]["bindings"]:
+				answer_rows.append(AnswerRow(raw_answerrow, self.parse_answerrow))
+		return answer_rows
 
-		return answers_set
+	def parse_answerrow(self, raw_answerrow):
+		answers = []
+		for var_id in raw_answerrow:
+			answers.append(Answer(raw_answerrow[var_id]["type"], raw_answerrow[var_id]["value"], self.parse_answer))
+		return answers
 
 	def parse_answer(self, answer_type, raw_answer):
 		return answer_type, Uri(raw_answer, DBpedia.parse_uri)
