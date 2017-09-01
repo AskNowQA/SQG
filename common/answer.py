@@ -3,6 +3,11 @@ class Answer:
 		self.raw_answer = raw_answer
 		self.answer_type, self.answer = parser(answer_type, raw_answer)
 
+	def __eq__(self, other):
+		if isinstance(other, Answer):
+			return self.answer == other.answer
+		return NotImplemented
+
 	def __str__(self):
 		if self.answer_type == "bool":
 			return str(self.answer)
