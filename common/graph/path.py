@@ -75,13 +75,13 @@ class Path:
         dest_node = self.dest_node
         if isinstance(self.dest_node, Path):
             dest_node = self.dest_node.source_node
-            return " {} {} {} . {}".format(self.source_node.uri.sparql_format(), self.edge.uri.sparql_format(),
+            return u" {} {} {} . {}".format(self.source_node.uri.sparql_format(), self.edge.uri.sparql_format(),
                                        dest_node.uri.sparql_format(), self.dest_node.__generate_where())
         else:
-            return " {} {} {} ".format(self.source_node.uri.sparql_format(), self.edge.uri.sparql_format(), dest_node.uri.sparql_format())
+            return u" {} {} {} ".format(self.source_node.uri.sparql_format(), self.edge.uri.sparql_format(), dest_node.uri.sparql_format())
 
     def generate_sparql(self):
-        return "SELECT DISTINCT * WHERE {{ {} }}".format(self.__generate_where())
+        return u"SELECT DISTINCT * WHERE {{ {} }}".format(self.__generate_where())
 
     def __str__(self):
         return u"{} --> {} --> {}".format(self.source_node.__str__(), self.edge.__str__(),
