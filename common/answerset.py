@@ -13,6 +13,7 @@ class AnswerSet:
 				for other_answers in other.answer_rows:
 					if answers == other_answers:
 						found = True
+						break
 				if not found:
 					return False
 			return True
