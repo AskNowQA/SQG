@@ -5,5 +5,5 @@ class Question:
 		self.text = parser(raw_question)
 
 	def __str__(self):
-		return self.text.encode("ascii","ignore")
+		return self.text.encode("ascii", "ignore")
 
