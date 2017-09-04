@@ -2,12 +2,26 @@ class Paths:
     def __init__(self):
         self.paths = []
 
+    def expand_paths(self):
+        if len(self.paths) > 1:
+            k = 0
+            new_paths = []
+            while k < len(self.paths):
+                first_path = self.paths[k]
+                for i in range(len(self.paths) - 1, k, -1):
+                    new_path = first_path.expand(self.paths[i])
+                    if new_path is not None:
+                        new_paths.append(new_path)
+                k += 1
+
+            self.paths.extend(new_paths)
+
     def merge_paths(self):
         if len(self.paths) > 1:
             k = 0
             while k < len(self.paths):
                 first_path = self.paths[k]
-                for i in range(len(self.paths) - 1, 0, -1):
+                for i in range(len(self.paths) - 1, k, -1):
                     if first_path.merge(self.paths[i]):
                         del self.paths[i]
                 k += 1
@@ -27,8 +41,8 @@ class Paths:
 
     def prune_paths(self, answers_set):
         """
-        Prune the paths that do not contain the a full answer
-        :param answers_set: set of answers
+        Prune the paths that do not contain the a full answer_row
+        :param answers_set: set of answer_row
         :return: number of pruned paths
         """
         to_be_removed = []
