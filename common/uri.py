@@ -19,6 +19,9 @@ class Uri:
 			return self.uri
 		return u"<{}>".format(self.uri)
 
+	def __hash__(self):
+		return hash(self.__str__())
+
 	def __str__(self):
 		return "{}:{}".format(self.uri_type, self.uri[self.uri.rfind("/") + 1:].encode("ascii", "ignore"))
 
