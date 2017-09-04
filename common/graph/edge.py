@@ -4,6 +4,9 @@ class Edge:
         self.uri = uri
         self.dest_node = dest_node
 
+    def sparql_format(self):
+        return self.uri.sparql_format()
+
     def __eq__(self, other):
         if isinstance(other, Edge):
             return self.uri == other.uri
