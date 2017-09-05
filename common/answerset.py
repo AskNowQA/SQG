@@ -4,6 +4,9 @@ class AnswerSet:
 		self.answer_rows = []
 		self.answer_rows = parser(raw_answerset)
 
+	def number_of_answer(self):
+		return self.answer_rows[0].number_of_answer()
+
 	def __eq__(self, other):
 		if isinstance(other, AnswerSet):
 			if len(self.answer_rows) != len(other.answer_rows):
@@ -23,4 +26,4 @@ class AnswerSet:
 		return len(self.answer_rows)
 
 	def __str__(self):
-		return "\n".join(str(a) for a in self.answers)
+		return "\n".join(str(a) for a in self.answer_rows)
