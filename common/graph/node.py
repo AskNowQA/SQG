@@ -41,7 +41,7 @@ class Node:
             return self.uris[0].sparql_format()
         raise Exception("...")
 
-    def __eq__(self, other):
+    def __le__(self, other):
         if isinstance(other, Node):
             for uri in self.uris:
                 if not other.has_uri(uri):
@@ -49,6 +49,33 @@ class Node:
 
             return True
         return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, Node):
+            for uri in self.uris:
+                if not other.has_uri(uri):
+                    return False
+
+            return True
+        return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, Node):
+            for uri in self.uris:
+                if not other.has_uri(uri):
+                    return False
+            for uri in other.uris:
+                if not self.has_uri(uri):
+                    return False
+
+            return True
+        return NotImplemented
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return result
+        return not result
 
     def __str__(self):
         output = []
