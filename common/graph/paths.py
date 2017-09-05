@@ -41,19 +41,28 @@ class Paths:
 
     def prune_paths(self, answers_set):
         """
-        Prune the paths that do not contain the a full answer_row
-        :param answers_set: set of answer_row
+        Prune the paths that do not contain the a full answer set
+        :param answers_set: answer set
         :return: number of pruned paths
         """
         to_be_removed = []
         for path in self.paths:
-            should_remove = True
-            for answer_row in answers_set.answer_rows:
-                if path.contains_answers(answer_row.answers):
-                    should_remove = False
-                    break
-            if should_remove:
-                to_be_removed.append(path)
+            if answers_set.number_of_answer() == 1:
+                should_remove = False
+                for answer_row in answers_set.answer_rows:
+                    if not path.contains_answers(answer_row.answers):
+                        should_remove = True
+                        break
+                if should_remove:
+                    to_be_removed.append(path)
+            else:
+                should_remove = True
+                for answer_row in answers_set.answer_rows:
+                    if path.contains_answers(answer_row.answers):
+                        should_remove = False
+                        break
+                if should_remove:
+                    to_be_removed.append(path)
         self.paths = [path for path in self.paths if path not in to_be_removed]
         return len(to_be_removed)
 
