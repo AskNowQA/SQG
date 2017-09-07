@@ -4,71 +4,79 @@ from common.uri import Uri
 class Node:
     def __init__(self, uris, mergable=False):
         if isinstance(uris, Uri):
-            self.uris = [uris]
+            self.uris = set([uris])
         elif isinstance(uris, list):
-            self.uris = []
+            self.uris = set()
             for uri in uris:
                 if isinstance(uri, Uri):
-                    self.uris.append(uri)
+                    self.uris.add(uri)
                 elif isinstance(uris, list):
-                    self.uris.extend(uri)
-        self.uris = list(set(self.uris))
+                    self.uris.update(uri)
         self.mergable = mergable
         self.inbound = []
         self.outbound = []
+
+    def is_disconnected(self):
+        return len(self.inbound) == 0 and len(self.outbound) == 0
+
+    def add_outbound(self, edge):
+        if edge not in self.outbound:
+            self.outbound.append(edge)
+
+    def remove_outbound(self, edge):
+        self.outbound.remove(edge)
+
+    def add_inbound(self, edge):
+        if edge not in self.inbound:
+            self.inbound.append(edge)
+
+    def remove_inbound(self, edge):
+        self.inbound.remove(edge)
 
     def __all_generic_uris(self):
         uris_type = set([u.uri_type for u in self.uris])
         return len(uris_type) == 1 and uris_type.pop() == "g"
 
     def replace_uri(self, uri, new_uri):
-        for i in range(len(self.uris)):
-            if self.uris[i] == uri:
-                self.uris[i] = new_uri
-                if self.__all_generic_uris():
-                    self.uris = [new_uri]
-                return True
+        if uri in self.uris:
+            self.uris.remove(uri)
+            self.uris.add(new_uri)
+            return True
         return False
 
     def has_uri(self, uri):
-        for u in self.uris:
-            if u == uri:
-                return True
-        return False
+        return uri in self.uris
 
     def sparql_format(self):
         if len(self.uris) == 1:
-            return self.uris[0].sparql_format()
+            for uri in self.uris:
+                return uri.sparql_format()
         raise Exception("...")
 
-    def __le__(self, other):
-        if isinstance(other, Node):
-            for uri in self.uris:
-                if not other.has_uri(uri):
-                    return False
+    def generic_equal(self, other):
+        return (self.__all_generic_uris() and other.__all_generic_uris()) or self == other
 
-            return True
-        return NotImplemented
-
-    def __ge__(self, other):
-        if isinstance(other, Node):
-            for uri in self.uris:
-                if not other.has_uri(uri):
-                    return False
-
-            return True
-        return NotImplemented
+    # def __le__(self, other):
+    #     if isinstance(other, Node):
+    #         for uri in self.uris:
+    #             if not other.has_uri(uri):
+    #                 return False
+    #
+    #         return True
+    #     return NotImplemented
+    #
+    # def __ge__(self, other):
+    #     if isinstance(other, Node):
+    #         for uri in self.uris:
+    #             if not other.has_uri(uri):
+    #                 return False
+    #
+    #         return True
+    #     return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, Node):
-            for uri in self.uris:
-                if not other.has_uri(uri):
-                    return False
-            for uri in other.uris:
-                if not self.has_uri(uri):
-                    return False
-
-            return True
+            return self.uris == other.uris
         return NotImplemented
 
     def __ne__(self, other):
@@ -78,7 +86,4 @@ class Node:
         return not result
 
     def __str__(self):
-        output = []
-        for uri in self.uris:
-            output.append(uri.__str__())
-        return output
+        return "\n".join([uri.__str__() for uri in self.uris])
