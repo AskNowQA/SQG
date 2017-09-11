@@ -1,7 +1,7 @@
 import json, re
 from common.qapair import QApair
 from common.uri import Uri
-from dbpedia.dbpedia import DBpedia
+from kb.dbpedia import DBpedia
 
 class LC_Qaud:	
 	def __init__(self, path = "./data/LC-QUAD/data_v8.json"):
@@ -33,9 +33,11 @@ class LC_QaudParser:
 
 		return raw_query, True, uris
 
-	def parse_answers(self, raw_answers):		
-			return []
+	def parse_answerset(self, raw_answerset):
+		return []
+
+	def parse_answerrow(self, raw_answerrow):
+		return []
 
 	def parse_answer(self, answer_type, raw_answer):
-		return "",""
-
+			return "", None
