@@ -6,6 +6,9 @@ class Edge:
         self.source_node.add_outbound(self)
         self.dest_node.add_inbound(self)
 
+    def has_uri(self, uri):
+        return self.uri == uri or self.source_node.has_uri(uri) or self.dest_node.has_uri(uri)
+
     def prepare_remove(self):
         self.source_node.remove_outbound(self)
         self.dest_node.remove_inbound(self)
