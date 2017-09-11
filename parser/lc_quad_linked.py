@@ -3,7 +3,7 @@ from common.qapair import QApair
 from common.answer import Answer
 from common.answerrow import AnswerRow
 from common.uri import Uri
-from dbpedia.dbpedia import DBpedia
+from kb.dbpedia import DBpedia
 
 
 class LC_Qaud_Linked:	
@@ -19,9 +19,9 @@ class LC_Qaud_Linked:
 
 	def parse(self):		
 		for raw_row in self.raw_data:
-			self.qapairs.append(QApair(raw_row["question"], raw_row.get("answers"), raw_row["sparql_query"], raw_row, self.parser))
+			self.qapairs.append(QApair(raw_row["question"], raw_row.get("answers"), raw_row["sparql_query"], raw_row, raw_row["id"], self.parser))
 
-	def print_pairs(self, n = -1):
+	def print_pairs(self, n=-1):
 		for item in self.qapairs[0:n]:
 			print item
 			print ""
