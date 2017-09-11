@@ -23,6 +23,9 @@ class Edge:
                 and self.uri.generic_equal(other.uri)
         return NotImplemented
 
+    def __hash__(self):
+        return hash(self.full_path())
+
     def __eq__(self, other):
         if isinstance(other, Edge):
             return self.source_node == other.source_node and self.uri == other.uri and self.dest_node == other.dest_node

@@ -74,6 +74,9 @@ class Node:
     #         return True
     #     return NotImplemented
 
+    def __hash__(self):
+        return hash(self.__str__())
+
     def __eq__(self, other):
         if isinstance(other, Node):
             return self.uris == other.uris
