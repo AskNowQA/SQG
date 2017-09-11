@@ -22,7 +22,7 @@ class KB(object):
             return response
 
     def one_hop_graph(self, entity_uri, relation_uri):
-        query = u"""SELECT DISTINCT * WHERE {{
+        query = u"""SELECT DISTINCT ?m, count(?u1) WHERE {{
 {{ values ?m {{ 0 }} ?u1 {0} {1} }}
 UNION {{ values ?m {{ 1 }} {1} {0} ?u1 }}
 UNION {{ values ?m {{ 2 }} {1} ?u1 {0} }}
