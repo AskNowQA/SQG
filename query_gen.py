@@ -1,9 +1,8 @@
 from parser.lc_quad_linked import LC_Qaud_Linked
-from jerrl.jerrl import Jerrl
-from dbpedia.dbpedia import DBpedia
-from common.graph.paths import Paths
+from kb.dbpedia import DBpedia
 from common.answerset import AnswerSet
-from parser.lc_quad_linked import LC_Qaud_LinkedParser
+from common.graph.graph import Graph
+import json
 
 
 def prepare_dataset(ds):
@@ -12,106 +11,95 @@ def prepare_dataset(ds):
 	return ds
 
 
-def qg(qapair):
-	if "22-rdf-syntax-ns#type" in qapair.sparql.raw_query:
-		print "No support for type"
+def qg(parser, qapair):
+	if qapair.answerset.number_of_answer() != 1:
 		return False
-	if "ASK WHERE" in qapair.sparql.raw_query:
-		print "No boolean question"
-		return False
+
 	print qapair.sparql
 	print qapair.question
-	entities = [u for u in qapair.sparql.uris if u.is_entity()]
-	ontologies = [u for u in qapair.sparql.uris if u.is_ontology()]
+	all_uri = []
+	entities = set([u for u in qapair.sparql.uris if u.is_entity()])
+	ontologies = set([u for u in qapair.sparql.uris if u.is_ontology()])
 
 	answer_uris = []
 	for answer_row in qapair.answerset.answer_rows:
 		for answer in answer_row.answers:
 			if answer.answer_type == "uri":
 				answer_uris.append(answer.answer)
-				entities.append(answer.answer)
 
-	dbp = DBpedia()
-	path_set = Paths()
-	if len(entities) > 100:
-		# print "len(entities)", len(entities)
-		return False
-	for ent1 in entities:
-		print ent1
-		for ent2 in entities:
-			if ent1 == ent2 or (ent1 in answer_uris and ent2 in answer_uris):
-				continue
-			paths = dbp.find_minimal_subgraph(ent1, ent2, lambda uri: uri in answer_uris, max_hop=2)
-			if paths is not None and len(paths) > 0:
-				for path in paths:
-					path_set.add_path(path)
+	all_uri.extend(entities)
+	all_uri.extend(ontologies)
+	all_uri.extend(answer_uris)
 
-	print "paths", len(path_set.paths)
-	for path in path_set.paths:
-		print path
+	kb = DBpedia()
+	graph = Graph(kb)
+	graph.find_minimal_subgraph(entities, ontologies, answer_uris)
+	print graph
+	print "-----"
+	where = graph.to_where_statement()
+	print graph
+	print where
+	raw_answer = kb.query_where(where)
+	answerset = AnswerSet(raw_answer, parser.parse_answerset)
+	if answerset == qapair.answerset:
+		return True
 
-	path_set.merge_paths()
-	print "Merged paths:", len(path_set.paths)
-	for path in path_set.paths:
-		print path
-
-	path_set.expand_paths()
-	print "expand paths", len(path_set.paths)
-	for path in path_set.paths:
-		print path
-
-	path_set.merge_paths()
-	print "Merged paths:", len(path_set.paths)
-	for path in path_set.paths:
-		print path
-
-	path_set.prune_paths(qapair.answerset)
-	print "pruned paths", len(path_set.paths)
-	for path in path_set.paths:
-		print path
-
-	path_set.replace_answers(qapair.answerset)
-	print "replace answers", len(path_set.paths)
-	for path in path_set.paths:
-		print path
-
-	for path in path_set.paths:
-		q = path.generate_sparql()
-		if q is not None:
-			print q
-			raw_answerset = dbp.query(q)
-			if raw_answerset[0] == 200:
-				answerset = AnswerSet(raw_answerset[1], LC_Qaud_LinkedParser().parse_answerset)
-				if answerset == qapair.answerset:
-					return True
 	return False
 
 if __name__ == "__main__":
-	jerrl = Jerrl()
-	i = 0
+	bool_q = 0
+	count_q = 0
+	total = 0
 	no_answer = 0
+	type_q = 0
 	correct_answer = 0
-	ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer3.json")
+	ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer4.json")
 	tmp = []
+
+	output = []
 	for qapair in prepare_dataset(ds).qapairs:
-		i += 1
-		print i
-		if i <= 7:
-			continue
-		results = jerrl.do(qapair)
-		# if len(results) != 2:
+		total += 1
+		print total
+		# if total <= 4959:
 		# 	continue
+		output_row = {}
+
+		output_row["question"] = qapair.question.text
+		output_row["id"] = qapair.id
+		output_row["no_answer"] = False
+		output_row["query"] = ""
+		output_row["correct_answer"] = False
 		if qapair.answerset is None or len(qapair.answerset) == 0:
 			no_answer += 1
+			output_row["no_answer"] = True
+		elif "COUNT(" in qapair.sparql.query:
+				count_q += 1
+				output_row["query"] = "COUNT"
+		elif "ASK " in qapair.sparql.query:
+				bool_q += 1
+				output_row["query"] = "ASK"
+		elif "22-rdf-syntax-ns#type" in qapair.sparql.query:
+			type_q += 1
+			output_row["query"] = "TYPE"
 		else:
-			if qg(qapair):
+			if qg(ds.parser, qapair):
 				print "True"
 				correct_answer += 1
+				output_row["correct_answer"] = True
 			else:
 				print "False"
 			# print qapair.answerset
 			print "--"
 
-		if i > 500:
-			break
-		print no_answer, correct_answer,  i
+		# if total > 5:
+		# 	break
+		print no_answer, bool_q, count_q, type_q, correct_answer,  total
+		output.append(output_row)
+
+		if total % 100 == 0:
+			with open("output/1.json", "w") as data_file:
+				json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
+
+	with open("output/1.json", "w") as data_file:
+		json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
+
