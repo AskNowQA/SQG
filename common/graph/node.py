@@ -33,7 +33,7 @@ class Node:
     def remove_inbound(self, edge):
         self.inbound.remove(edge)
 
-    def __all_generic_uris(self):
+    def are_all_uris_generic(self):
         uris_type = set([u.uri_type for u in self.uris])
         return len(uris_type) == 1 and uris_type.pop() == "g"
 
@@ -54,7 +54,7 @@ class Node:
         raise Exception("...")
 
     def generic_equal(self, other):
-        return (self.__all_generic_uris() and other.__all_generic_uris()) or self == other
+        return (self.are_all_uris_generic() and other.are_all_uris_generic()) or self == other
 
     # def __le__(self, other):
     #     if isinstance(other, Node):
