@@ -37,3 +37,7 @@ UNION {{ values ?m {{ 4 }} ?u1 {2} {0} }}
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
             return response["results"]["bindings"]
+
+    @staticmethod
+    def parse_uri(input_uri):
+        pass
