@@ -33,9 +33,15 @@ class Node:
     def remove_inbound(self, edge):
         self.inbound.remove(edge)
 
-    def are_all_uris_generic(self):
+    def __are_all_uris_of_type(self, uri_type):
         uris_type = set([u.uri_type for u in self.uris])
-        return len(uris_type) == 1 and uris_type.pop() == "g"
+        return len(uris_type) == 1 and uris_type.pop() == uri_type
+
+    def are_all_uris_generic(self):
+        return self.__are_all_uris_of_type("g")
+
+    def are_all_uris_type(self):
+        return self.__are_all_uris_of_type("?t")
 
     def replace_uri(self, uri, new_uri):
         if uri in self.uris:
