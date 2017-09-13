@@ -1,5 +1,6 @@
 from parser.qald import Qald
 from parser.lc_quad import LC_Qaud
+from parser.lc_quad_linked import LC_Qaud_Linked
 from parser.webqsp import WebQSP
 
 
@@ -7,7 +8,7 @@ from parser.webqsp import WebQSP
 ds = WebQSP()
 ds.load()
 ds.parse()
-# ds.print_pairs()
+ds.print_pairs()
 
 ### Get entity label in freebase
 # PREFIX ns: <http://rdf.freebase.com/ns/>
@@ -20,7 +21,7 @@ ds.parse()
 # }
 
 
-# ds = Qald(Qald.qald_6)
+# ds = Qald(Qald.qald_8)
 # ds.load()
 # ds.parse()
 # ds.print_pairs()
@@ -32,8 +33,15 @@ ds.parse()
 # ds.print_pairs()
 
 
-for x in ds.qapairs[:10]:
-	print x.sparql
-	for y in x.sparql.uris:
-		print y.type,
-	print ""
+ds = LC_Qaud_Linked()
+ds.load()
+ds.parse()
+ds.print_pairs()
+
+
+
+# for x in ds.qapairs[:10]:
+# 	print x.sparql
+# 	for y in x.sparql.uris:
+# 		print y.type,
+# 	print ""
