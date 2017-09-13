@@ -9,6 +9,7 @@ class DBpedia(KB):
 	# http://drogon:7890/sparql
 	def __init__(self, endpoint="http://drogon:7890/sparql"):
 		super(DBpedia, self).__init__(endpoint)
+		self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
 
 	def __find_minimal_subgraph(self, ent1, ent2, hop=1, direction=0):
 		result = []
