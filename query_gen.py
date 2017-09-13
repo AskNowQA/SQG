@@ -15,6 +15,8 @@ def qg(parser, qapair):
 	if qapair.answerset.number_of_answer() != 1:
 		return False
 
+	if "22-rdf-syntax-ns#type" in qapair.sparql.query:
+		pass
 	print qapair.sparql
 	print qapair.question
 	all_uri = []
@@ -37,6 +39,9 @@ def qg(parser, qapair):
 	print graph
 	print "-----"
 	where = graph.to_where_statement()
+	if len(where) == 0:
+		return False
+	where = where[0]
 	print graph
 	print where
 	raw_answer = kb.query_where(where)
@@ -60,7 +65,7 @@ if __name__ == "__main__":
 	for qapair in prepare_dataset(ds).qapairs:
 		total += 1
 		print total
-		# if total <= 4959:
+		# if total <= 632:
 		# 	continue
 		output_row = {}
 
@@ -78,9 +83,9 @@ if __name__ == "__main__":
 		elif "ASK " in qapair.sparql.query:
 				bool_q += 1
 				output_row["query"] = "ASK"
-		elif "22-rdf-syntax-ns#type" in qapair.sparql.query:
-			type_q += 1
-			output_row["query"] = "TYPE"
+		# elif "22-rdf-syntax-ns#type" in qapair.sparql.query:
+		# 	type_q += 1
+		# 	output_row["query"] = "TYPE"
 		else:
 			if qg(ds.parser, qapair):
 				print "True"
@@ -91,15 +96,15 @@ if __name__ == "__main__":
 			# print qapair.answerset
 			print "--"
 
-		# if total > 5:
+		# if total > 10:
 		# 	break
 		print no_answer, bool_q, count_q, type_q, correct_answer,  total
 		output.append(output_row)
 
 		if total % 100 == 0:
-			with open("output/1.json", "w") as data_file:
+			with open("output/5.json", "w") as data_file:
 				json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
-	with open("output/1.json", "w") as data_file:
+	with open("output/5.json", "w") as data_file:
 		json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
