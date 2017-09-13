@@ -12,6 +12,9 @@ class Uri:
 	def is_ontology(self):
 		return self.uri_type == "?p"
 
+	def is_type(self):
+		return self.uri_type == "?t"
+
 	def sparql_format(self):
 		if self.uri_type == "g":
 			return self.uri
