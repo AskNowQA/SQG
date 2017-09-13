@@ -61,16 +61,16 @@ class Graph:
                             n_d = self.create_or_get_node(relation_uri)
                             n_s = self.create_or_get_node(entity_uri)
                             e = Edge(n_s, uri, n_d)
-                            self.add_edge(e)
+                            # self.add_edge(e)
                         elif m == 3:
                             n_d = self.create_or_get_node(entity_uri)
                             n_s = self.create_or_get_node(relation_uri)
                             e = Edge(n_s, uri, n_d)
-                            self.add_edge(e)
+                            # self.add_edge(e)
                         elif m == 4:
-                            n_d = self.create_or_get_node(entity_uri)
-                            n_s = self.create_or_get_node(relation_uri)
-                            e = Edge(n_s, uri, n_d)
+                            n_d = self.create_or_get_node(relation_uri)
+                            n_s = self.create_or_get_node(uri)
+                            e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                             self.add_edge(e)
 
     def find_minimal_subgraph(self, entity_uris, relation_uris, answer_uris):
@@ -138,9 +138,9 @@ class Graph:
         for relation in relation_uris:
             for edge in self.__find_edges(edges, relation):
                 entities = set()
-                if not edge.source_node.are_all_uris_generic():
+                if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
                     entities.update(edge.source_node.uris)
-                if not edge.dest_node.are_all_uris_generic():
+                if not (edge.dest_node.are_all_uris_generic() or edge.uri.is_type()):
                     entities.update(edge.dest_node.uris)
 
                 if entities <= entity_uris:
@@ -162,7 +162,7 @@ class Graph:
         return new_output
 
     def __find_edges(self, edges, uri):
-        return [edge for edge in edges if edge.uri == uri]
+        return [edge for edge in edges if edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))]
 
     def __get_generic_uri(self, uri, edges):
         return Uri.generic_uri(0)
