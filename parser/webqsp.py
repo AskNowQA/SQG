@@ -1,7 +1,9 @@
 import json, re
 from common.qapair import QApair
 from common.answer import Answer
+from common.answerrow import AnswerRow
 from common.uri import Uri
+
 
 class WebQSP:
 	def __init__(self, path = "./data/WebQuestionsSP/WebQSP.train.json"):
@@ -14,16 +16,18 @@ class WebQSP:
 			self.raw_data = json.load(data_file)
 
 	def parse(self):
-		parser = QaldParser()
+		parser = WebQSPParser()
 		for raw_row in self.raw_data["Questions"]:
-			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], raw_row, parser))
+			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], raw_row, raw_row["QuestionId"], parser))
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
 			print item.sparql
 			print ""
 
-class QaldParser:
+
+class WebQSPParser:
+
 	def parse_question(self, raw_question):
 		return raw_question
 
@@ -38,14 +42,20 @@ class QaldParser:
 		supported = not any(substring in raw_query.upper() for substring in ["EXISTS", "UNION", "FILTER"])
 		return raw_query, supported, uris
 
-	def parse_answers(self, raw_answers):
-		answers = []
+	def parse_answerset(self, raw_answers):
+		answer_rows = []
 		for raw_answer in raw_answers[0]["Answers"]:
-			answers.append(Answer(raw_answer["AnswerType"], raw_answer, self.parse_answer))
+			answer_rows.append(AnswerRow(raw_answer, self.parse_answerrow))
+				# Answer(raw_answer["AnswerType"], raw_answer, self.parse_answer))
+		return answer_rows
+
+	def parse_answerrow(self, raw_answerrow):
+		answers = []
+		answers.append(Answer(raw_answerrow["AnswerType"], raw_answerrow, self.parse_answer))
 		return answers
 
 	def parse_answer(self, answer_type, raw_answer):
-		if answer_type == "Value":
+		if answer_type == "Entity":
 			return answer_type, raw_answer["AnswerArgument"]
 		else:
 			return answer_type, raw_answer["EntityName"]
