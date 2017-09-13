@@ -5,16 +5,22 @@ from common.uri import Uri
 class Graph:
     def __init__(self, kb):
         self.kb = kb
-        self.nodes, self.edges = [], []
+        self.nodes, self.edges = set(), set()
         self.entity_uris, self.relation_uris, self.answer_uris = set(), set(), set()
 
     def create_or_get_node(self, uris, mergable=False):
-        node = Node(uris, mergable)
-        return self.nodes[self.nodes.index(node)] if node in self.nodes else node
+        if isinstance(uris, (int, long)):
+            uris = self.__get_generic_uri(0, 0)
+            mergable = True
+        new_node = Node(uris, mergable)
+        for node in self.nodes:
+            if node == new_node:
+                return node
+        return new_node
 
     def add_node(self, node):
         if node not in self.nodes:
-            self.nodes.append(node)
+            self.nodes.add(node)
 
     def remove_node(self, node):
         self.nodes.remove(node)
@@ -23,7 +29,7 @@ class Graph:
         if edge not in self.edges:
             self.add_node(edge.source_node)
             self.add_node(edge.dest_node)
-            self.edges.append(edge)
+            self.edges.add(edge)
 
     def remove_edge(self, edge):
         edge.prepare_remove()
@@ -40,7 +46,7 @@ class Graph:
                 if result is not None:
                     for item in result:
                         m = int(item["m"]["value"])
-                        uri = Uri(item["u1"]["value"], self.kb.parse_uri)
+                        uri = int(item["callret-1"]["value"])
                         if m == 0:
                             n_s = self.create_or_get_node(uri, True)
                             n_d = self.create_or_get_node(entity_uri)
@@ -57,6 +63,11 @@ class Graph:
                             e = Edge(n_s, uri, n_d)
                             self.add_edge(e)
                         elif m == 3:
+                            n_d = self.create_or_get_node(entity_uri)
+                            n_s = self.create_or_get_node(relation_uri)
+                            e = Edge(n_s, uri, n_d)
+                            self.add_edge(e)
+                        elif m == 4:
                             n_d = self.create_or_get_node(entity_uri)
                             n_s = self.create_or_get_node(relation_uri)
                             e = Edge(n_s, uri, n_d)
@@ -87,7 +98,71 @@ class Graph:
     def to_where_statement(self):
         self.__generalize_nodes()
         self.__merge_edges()
-        return [edge.sparql_format() for edge in self.edges]
+        output = []
+        paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges, [])
+
+        to_be_removed = set()
+        for i in range(len(paths)):
+            batch_edges = paths[i]
+            found_entities = set()
+            for edge in batch_edges:
+                for uri in self.entity_uris:
+                    if edge.has_uri(uri):
+                        found_entities.add(uri)
+            if len(found_entities) != len(self.entity_uris):
+                to_be_removed.add(i)
+        to_be_removed = list(to_be_removed)
+        to_be_removed.sort(reverse=True)
+        for i in to_be_removed:
+            paths.pop(i)
+
+        if len(paths) == 1:
+            return [[edge.sparql_format() for edge in batch_edges]]
+
+        for batch_edges in paths:
+            sparql_where = [edge.sparql_format() for edge in batch_edges]
+            result = self.kb.query_where(sparql_where, count=True)
+            result = int(result["results"]["bindings"][0]["callret-0"]["value"])
+            if result > 0:
+                output.append(sparql_where)
+        return output
+
+    def __find_paths(self, entity_uris, relation_uris, edges, output=[]):
+        new_output = []
+
+        if len(relation_uris) == 0:
+            if len(entity_uris) > 0:
+                return self.__find_paths(entity_uris, self.relation_uris, edges, output)
+            return output
+
+        for relation in relation_uris:
+            for edge in self.__find_edges(edges, relation):
+                entities = set()
+                if not edge.source_node.are_all_uris_generic():
+                    entities.update(edge.source_node.uris)
+                if not edge.dest_node.are_all_uris_generic():
+                    entities.update(edge.dest_node.uris)
+
+                if entities <= entity_uris:
+                    valid_edges = self.__find_paths(entity_uris - entities, relation_uris - {relation},
+                                                          edges - {edge},
+                                                          self.__extend_output(edge, output))
+                    if len(valid_edges) > 0 and isinstance(valid_edges[0], list):
+                        valid_edges = valid_edges[0]
+                    new_output.append(valid_edges)
+
+        return new_output
+
+    def __extend_output(self, edge, output):
+        new_output = []
+        if len(output) == 0:
+            output.append([])
+        for item in output:
+                new_output.append(item + [edge])
+        return new_output
+
+    def __find_edges(self, edges, uri):
+        return [edge for edge in edges if edge.uri == uri]
 
     def __get_generic_uri(self, uri, edges):
         return Uri.generic_uri(0)
@@ -101,20 +176,15 @@ class Graph:
                     node.replace_uri(uri, generic_uri)
 
     def __merge_edges(self):
-        # Merge edges
-        i = 0
-        while i < len(self.edges):
-            to_be_removed = []
-            for j in range(i, len(self.edges)):
-                if i == j:
+        to_be_removed = set()
+        for edge_1 in self.edges:
+            for edge_2 in self.edges:
+                if edge_1 == edge_2 or edge_2 in to_be_removed:
                     continue
-                if self.edges[j] not in to_be_removed and self.edges[i].generic_equal(self.edges[j]):
-                    to_be_removed.append(self.edges[j])
-            for item in to_be_removed:
-                self.remove_edge(item)
-            i += 1
+                if edge_1.generic_equal(edge_2):
+                    to_be_removed.append(edge_2)
+        for item in to_be_removed:
+            self.remove_edge(item)
 
     def __str__(self):
         return "\n".join([edge.full_path() for edge in self.edges])
-
-
