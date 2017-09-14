@@ -42,7 +42,7 @@ class Graph:
     def __one_hop_graph(self, entity_uris, relation_uris):
         for entity_uri in entity_uris:
             for relation_uri in relation_uris:
-                result = self.kb.one_hop_graph(entity_uri.sparql_format(), relation_uri.sparql_format())
+                result = self.kb.one_hop_graph(entity_uri, relation_uri)
                 if result is not None:
                     for item in result:
                         m = int(item["m"]["value"])
@@ -117,10 +117,10 @@ class Graph:
             paths.pop(i)
 
         if len(paths) == 1:
-            return [[edge.sparql_format() for edge in batch_edges]]
+            return [[edge.sparql_format(self.kb) for edge in batch_edges]]
 
         for batch_edges in paths:
-            sparql_where = [edge.sparql_format() for edge in batch_edges]
+            sparql_where = [edge.sparql_format(self.kb) for edge in batch_edges]
             result = self.kb.query_where(sparql_where, count=True)
             result = int(result["results"]["bindings"][0]["callret-0"]["value"])
             if result > 0:
