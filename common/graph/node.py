@@ -53,10 +53,10 @@ class Node:
     def has_uri(self, uri):
         return uri in self.uris
 
-    def sparql_format(self):
+    def sparql_format(self, kb):
         if len(self.uris) == 1:
             for uri in self.uris:
-                return uri.sparql_format()
+                return uri.sparql_format(kb)
         raise Exception("...")
 
     def generic_equal(self, other):
