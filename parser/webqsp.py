@@ -1,8 +1,11 @@
-import json, re
+import json
+import re
 from common.qapair import QApair
-from common.answer import Answer
-from common.answerrow import AnswerRow
 from common.uri import Uri
+from common.answerrow import AnswerRow
+from common.answer import Answer
+from kb.freebase import Freebase
+from answerparser import AnswerParser
 
 
 class WebQSP:
@@ -27,7 +30,9 @@ class WebQSP:
 			print ""
 
 
-class WebQSPParser:
+class WebQSPParser(AnswerParser):
+	def __init__(self):
+		super(WebQSPParser, self).__init__(Freebase)
 
 	def parse_question(self, raw_question):
 		return raw_question
@@ -39,7 +44,7 @@ class WebQSPParser:
 		#remove comments from the sparql query
 		for t in re.findall("\#[^\n]*", raw_query):
 			raw_query = raw_query.replace(t, " ")
-		uris = [Uri(raw_uri, self.parse_uri) for raw_uri in re.findall('(ns:[^ ]*|\?[^ ]*)', raw_query)]
+		uris = [Uri(raw_uri, Freebase.parse_uri) for raw_uri in re.findall('(ns:[^ ]*|\?[^ ]*)', raw_query)]
 		supported = not any(substring in raw_query.upper() for substring in ["EXISTS", "UNION", "FILTER"])
 		return raw_query, supported, uris
 
@@ -47,7 +52,6 @@ class WebQSPParser:
 		answer_rows = []
 		for raw_answer in raw_answers[0]["Answers"]:
 			answer_rows.append(AnswerRow(raw_answer, self.parse_answerrow))
-				# Answer(raw_answer["AnswerType"], raw_answer, self.parse_answer))
 		return answer_rows
 
 	def parse_answerrow(self, raw_answerrow):
@@ -57,14 +61,8 @@ class WebQSPParser:
 
 	def parse_answer(self, answer_type, raw_answer):
 		if answer_type == "Entity":
+			return answer_type, Uri(self.kb.shorten_prefix() + raw_answer["AnswerArgument"], self.kb.parse_uri)
+		elif answer_type == "Value":
 			return answer_type, raw_answer["AnswerArgument"]
 		else:
-			return answer_type, raw_answer["EntityName"]
-
-	def parse_uri(self, raw_uri):
-		if raw_uri.find("ns:m.") >= 0:
-			return "?s", raw_uri
-		elif raw_uri.find("ns:") >= 0:
-			return "?p", raw_uri
-		else:
-			return raw_uri, raw_uri
+			return answer_type, Uri(raw_answer["EntityName"], self.kb.parse_uri)
