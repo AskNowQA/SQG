@@ -13,8 +13,8 @@ class Edge:
         self.source_node.remove_outbound(self)
         self.dest_node.remove_inbound(self)
 
-    def sparql_format(self):
-        return u"{} {} {}".format(self.source_node.sparql_format(), self.uri.sparql_format(), self.dest_node.sparql_format())
+    def sparql_format(self, kb):
+        return u"{} {} {}".format(self.source_node.sparql_format(kb), self.uri.sparql_format(kb), self.dest_node.sparql_format(kb))
 
     def full_path(self):
         return "{} --> {} --> {}".format(self.source_node.__str__(), self.uri.__str__(), self.dest_node.__str__())
