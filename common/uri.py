@@ -15,10 +15,8 @@ class Uri:
 	def is_type(self):
 		return self.uri_type == "?t"
 
-	def sparql_format(self):
-		if self.uri_type == "g":
-			return self.uri
-		return u"<{}>".format(self.uri)
+	def sparql_format(self, kb):
+		return kb.uri_to_sparql(self)
 
 	def generic_equal(self, other):
 		return (self.is_generic() and other.is_generic()) or self == other
