@@ -1,6 +1,4 @@
 from kb import KB
-from common.graph.path import Path
-from common.uri import Uri
 
 
 class Freebase(KB):
@@ -9,12 +7,8 @@ class Freebase(KB):
 		super(Freebase, self).__init__(endpoint)
 		self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
 
-	def get_answers_type(self, answer_set):
-		where = ""
-		for answer_row in answer_set.answer_rows:
-			for answer in answer_row.answers:
-				where += u"{} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?u .".format(answer.answer.sparql_format())
-		return self.query(u"SELECT * WHERE {{ {} }}".format(where))
+	def prefix(self):
+		return "PREFIX ns: <http://rdf.freebase.com/ns/>"
 
 	@staticmethod
 	def parse_uri(input_uri):
