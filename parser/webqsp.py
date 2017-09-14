@@ -10,6 +10,7 @@ class WebQSP:
 		self.raw_data = []
 		self.qapairs = []
 		self.path = path
+		self.parser = WebQSPParser()
 
 	def load(self):
 		with open(self.path) as data_file:	
