@@ -82,7 +82,8 @@ class Graph:
 
         if len(self.edges) > 100:
             return
-        for edge in self.edges:
+        
+        for edge in itertools.islice(self.edges, 0, len(self.edges) - 1):
             mergable_node = None
             entity_node = None
             if edge.source_node.mergable:
