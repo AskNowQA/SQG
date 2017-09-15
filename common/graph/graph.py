@@ -12,7 +12,7 @@ class Graph:
 
     def create_or_get_node(self, uris, mergable=False):
         if isinstance(uris, (int, long)):
-            uris = self.__get_generic_uri(0, 0)
+            uris = self.__get_generic_uri(uris, 0)
             mergable = True
         new_node = Node(uris, mergable)
         for node in self.nodes:
@@ -48,7 +48,7 @@ class Graph:
                 if result is not None:
                     for item in result:
                         m = int(item["m"]["value"])
-                        uri = entity_uri[1] if len(entity_uri) > 1 else int(item["callret-1"]["value"])
+                        uri = entity_uri[1] if len(entity_uri) > 1 else 0  #int(item["callret-1"]["value"])
                         if m == 0:
                             n_s = self.create_or_get_node(uri, True)
                             n_d = self.create_or_get_node(entity_uri[0])
@@ -78,25 +78,65 @@ class Graph:
     def find_minimal_subgraph(self, entity_uris, relation_uris, answer_uris, ask_query=False):
         self.entity_uris, self.relation_uris, self.answer_uris = entity_uris, relation_uris, answer_uris
 
+        #Find subgraphs that are consist of at leat one entity and exactly one relation
         self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
 
         if len(self.edges) > 100:
             return
-        
-        for edge in itertools.islice(self.edges, 0, len(self.edges) - 1):
-            mergable_node = None
+
+        for edge in itertools.islice(self.edges, 0, len(self.edges)):
+            mergeable_node = None
             entity_node = None
+
             if edge.source_node.mergable:
-                mergable_node = edge.source_node
-            if edge.dest_node.mergable:
-                mergable_node = edge.dest_node
-            if not edge.source_node.mergable:
+                mergeable_node = edge.source_node
+            else:
                 entity_node = edge.source_node
-            if not edge.dest_node.mergable:
+
+            if edge.dest_node.mergable:
+                mergeable_node = edge.dest_node
+            else:
                 entity_node = edge.dest_node
-            if mergable_node is not None and entity_node is not None:
+
+            if mergeable_node is not None and entity_node is not None:
                 self.__one_hop_graph(entity_uris - set(entity_node.uris),
                         relation_uris - set([e.uri for e in entity_node.inbound + entity_node.outbound]))
+
+        #When there are unbound relation
+        if len(self.edges) < len(relation_uris):
+            new_edges = set()
+            for relation_uri in relation_uris - set([e.uri for e in self.edges]):
+                for edge in self.edges:
+                    new_edges.update(self.__extend_edge(edge, relation_uri))
+            for e in new_edges:
+                self.add_edge(e)
+
+    def __extend_edge(self, edge, relation_uri):
+        output = set()
+        var_node = None
+        if edge.source_node.are_all_uris_generic():
+            var_node = edge.source_node
+        if edge.dest_node.are_all_uris_generic():
+            var_node = edge.dest_node
+        ent1 = edge.source_node.first_uri_if_only()
+        ent2 = edge.dest_node.first_uri_if_only()
+        if not (ent1 is None or ent2 is None):
+            result = self.kb.two_hop_graph(ent1, edge.uri, ent2, relation_uri)
+            if result is not None:
+                for item in result:
+                    m = int(item["m"]["value"])
+                    uri = int(item["callret-1"]["value"])
+                    if m == 0:
+                        n_s = self.create_or_get_node(1, True)
+                        n_d = var_node
+                        e = Edge(n_s, relation_uri, n_d)
+                        output.add(e)
+                    elif m == 1:
+                        n_s = var_node
+                        n_d = self.create_or_get_node(1, True)
+                        e = Edge(n_s, relation_uri, n_d)
+                        output.add(e)
+        return output
 
     def to_where_statement(self):
         self.__generalize_nodes()
@@ -120,14 +160,16 @@ class Graph:
             paths.pop(i)
 
         if len(paths) == 1:
-            return [[edge.sparql_format(self.kb) for edge in batch_edges]]
+            return [(0, [edge.sparql_format(self.kb) for edge in batch_edges])]
 
         for batch_edges in paths:
             sparql_where = [edge.sparql_format(self.kb) for edge in batch_edges]
+            max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
             result = self.kb.query_where(sparql_where, count=True)
-            result = int(result["results"]["bindings"][0]["callret-0"]["value"])
-            if result > 0:
-                output.append(sparql_where)
+            if result is not None:
+                result = int(result["results"]["bindings"][0]["callret-0"]["value"])
+                if result > 0:
+                    output.append((max_generic_id, sparql_where))
         return output
 
     def __find_paths(self, entity_uris, relation_uris, edges, number_of_left_relations, output=[]):
@@ -169,13 +211,13 @@ class Graph:
         return [edge for edge in edges if edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))]
 
     def __get_generic_uri(self, uri, edges):
-        return Uri.generic_uri(0)
+        return Uri.generic_uri(uri)
 
     def __generalize_nodes(self):
         uris = self.entity_uris.union(self.relation_uris)
         for node in self.nodes:
             for uri in node.uris:
-                if uri not in uris:
+                if not (uri in uris or uri.is_generic()):
                     generic_uri = self.__get_generic_uri(uri, node.inbound + node.outbound)
                     node.replace_uri(uri, generic_uri)
 
@@ -183,10 +225,14 @@ class Graph:
         to_be_removed = set()
         for edge_1 in self.edges:
             for edge_2 in self.edges:
-                if edge_1 == edge_2 or edge_2 in to_be_removed:
+                if edge_1 is edge_2 or edge_2 in to_be_removed:
                     continue
-                if edge_1.generic_equal(edge_2):
-                    to_be_removed.append(edge_2)
+                if edge_1 == edge_2:
+                    to_be_removed.add(edge_2)
+                # if edge_1 == edge_2 or edge_2 in to_be_removed:
+                #     continue
+                # if edge_1.generic_equal(edge_2):
+                #     to_be_removed.add(edge_2)
         for item in to_be_removed:
             self.remove_edge(item)
 
