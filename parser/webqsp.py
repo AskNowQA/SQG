@@ -15,14 +15,19 @@ class WebQSP:
 		self.path = path
 		self.parser = WebQSPParser()
 
-	def load(self):
-		with open(self.path) as data_file:	
+	def load(self, path=None):
+		if path is None:
+			path = self.path
+		with open(path) as data_file:
 			self.raw_data = json.load(data_file)
 
+	def extend(self, path):
+		self.load(path)
+		self.parse()
+
 	def parse(self):
-		parser = WebQSPParser()
 		for raw_row in self.raw_data["Questions"]:
-			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], raw_row, raw_row["QuestionId"], parser))
+			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], raw_row, raw_row["QuestionId"], self.parser))
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
