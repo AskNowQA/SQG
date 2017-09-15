@@ -1,6 +1,8 @@
 from node import Node
 from edge import Edge
 from common.uri import Uri
+import itertools
+
 
 class Graph:
     def __init__(self, kb):
@@ -39,31 +41,31 @@ class Graph:
         if edge.dest_node.is_disconnected():
             self.remove_node(edge.dest_node)
 
-    def __one_hop_graph(self, entity_uris, relation_uris):
-        for entity_uri in entity_uris:
-            for relation_uri in relation_uris:
-                result = self.kb.one_hop_graph(entity_uri, relation_uri)
+    def __one_hop_graph(self, entity_uris, relation_uris, number_of_entities=1):
+        for relation_uri in relation_uris:
+            for entity_uri in itertools.combinations(entity_uris, number_of_entities):
+                result = self.kb.one_hop_graph(entity_uri[0], relation_uri, entity_uri[1] if len(entity_uri) > 1 else None)
                 if result is not None:
                     for item in result:
                         m = int(item["m"]["value"])
-                        uri = int(item["callret-1"]["value"])
+                        uri = entity_uri[1] if len(entity_uri) > 1 else int(item["callret-1"]["value"])
                         if m == 0:
                             n_s = self.create_or_get_node(uri, True)
-                            n_d = self.create_or_get_node(entity_uri)
+                            n_d = self.create_or_get_node(entity_uri[0])
                             e = Edge(n_s, relation_uri, n_d)
                             self.add_edge(e)
                         elif m == 1:
                             n_d = self.create_or_get_node(uri, True)
-                            n_s = self.create_or_get_node(entity_uri)
+                            n_s = self.create_or_get_node(entity_uri[0])
                             e = Edge(n_s, relation_uri, n_d)
                             self.add_edge(e)
                         elif m == 2:
                             n_d = self.create_or_get_node(relation_uri)
-                            n_s = self.create_or_get_node(entity_uri)
+                            n_s = self.create_or_get_node(entity_uri[0])
                             e = Edge(n_s, uri, n_d)
                             # self.add_edge(e)
                         elif m == 3:
-                            n_d = self.create_or_get_node(entity_uri)
+                            n_d = self.create_or_get_node(entity_uri[0])
                             n_s = self.create_or_get_node(relation_uri)
                             e = Edge(n_s, uri, n_d)
                             # self.add_edge(e)
@@ -73,10 +75,10 @@ class Graph:
                             e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                             self.add_edge(e)
 
-    def find_minimal_subgraph(self, entity_uris, relation_uris, answer_uris):
+    def find_minimal_subgraph(self, entity_uris, relation_uris, answer_uris, ask_query=False):
         self.entity_uris, self.relation_uris, self.answer_uris = entity_uris, relation_uris, answer_uris
 
-        self.__one_hop_graph(entity_uris, relation_uris)
+        self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
 
         if len(self.edges) > 100:
             return
@@ -131,7 +133,7 @@ class Graph:
         new_output = []
 
         if len(relation_uris) == 0:
-            if len(entity_uris) > 0:
+            if len(entity_uris) > 0 and len(self.relation_uris) > 0:
                 return self.__find_paths(entity_uris, self.relation_uris, edges, output)
             return output
 
