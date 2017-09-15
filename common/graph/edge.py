@@ -13,6 +13,21 @@ class Edge:
         self.source_node.remove_outbound(self)
         self.dest_node.remove_inbound(self)
 
+    def max_generic_id(self):
+        s = self.source_node.first_uri_if_only()
+        if s is not None:
+            s = s.generic_id()
+        if s is None:
+            s = -1
+
+        d = self.dest_node.first_uri_if_only()
+        if d is not None:
+            d = d.generic_id()
+        if d is None:
+            d = -1
+
+        return max(s, d)
+
     def sparql_format(self, kb):
         return u"{} {} {}".format(self.source_node.sparql_format(kb), self.uri.sparql_format(kb), self.dest_node.sparql_format(kb))
 
