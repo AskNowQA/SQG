@@ -33,6 +33,11 @@ class Node:
     def remove_inbound(self, edge):
         self.inbound.remove(edge)
 
+    def first_uri_if_only(self):
+        if len(self.uris) == 1:
+            return next(iter(self.uris))
+        return None
+
     def __are_all_uris_of_type(self, uri_type):
         uris_type = set([u.uri_type for u in self.uris])
         return len(uris_type) == 1 and uris_type.pop() == uri_type
@@ -55,8 +60,7 @@ class Node:
 
     def sparql_format(self, kb):
         if len(self.uris) == 1:
-            for uri in self.uris:
-                return uri.sparql_format(kb)
+            return self.first_uri_if_only().sparql_format(kb)
         raise Exception("...")
 
     def generic_equal(self, other):
