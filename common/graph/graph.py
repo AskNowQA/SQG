@@ -101,7 +101,7 @@ class Graph:
         self.__generalize_nodes()
         self.__merge_edges()
         output = []
-        paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges, [])
+        paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges, len(self.relation_uris), [])
 
         to_be_removed = set()
         for i in range(len(paths)):
@@ -129,12 +129,12 @@ class Graph:
                 output.append(sparql_where)
         return output
 
-    def __find_paths(self, entity_uris, relation_uris, edges, output=[]):
+    def __find_paths(self, entity_uris, relation_uris, edges, number_of_left_relations, output=[]):
         new_output = []
 
-        if len(relation_uris) == 0:
+        if number_of_left_relations == 0:
             if len(entity_uris) > 0 and len(self.relation_uris) > 0:
-                return self.__find_paths(entity_uris, self.relation_uris, edges, output)
+                return self.__find_paths(entity_uris, self.relation_uris, edges, 1, output)
             return output
 
         for relation in relation_uris:
@@ -148,6 +148,7 @@ class Graph:
                 if entities <= entity_uris:
                     valid_edges = self.__find_paths(entity_uris - entities, relation_uris - {relation},
                                                           edges - {edge},
+                                                          number_of_left_relations - 1,
                                                           self.__extend_output(edge, output))
                     if len(valid_edges) > 0 and isinstance(valid_edges[0], list):
                         valid_edges = valid_edges[0]
