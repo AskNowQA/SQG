@@ -18,6 +18,11 @@ class Uri:
 	def sparql_format(self, kb):
 		return kb.uri_to_sparql(self)
 
+	def generic_id(self):
+		if self.is_generic():
+			return int(self.uri[3:])
+		return None
+
 	def generic_equal(self, other):
 		return (self.is_generic() and other.is_generic()) or self == other
 
