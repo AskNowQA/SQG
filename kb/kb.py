@@ -13,7 +13,7 @@ class KB(object):
             ('query', q),
             ('format', 'application/json'))
 
-        r = requests.get(self.endpoint, params=payload)
+        r = requests.get(self.endpoint, params=payload, timeout=60)
         return r.status_code, r.json() if r.status_code == 200 else None
 
     def query_where(self, clauses, count=False, ask=False):
