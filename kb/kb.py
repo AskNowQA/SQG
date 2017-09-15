@@ -16,25 +16,33 @@ class KB(object):
         r = requests.get(self.endpoint, params=payload)
         return r.status_code, r.json() if r.status_code == 200 else None
 
-    def query_where(self, clauses, count=False):
+    def query_where(self, clauses, count=False, ask=False):
         where = u"WHERE {{ {} }}".format(" .".join(clauses))
         if count:
             query = u"{} SELECT COUNT(DISTINCT *) {}".format(self.query_prefix(), where)
+        elif ask:
+            query = u"{} ASK {}".format(self.query_prefix(), where)
         else:
             query = u"{} SELECT DISTINCT * {}".format(self.query_prefix(), where)
         status, response = self.query(query)
-        if status == 200 and len(response["results"]["bindings"]) > 0:
+        if status == 200:  # and len(response["results"]["bindings"]) > 0:
             return response
 
-    def one_hop_graph(self, entity_uri, relation_uri):
-        query = u"""{3} 
+    def one_hop_graph(self, entity1_uri, relation_uri, entity2_uri=None):
+        relation_uri = self.uri_to_sparql(relation_uri)
+        entity1_uri = self.uri_to_sparql(entity1_uri)
+        if entity2_uri is None:
+            entity2_uri = "?u1"
+        else:
+            entity2_uri = self.uri_to_sparql(entity2_uri)
+        query = u"""{prefix}
 SELECT DISTINCT ?m, count(?u1) WHERE {{
-{{ values ?m {{ 0 }} ?u1 {0} {1} }}
-UNION {{ values ?m {{ 1 }} {1} {0} ?u1 }}
-UNION {{ values ?m {{ 2 }} {1} ?u1 {0} }}
-UNION {{ values ?m {{ 3 }} {0} ?u1 {1} }}
-UNION {{ values ?m {{ 4 }} ?u1 {2} {0} }}
-}}""".format(self.uri_to_sparql(relation_uri), self.uri_to_sparql(entity_uri), self.type_uri, self.query_prefix())
+{{ values ?m {{ 0 }} {ent2} {rel} {ent1} }}
+UNION {{ values ?m {{ 1 }} {ent1} {rel} {ent2} }}
+UNION {{ values ?m {{ 2 }} {ent1} {ent2} {rel} }}
+UNION {{ values ?m {{ 3 }} {rel} {ent2} {ent1} }}
+UNION {{ values ?m {{ 4 }} ?u1 {type} {rel} }}
+}}""".format(rel=relation_uri, ent1=entity1_uri, ent2=entity2_uri, type=self.type_uri, prefix=self.query_prefix())
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
             return response["results"]["bindings"]
