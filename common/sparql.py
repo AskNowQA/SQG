@@ -13,7 +13,7 @@ class SPARQL:
 		idx = sparql_query.find(WHERE)
 		self.where_clause = ' '.join(sparql_query.split())
 		if idx >= 0:
-			self.where_clause= ' '.join(self.where_clause[idx +len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
+			self.where_clause= ' '.join(self.where_clause[idx + len(WHERE) + 1:].strip("{}. ").replace(".", " ").split())
 
 
 	def __str__(self):
