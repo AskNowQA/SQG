@@ -144,6 +144,7 @@ class Graph:
         output = []
         paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges, len(self.relation_uris), [])
 
+        # Prune paths that do not contain all the entities
         to_be_removed = set()
         for i in range(len(paths)):
             batch_edges = paths[i]
@@ -154,6 +155,25 @@ class Graph:
                         found_entities.add(uri)
             if len(found_entities) != len(self.entity_uris):
                 to_be_removed.add(i)
+        to_be_removed = list(to_be_removed)
+        to_be_removed.sort(reverse=True)
+        for i in to_be_removed:
+            paths.pop(i)
+
+        # Remove duplicate paths
+        to_be_removed = set()
+        for i in range(len(paths)):
+            batch_edges = paths[i]
+            for j in range(i + 1, len(paths)):
+                other_batch_edges = paths[j]
+                same_flag = True
+                for edge in batch_edges:
+                    if edge not in other_batch_edges:
+                        same_flag = False
+                        break
+                if same_flag:
+                    to_be_removed.add(i)
+
         to_be_removed = list(to_be_removed)
         to_be_removed.sort(reverse=True)
         for i in to_be_removed:
