@@ -38,5 +38,5 @@ class LC_Qaud_LinkedParser(AnswerParser):
 		return self.parse_queryresult(raw_answers)
 
 	def parse_sparql(self, raw_query):
-		uris = [Uri(raw_uri, DBpedia.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
+		uris = [Uri(raw_uri, self.kb.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
 		return raw_query, True, uris
