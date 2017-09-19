@@ -1,11 +1,11 @@
 from parser.lc_quad_linked import LC_Qaud_Linked
 from parser.webqsp import WebQSP
+from parser.qald import Qald
 from kb.dbpedia import DBpedia
 from kb.freebase import Freebase
 from common.answerset import AnswerSet
 from common.graph.graph import Graph
 import json
-
 
 
 def qg(kb, parser, qapair):
@@ -39,9 +39,10 @@ def qg(kb, parser, qapair):
 		raw_answer = kb.query_where(where[1], return_vars="?u_" + str(where[0]), ask=ask_query)
 		answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 		if answerset == qapair.answerset:
-			return True
-
-	return False
+			return 1
+		else:
+			return len(where)
+	return 0
 
 if __name__ == "__main__":
 	multiple_answer_q = 0
@@ -49,24 +50,34 @@ if __name__ == "__main__":
 	total = 0
 	no_answer = 0
 	correct_answer = 0
+	multiple_path = 0
+	no_path = 0
 
-	# ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer4.json")
-	# kb = DBpedia()
-	# ds.load()
-	# ds.parse()
+	t = 2
 
-	ds = WebQSP()
-	kb = Freebase()
-	ds.load()
-	ds.parse()
-	ds.extend("./data/WebQuestionsSP/WebQSP.test.json")
+	if t == 0:
+		ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer4.json")
+		kb = DBpedia()
+		ds.load()
+		ds.parse()
+	elif t == 1:
+		ds = WebQSP()
+		kb = Freebase()
+		ds.load()
+		ds.parse()
+		ds.extend("./data/WebQuestionsSP/WebQSP.test.json")
+	elif t == 2:
+		ds = Qald(Qald.qald_7_multilingual)
+		kb = DBpedia()
+		ds.load()
+		ds.parse()
 
 	tmp = []
 	output = []
 	for qapair in ds.qapairs:
 		total += 1
 		print total
-		# if total <= 28:
+		# if total <= 7:
 		# 	continue
 		output_row = {}
 
@@ -83,22 +94,26 @@ if __name__ == "__main__":
 		elif qapair.answerset.number_of_answer() != 1:
 			multiple_answer_q += 1
 		else:
-			if qg(kb, ds.parser, qapair):
+			results = qg(kb, ds.parser, qapair)
+			if results == 1:
 				print "True"
 				correct_answer += 1
 				output_row["correct_answer"] = True
+			elif results == 0:
+				no_path += 1
 			else:
-				print "False"
+				multiple_path += 1
+				#print "False"
 			print "--"
 
-		# if total > 10:
+		# if total > 100:
 		# 	break
-		print no_answer, multiple_answer_q, count_q, correct_answer,  total
+		print no_answer, multiple_answer_q, count_q, correct_answer, multiple_path, no_path,  total
 		output.append(output_row)
 
 		if total % 100 == 0:
-			with open("output/wg_3.json", "w") as data_file:
+			with open("output/tmp2.json", "w") as data_file:
 				json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
-	with open("output/wg_3.json", "w") as data_file:
+	with open("output/tmp2.json", "w") as data_file:
 		json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
