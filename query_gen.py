@@ -6,6 +6,7 @@ from kb.freebase import Freebase
 from common.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.stats import Stats
+from jerrl.jerrl import Jerrl
 import json
 
 
@@ -14,22 +15,12 @@ def qg(kb, parser, qapair):
 	print qapair.question
 
 	ask_query = "ASK " in qapair.sparql.query
-	all_uri = []
-	entities = set([u for u in qapair.sparql.uris if u.is_entity()])
-	ontologies = set([u for u in qapair.sparql.uris if u.is_ontology()])
 
-	answer_uris = []
-	for answer_row in qapair.answerset.answer_rows:
-		for answer in answer_row.answers:
-			if answer.answer_type == "uri":
-				answer_uris.append(answer.answer)
-
-	all_uri.extend(entities)
-	all_uri.extend(ontologies)
-	all_uri.extend(answer_uris)
+	jerrl = Jerrl()
+	entities, ontologies = jerrl.do(qapair)
 
 	graph = Graph(kb)
-	graph.find_minimal_subgraph(entities, ontologies, answer_uris, ask_query)
+	graph.find_minimal_subgraph(entities, ontologies, ask_query)
 	print graph
 	print "-----"
 	where = graph.to_where_statement()
@@ -50,7 +41,7 @@ def qg(kb, parser, qapair):
 
 if __name__ == "__main__":
 	stats = Stats()
-	t = 2
+	t = 0
 
 	if t == 0:
 		ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer4.json")
@@ -90,7 +81,7 @@ if __name__ == "__main__":
 		elif qapair.answerset.number_of_answer() != 1:
 			stats.inc("query_multiple_answer")
 		else:
-			results = qg(kb, ds.parser, qapair)
+			results = qg(ds.parser.kb, ds.parser, qapair)
 			if results == -1:
 				stats.inc("answer_incorrect")
 			elif results == 1:
