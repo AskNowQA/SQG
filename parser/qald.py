@@ -7,6 +7,7 @@ from kb.dbpedia import DBpedia
 from answerparser import AnswerParser
 
 class Qald:
+	qald_5 = "./data/QALD/5/data/qald-5_train.json"
 	qald_6 = "./data/QALD/6/data/qald-6-train-multilingual.json"
 	qald_7_largescale = "./data/QALD/7/data/qald-7-train-largescale.json"
 	qald_7_multilingual = "./data/QALD/7/data/qald-7-train-multilingual.json"
@@ -25,7 +26,16 @@ class Qald:
 	def parse(self):
 		parser = QaldParser()
 		for raw_row in self.raw_data["questions"]:
-			self.qapairs.append(QApair(raw_row["question"], raw_row["answers"], raw_row["query"], raw_row, raw_row["id"], parser))
+			question = ""
+			query = ""
+			if "question" in raw_row:
+				question = raw_row["question"]
+			elif "body" in raw_row:
+				# QALD-5 format
+				question = raw_row["body"]
+			if "query" in raw_row:
+				query = raw_row["query"]
+			self.qapairs.append(QApair(question, raw_row["answers"], query, raw_row, raw_row["id"], parser))
 
 	def print_pairs(self, n=-1):
 		for item in self.qapairs[0:n]:
@@ -44,8 +54,17 @@ class QaldParser(AnswerParser):
 				return q["string"]
 
 	def parse_sparql(self, raw_query):
-		raw_query = raw_query["sparql"] if "sparql" in raw_query else ""
+		if "sparql" in raw_query:
+			raw_query = raw_query["sparql"]
+		elif isinstance(raw_query, basestring) and "where" in raw_query.lower():
+			pass
+		else:
+			raw_query = ""
 		if "PREFIX " in raw_query:
+			#QALD-5 bug!
+			raw_query = raw_query.replace("htp:/w.", "http://www.")
+			raw_query = raw_query.replace("htp:/dbpedia.", "http://dbpedia.")
+
 			for item in re.findall("PREFIX [^:]*: <[^>]*>", raw_query):
 				prefix = item[7:item.find(" ", 9)]
 				uri = item[item.find("<"):-1]
@@ -61,14 +80,23 @@ class QaldParser(AnswerParser):
 		return raw_query, supported, uris
 
 	def parse_answerset(self, raw_answers):
-		if len(raw_answers) == 1:
+		if len(raw_answers) == 0:
+			return []
+		elif len(raw_answers) == 1:
 			return self.parse_queryresult(raw_answers[0])
 		else:
-			return []
+			result = []
+			for item in raw_answers:
+				result.append(
+					AnswerRow(item["string"],
+							  lambda x: [Answer("uri", x, lambda t, y: ("uri", Uri(y, self.kb.parse_uri)))]))
+
+
+
+			return result
 
 	def parse_answerrow(self, raw_answerrow):
-		answers = []
-		answers.append(Answer(raw_answerrow["AnswerType"], raw_answerrow, self.parse_answer))
+		answers = [Answer(raw_answerrow["AnswerType"], raw_answerrow, self.parse_answer)]
 		return answers
 
 	def parse_answer(self, answer_type, raw_answer):
