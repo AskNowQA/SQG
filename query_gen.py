@@ -5,6 +5,7 @@ from kb.dbpedia import DBpedia
 from kb.freebase import Freebase
 from common.answerset import AnswerSet
 from common.graph.graph import Graph
+from common.stats import Stats
 import json
 
 
@@ -32,7 +33,9 @@ def qg(kb, parser, qapair):
 	print graph
 	print "-----"
 	where = graph.to_where_statement()
-	if len(where) > 0:
+	if len(where) == 0:
+		return 0
+	elif len(where) == 1:
 		where = where[0]
 		print graph
 		print where[1]
@@ -41,18 +44,12 @@ def qg(kb, parser, qapair):
 		if answerset == qapair.answerset:
 			return 1
 		else:
-			return len(where)
-	return 0
+			return -1
+	else:
+		return len(where)
 
 if __name__ == "__main__":
-	multiple_answer_q = 0
-	count_q = 0
-	total = 0
-	no_answer = 0
-	correct_answer = 0
-	multiple_path = 0
-	no_path = 0
-
+	stats = Stats()
 	t = 2
 
 	if t == 0:
@@ -67,7 +64,7 @@ if __name__ == "__main__":
 		ds.parse()
 		ds.extend("./data/WebQuestionsSP/WebQSP.test.json")
 	elif t == 2:
-		ds = Qald(Qald.qald_7_multilingual)
+		ds = Qald(Qald.qald_6)
 		kb = DBpedia()
 		ds.load()
 		ds.parse()
@@ -75,8 +72,7 @@ if __name__ == "__main__":
 	tmp = []
 	output = []
 	for qapair in ds.qapairs:
-		total += 1
-		print total
+		stats.inc("total")
 		# if total <= 7:
 		# 	continue
 		output_row = {}
@@ -87,31 +83,31 @@ if __name__ == "__main__":
 		output_row["query"] = qapair.sparql.query
 		output_row["correct_answer"] = False
 		if qapair.answerset is None or len(qapair.answerset) == 0:
-			no_answer += 1
+			stats.inc("query_no_answer")
 			output_row["no_answer"] = True
 		elif "COUNT(" in qapair.sparql.query:
-				count_q += 1
+			stats.inc("query_count")
 		elif qapair.answerset.number_of_answer() != 1:
-			multiple_answer_q += 1
+			stats.inc("query_multiple_answer")
 		else:
 			results = qg(kb, ds.parser, qapair)
-			if results == 1:
-				print "True"
-				correct_answer += 1
+			if results == -1:
+				stats.inc("answer_incorrect")
+			elif results == 1:
+				stats.inc("answer_correct")
 				output_row["correct_answer"] = True
 			elif results == 0:
-				no_path += 1
+				stats.inc("answer_no_path")
 			else:
-				multiple_path += 1
-				#print "False"
+				stats.inc("answer_multiple_path")
 			print "--"
 
 		# if total > 100:
 		# 	break
-		print no_answer, multiple_answer_q, count_q, correct_answer, multiple_path, no_path,  total
+		print stats
 		output.append(output_row)
 
-		if total % 100 == 0:
+		if stats["total"] % 100 == 0:
 			with open("output/tmp2.json", "w") as data_file:
 				json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
