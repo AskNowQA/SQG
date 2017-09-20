@@ -37,7 +37,7 @@ class WebQSP:
 
 class WebQSPParser(AnswerParser):
 	def __init__(self):
-		super(WebQSPParser, self).__init__(Freebase)
+		super(WebQSPParser, self).__init__(Freebase())
 
 	def parse_question(self, raw_question):
 		return raw_question

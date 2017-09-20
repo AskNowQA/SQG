@@ -45,7 +45,7 @@ class Qald:
 
 class QaldParser(AnswerParser):
 	def __init__(self):
-		super(QaldParser, self).__init__(DBpedia)
+		super(QaldParser, self).__init__(DBpedia())
 
 
 	def parse_question(self, raw_question):

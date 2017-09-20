@@ -29,7 +29,7 @@ class LC_Qaud_Linked:
 
 class LC_Qaud_LinkedParser(AnswerParser):
 	def __init__(self):
-		super(LC_Qaud_LinkedParser, self).__init__(DBpedia)
+		super(LC_Qaud_LinkedParser, self).__init__(DBpedia())
 
 	def parse_question(self, raw_question):
 		return raw_question
