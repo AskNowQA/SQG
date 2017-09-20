@@ -8,7 +8,7 @@ class Graph:
     def __init__(self, kb):
         self.kb = kb
         self.nodes, self.edges = set(), set()
-        self.entity_uris, self.relation_uris, self.answer_uris = set(), set(), set()
+        self.entity_uris, self.relation_uris = set(), set()
 
     def create_or_get_node(self, uris, mergable=False):
         if isinstance(uris, (int, long)):
@@ -75,8 +75,8 @@ class Graph:
                             e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                             self.add_edge(e)
 
-    def find_minimal_subgraph(self, entity_uris, relation_uris, answer_uris, ask_query=False):
-        self.entity_uris, self.relation_uris, self.answer_uris = entity_uris, relation_uris, answer_uris
+    def find_minimal_subgraph(self, entity_uris, relation_uris, ask_query=False):
+        self.entity_uris, self.relation_uris = entity_uris, relation_uris
 
         #Find subgraphs that are consist of at leat one entity and exactly one relation
         self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
