@@ -27,7 +27,7 @@ class Qald:
 		for raw_row in self.raw_data["questions"]:
 			self.qapairs.append(QApair(raw_row["question"], raw_row["answers"], raw_row["query"], raw_row, raw_row["id"], parser))
 
-	def print_pairs(self, n = -1):
+	def print_pairs(self, n=-1):
 		for item in self.qapairs[0:n]:
 			print item
 			print ""
@@ -64,7 +64,7 @@ class QaldParser(AnswerParser):
 		if len(raw_answers) == 1:
 			return self.parse_queryresult(raw_answers[0])
 		else:
-			pass
+			return []
 
 	def parse_answerrow(self, raw_answerrow):
 		answers = []
