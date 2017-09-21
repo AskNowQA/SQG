@@ -12,8 +12,11 @@ class KB(object):
             # ('default-graph-uri', self.default_graph_uri),
             ('query', q),
             ('format', 'application/json'))
+        try:
+            r = requests.get(self.endpoint, params=payload, timeout=60)
+        except:
+            return 0, None
 
-        r = requests.get(self.endpoint, params=payload, timeout=60)
         return r.status_code, r.json() if r.status_code == 200 else None
 
     def query_where(self, clauses, return_vars="*", count=False, ask=False):
