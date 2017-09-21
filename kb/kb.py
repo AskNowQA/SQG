@@ -59,6 +59,8 @@ UNION {{ values ?m {{ 4 }} ?u1 {type} {rel} }}
 SELECT DISTINCT ?m, count(?u1) WHERE {{
 {{ values ?m {{ 0 }} {ent1} {rel1} {ent2} . ?u1 {rel2} {ent1} }}
 UNION {{ values ?m {{ 1 }} {ent1} {rel1} {ent2} . {ent1} {rel2} ?u1 }}
+UNION {{ values ?m {{ 2 }} {ent1} {rel1} {ent2} . {ent2} {rel2} ?u1 }}
+UNION {{ values ?m {{ 3 }} {ent1} {rel1} {ent2} . ?u1 {rel2} {ent2} }}
 }}""".format(prefix=self.query_prefix(), rel1=relation1_uri, ent1=entity1_uri, ent2=entity2_uri, rel2=relation2_uri)
 
         status, response = self.query(query)

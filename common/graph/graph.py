@@ -9,6 +9,7 @@ class Graph:
         self.kb = kb
         self.nodes, self.edges = set(), set()
         self.entity_uris, self.relation_uris = set(), set()
+        self.suggest_retrieve_id = 0
 
     def create_or_get_node(self, uris, mergable=False):
         if isinstance(uris, (int, long)):
@@ -136,6 +137,17 @@ class Graph:
                         n_d = self.create_or_get_node(1, True)
                         e = Edge(n_s, relation_uri, n_d)
                         output.add(e)
+                    elif m == 2:
+                        n_s = var_node
+                        n_d = self.create_or_get_node(1, True)
+                        e = Edge(n_s, relation_uri, n_d)
+                        output.add(e)
+                        self.suggest_retrieve_id = 1
+                    elif m == 3:
+                        n_s = self.create_or_get_node(1, True)
+                        n_d = var_node
+                        e = Edge(n_s, relation_uri, n_d)
+                        output.add(e)
         return output
 
     def to_where_statement(self):
@@ -173,6 +185,7 @@ class Graph:
                         break
                 if same_flag:
                     to_be_removed.add(i)
+                    break
 
         to_be_removed = list(to_be_removed)
         to_be_removed.sort(reverse=True)
@@ -180,7 +193,8 @@ class Graph:
             paths.pop(i)
 
         if len(paths) == 1:
-            return [(0, [edge.sparql_format(self.kb) for edge in batch_edges])]
+            batch_edges = paths[0]
+            return [(self.suggest_retrieve_id, [edge.sparql_format(self.kb) for edge in batch_edges])]
 
         for batch_edges in paths:
             sparql_where = [edge.sparql_format(self.kb) for edge in batch_edges]
