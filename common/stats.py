@@ -11,4 +11,6 @@ class Stats:
         self.dict[key] += 1
 
     def __str__(self):
-        return " ".join([key + ":" + str(self.dict[key]) for key in self.dict])
+        keys = self.dict.keys()
+        keys.sort()
+        return " ".join([key + ":" + str(self.dict[key]) for key in keys])
