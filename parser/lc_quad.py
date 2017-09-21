@@ -2,12 +2,15 @@ import json, re
 from common.qapair import QApair
 from common.uri import Uri
 from kb.dbpedia import DBpedia
+from answerparser import AnswerParser
 
-class LC_Qaud:	
+
+class LC_Qaud:
 	def __init__(self, path = "./data/LC-QUAD/data_v8.json"):
 		self.raw_data = []
 		self.qapairs = []
 		self.path = path
+		self.parser = LC_QaudParser()
 
 	def load(self):
 		with open(self.path) as data_file:	
@@ -16,15 +19,19 @@ class LC_Qaud:
 	def parse(self):
 		parser = LC_QaudParser()
 		for raw_row in self.raw_data:
-			self.qapairs.append(QApair(raw_row["corrected_question"], "", raw_row["sparql_query"], raw_row, parser))
+			self.qapairs.append(
+				QApair(raw_row["corrected_question"], [], raw_row["sparql_query"], raw_row, raw_row["_id"], self.parser))
 
-	def print_pairs(self, n = -1):
+	def print_pairs(self, n=-1):
 		for item in self.qapairs[0:n]:
 			print item
 			print ""
 
 
-class LC_QaudParser:
+class LC_QaudParser(AnswerParser):
+	def __init__(self):
+		super(LC_QaudParser, self).__init__(DBpedia())
+
 	def parse_question(self, raw_question):
 		return raw_question
 
