@@ -103,14 +103,13 @@ class Graph:
                 self.__one_hop_graph(entity_uris - set(entity_node.uris),
                         relation_uris - set([e.uri for e in entity_node.inbound + entity_node.outbound]))
 
-        #When there are unbound relation
-        if len(self.edges) < len(relation_uris):
-            new_edges = set()
-            for relation_uri in relation_uris - set([e.uri for e in self.edges]):
-                for edge in self.edges:
-                    new_edges.update(self.__extend_edge(edge, relation_uri))
-            for e in new_edges:
-                self.add_edge(e)
+        # Extend the existing edges with another hop
+        new_edges = set()
+        for relation_uri in relation_uris:  # - set([e.uri for e in self.edges]):
+            for edge in self.edges:
+                new_edges.update(self.__extend_edge(edge, relation_uri))
+        for e in new_edges:
+            self.add_edge(e)
 
     def __extend_edge(self, edge, relation_uri):
         output = set()
@@ -121,7 +120,7 @@ class Graph:
             var_node = edge.dest_node
         ent1 = edge.source_node.first_uri_if_only()
         ent2 = edge.dest_node.first_uri_if_only()
-        if not (ent1 is None or ent2 is None):
+        if not (var_node is None or ent1 is None or ent2 is None):
             result = self.kb.two_hop_graph(ent1, edge.uri, ent2, relation_uri)
             if result is not None:
                 for item in result:
@@ -178,14 +177,15 @@ class Graph:
             batch_edges = paths[i]
             for j in range(i + 1, len(paths)):
                 other_batch_edges = paths[j]
-                same_flag = True
-                for edge in batch_edges:
-                    if edge not in other_batch_edges:
-                        same_flag = False
+                if len(batch_edges) == len(other_batch_edges):
+                    same_flag = True
+                    for edge in batch_edges:
+                        if edge not in other_batch_edges:
+                            same_flag = False
+                            break
+                    if same_flag:
+                        to_be_removed.add(i)
                         break
-                if same_flag:
-                    to_be_removed.add(i)
-                    break
 
         to_be_removed = list(to_be_removed)
         to_be_removed.sort(reverse=True)
@@ -206,12 +206,12 @@ class Graph:
                     output.append((max_generic_id, sparql_where))
         return output
 
-    def __find_paths(self, entity_uris, relation_uris, edges, number_of_left_relations, output=[]):
+    def __find_paths(self, entity_uris, relation_uris, edges, number_of_left_relations, force_entity=False, output=[]):
         new_output = []
 
         if number_of_left_relations == 0:
             if len(entity_uris) > 0 and len(self.relation_uris) > 0:
-                return self.__find_paths(entity_uris, self.relation_uris, edges, 1, output)
+                return self.__find_paths(entity_uris, self.relation_uris, edges, 1, force_entity=True, output=output)
             return output
 
         for relation in relation_uris:
@@ -222,23 +222,34 @@ class Graph:
                 if not (edge.dest_node.are_all_uris_generic() or edge.uri.is_type()):
                     entities.update(edge.dest_node.uris)
 
+                if force_entity and len(entities) == 0:
+                    continue
+
                 if entities <= entity_uris:
                     valid_edges = self.__find_paths(entity_uris - entities, relation_uris - {relation},
                                                           edges - {edge},
                                                           number_of_left_relations - 1,
-                                                          self.__extend_output(edge, output))
-                    if len(valid_edges) > 0 and isinstance(valid_edges[0], list):
-                        valid_edges = valid_edges[0]
-                    new_output.append(valid_edges)
+                                                          force_entity=force_entity,
+                                                          output=self.__extend_output(edge, output))
+                    new_output.extend(valid_edges)
 
         return new_output
 
-    def __extend_output(self, edge, output):
+    def __extend_output(self, new_edge, output):
         new_output = []
         if len(output) == 0:
             output.append([])
         for item in output:
-                new_output.append(item + [edge])
+            path = []
+            for edge in item:
+                if edge.uri == new_edge.uri and \
+                        edge.source_node.are_all_uris_generic() and \
+                        edge.dest_node.are_all_uris_generic() and \
+                        not (new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
+                    pass
+                else:
+                    path.append(edge)
+            new_output.append(path + [new_edge])
         return new_output
 
     def __find_edges(self, edges, uri):
@@ -263,10 +274,6 @@ class Graph:
                     continue
                 if edge_1 == edge_2:
                     to_be_removed.add(edge_2)
-                # if edge_1 == edge_2 or edge_2 in to_be_removed:
-                #     continue
-                # if edge_1.generic_equal(edge_2):
-                #     to_be_removed.add(edge_2)
         for item in to_be_removed:
             self.remove_edge(item)
 
