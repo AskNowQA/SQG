@@ -1,5 +1,6 @@
 import requests, json, re, operator
 from parser.lc_quad_linked import LC_Qaud_Linked
+from parser.lc_quad import LC_Qaud
 
 
 def prepare_dataset(ds):
@@ -36,19 +37,25 @@ def has_answer(t):
 if __name__ == "__main__":
 	# print query("SELECT DISTINCT ?uri WHERE {?uri <http://dbpedia.org/ontology/developer> <http://dbpedia.org/resource/J._Michael_Straczynski> . ?uri <http://dbpedia.org/property/network> <http://dbpedia.org/resource/TNT_(TV_channel)>  . ?uri <https://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/TelevisionShow>}".replace("/property", "/ontology"))
 	i=0
-	ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked.json")
+	# ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked.json")
+	ds = LC_Qaud()
 	tmp = []
 	no_answer = 0
 	no_entity = 0
 	for qapair in prepare_dataset(ds).qapairs:
+		raw_row = dict()
+		raw_row["id"] = qapair.id.__str__()
+		raw_row["question"] = qapair.question.__str__()
+		raw_row["sparql_query"] = qapair.sparql.query
 		try:
 			r = query(qapair.sparql.query)
-			qapair.raw_row["answers"] = r[1]
+			raw_row["answers"] = r[1]
 		except Exception as e:
-			qapair.raw_row["answers"] = []
+			raw_row["answers"] = []
 			print e
 			print
-		if not has_answer(qapair.raw_row["answers"]):
+
+		if not has_answer(raw_row["answers"]):
 		# 	print qapair.question
 		# 	print qapair.raw_row["answers"]
 		# 	print qapair.sparql.query
@@ -76,8 +83,8 @@ if __name__ == "__main__":
 		# if i > 10:
 		# 	break
 		print i
-		tmp.append(qapair.raw_row)
+		tmp.append(raw_row)
 	print i
 
-	with open('data/LC-QUAD/linked_answer4.json', 'w') as jsonFile:
+	with open('data/LC-QUAD/linked_answer5.json', 'w') as jsonFile:
 		json.dump(tmp, jsonFile)
