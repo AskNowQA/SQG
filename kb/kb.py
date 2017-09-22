@@ -39,13 +39,15 @@ class KB(object):
         else:
             entity2_uri = self.uri_to_sparql(entity2_uri)
         query = u"""{prefix}
-SELECT DISTINCT ?m, count(?u1) WHERE {{
-{{ values ?m {{ 0 }} {ent2} {rel} {ent1} }}
-UNION {{ values ?m {{ 1 }} {ent1} {rel} {ent2} }}
-UNION {{ values ?m {{ 2 }} {ent1} {ent2} {rel} }}
-UNION {{ values ?m {{ 3 }} {rel} {ent2} {ent1} }}
-UNION {{ values ?m {{ 4 }} ?u1 {type} {rel} }}
-}}""".format(rel=relation_uri, ent1=entity1_uri, ent2=entity2_uri, type=self.type_uri, prefix=self.query_prefix())
+SELECT DISTINCT ?m WHERE {{
+{{ values ?m {{ 0 }} {{select <1> where {{ {ent2} {rel} {ent1} }} limit 1}} }}
+UNION {{ values ?m {{ 1 }} {{select <1> where {{ {ent1} {rel} {ent2} }} limit 1}} }}
+UNION {{ values ?m {{ 2 }} {{select <1> where {{ {ent1} {ent2} {rel} }} limit 1}} }}
+UNION {{ values ?m {{ 3 }} {{select <1> where {{ {rel} {ent2} {ent1} }} limit 1}} }}
+UNION {{ values ?m {{ 4 }} {{select <1> where {{ ?u1 {type} {rel} }} limit 1}} }}
+}}""".format(rel=relation_uri, ent1=entity1_uri, ent2=entity2_uri, type=self.type_uri,
+                     prefix=self.query_prefix())
+
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
             return response["results"]["bindings"]
@@ -59,12 +61,12 @@ UNION {{ values ?m {{ 4 }} ?u1 {type} {rel} }}
         entity2_uri = self.uri_to_sparql(entity2_uri)
 
         query = u"""{prefix}
-SELECT DISTINCT ?m, count(?u1) WHERE {{
-{{ values ?m {{ 0 }} {ent1} {rel1} {ent2} . ?u1 {rel2} {ent1} }}
-UNION {{ values ?m {{ 1 }} {ent1} {rel1} {ent2} . {ent1} {rel2} ?u1 }}
-UNION {{ values ?m {{ 2 }} {ent1} {rel1} {ent2} . {ent2} {rel2} ?u1 }}
-UNION {{ values ?m {{ 3 }} {ent1} {rel1} {ent2} . ?u1 {rel2} {ent2} }}
-}}""".format(prefix=self.query_prefix(), rel1=relation1_uri, ent1=entity1_uri, ent2=entity2_uri, rel2=relation2_uri)
+SELECT DISTINCT ?m WHERE {{
+{{ values ?m {{ 0 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {rel2} {ent1} }}  limit 1}} }}
+UNION {{ values ?m {{ 1 }} {{select <1> where {{ {ent1} {rel1} {ent2} . {ent1} {rel2} ?u1 }} limit 1}} }}
+UNION {{ values ?m {{ 2 }} {{select <1> where {{ {ent1} {rel1} {ent2} . {ent2} {rel2} ?u1 }} limit 1}} }}
+UNION {{ values ?m {{ 3 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {rel2} {ent2} }} limit 1}} }}
+}}""".format(prefix=self.query_prefix(), rel1=relation1_uri, ent1=entity1_uri, ent2=entity2_uri, rel2=relation2_uri, type=self.type_uri)
 
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
