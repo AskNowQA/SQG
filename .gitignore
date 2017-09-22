@@ -1,3 +1,13 @@
+# Mac
+**/.DS_Store
+
+# Pycharm
+.idea
+
+# tmp dirs
+output
+tmp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
