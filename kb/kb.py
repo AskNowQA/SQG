@@ -66,6 +66,7 @@ SELECT DISTINCT ?m WHERE {{
 UNION {{ values ?m {{ 1 }} {{select <1> where {{ {ent1} {rel1} {ent2} . {ent1} {rel2} ?u1 }} limit 1}} }}
 UNION {{ values ?m {{ 2 }} {{select <1> where {{ {ent1} {rel1} {ent2} . {ent2} {rel2} ?u1 }} limit 1}} }}
 UNION {{ values ?m {{ 3 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {rel2} {ent2} }} limit 1}} }}
+UNION {{ values ?m {{ 4 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {type} {rel2} }} limit 1}} }}
 }}""".format(prefix=self.query_prefix(), rel1=relation1_uri, ent1=entity1_uri, ent2=entity2_uri, rel2=relation2_uri, type=self.type_uri)
 
         status, response = self.query(query)

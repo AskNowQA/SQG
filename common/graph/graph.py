@@ -104,9 +104,12 @@ class Graph:
                         relation_uris - set([e.uri for e in entity_node.inbound + entity_node.outbound]))
 
         # Extend the existing edges with another hop
+        self.__extend_edges(self.edges, relation_uris)
+
+    def __extend_edges(self, edges, relation_uris):
         new_edges = set()
         for relation_uri in relation_uris:  # - set([e.uri for e in self.edges]):
-            for edge in self.edges:
+            for edge in edges:
                 new_edges.update(self.__extend_edge(edge, relation_uri))
         for e in new_edges:
             self.add_edge(e)
@@ -125,7 +128,6 @@ class Graph:
             if result is not None:
                 for item in result:
                     m = int(item["m"]["value"])
-                    uri = int(item["callret-1"]["value"])
                     if m == 0:
                         n_s = self.create_or_get_node(1, True)
                         n_d = var_node
@@ -146,6 +148,11 @@ class Graph:
                         n_s = self.create_or_get_node(1, True)
                         n_d = var_node
                         e = Edge(n_s, relation_uri, n_d)
+                        output.add(e)
+                    elif m == 4:
+                        n_d = self.create_or_get_node(relation_uri)
+                        n_s = self.create_or_get_node(1, True)
+                        e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                         output.add(e)
         return output
 
