@@ -82,7 +82,7 @@ if __name__ == "__main__":
 	output = []
 	for qapair in ds.qapairs:
 		stats.inc("total")
-		# if stats["total"] - 1 not in [13, 17, 45, 133, 135, 282, 319, 331, 332, 359, 365, 390, 399, 432, 438, 569, 588, 597, 610, 672, 675, 725, 775, 834, 863, 875, 890, 957, 968, 1007, 1041, 1058, 1062, 1063, 1064, 1215, 1217, 1233, 1252, 1258, 1274, 1307, 1323, 1355, 1410, 1434, 1437, 1461, 1539, 1544, 1548, 1599, 1663, 1711, 1733, 1752, 1755, 1899, 1902, 1909, 1919, 1928, 1930, 1931, 1938, 2007, 2032, 2058, 2066, 2068, 2083, 2098, 2116, 2145, 2191, 2215, 2233, 2236, 2264, 2270, 2286, 2331, 2362, 2391, 2409, 2430, 2448, 2505, 2538, 2578, 2645, 2673, 2692, 2713, 2734, 2748, 2762, 2844, 2861, 2941, 3006, 3010, 3051, 3058, 3116, 3125, 3176, 3178, 3194, 3207, 3215, 3221, 3246, 3278, 3402, 3471, 3491, 3579, 3610, 3624, 3689, 3695, 3803, 3808, 3829, 3868, 3950, 3995, 4001, 4027, 4034, 4036, 4054, 4064, 4066, 4085, 4133, 4183, 4222, 4228, 4253, 4289, 4308, 4324, 4344, 4345, 4383, 4389, 4411, 4419, 4430, 4491, 4522, 4544, 4545, 4571, 4587, 4643, 4736, 4744, 4788, 4793, 4819, 4877, 4971, 4984]:
+		# if stats["total"] - 1 not in []:
 		# 	continue
 		# if stats["total"] <= 4984:
 		# 	continue
@@ -103,9 +103,7 @@ if __name__ == "__main__":
 		else:
 			result = qg(ds.parser.kb, ds.parser, qapair)
 			stats.inc(result)
-			if result == "answer_correct":
-				output_row["correct_answer"] = True
-
+			output_row["answer"] = result
 			print result
 
 		# if stats["total"] > 100:
@@ -116,8 +114,8 @@ if __name__ == "__main__":
 		output.append(output_row)
 
 		if stats["total"] % 100 == 0:
-			with open("output/12.json", "w") as data_file:
+			with open("output/tmp.json", "w") as data_file:
 				json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
-	with open("output/12.json", "w") as data_file:
+	with open("output/tmp.json", "w") as data_file:
 		json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
