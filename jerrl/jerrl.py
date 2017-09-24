@@ -7,5 +7,5 @@ class Jerrl:
 		pass
 
 	def do(self, qapair):
-		return set([u for u in qapair.sparql.uris if u.is_entity()]), \
-			   set([u for u in qapair.sparql.uris if u.is_ontology()])
+		return [u for u in qapair.sparql.uris if u.is_entity()], \
+			   [u for u in qapair.sparql.uris if u.is_ontology()]
