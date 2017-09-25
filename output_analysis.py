@@ -1,9 +1,18 @@
 import json
+from common.stats import Stats
 
 
 def load_ds(name):
     with open("output/{}.json".format(name)) as data_file:
         return json.load(data_file)
+
+
+def filter(ds, filter_func):
+    result = []
+    for i in range(len(ds)):
+        if filter_func(ds[i]):
+            result.append(i)
+    return result
 
 
 def diff(ds_1, ds_2, f1=None, f2=None):
@@ -19,39 +28,34 @@ def diff(ds_1, ds_2, f1=None, f2=None):
                 print
     return result
 
+
 def default(ds, n=-1):
-    total = 0
-    answered = 0
+    stat = Stats()
     for data in ds:
-        total += 1
-        if data["correct_answer"]:
-            answered += 1
-        if total == n:
+        stat.inc("total")
+        if "answer" in data:
+            stat.inc(data["answer"])
+        if stat["total"] == n:
             break
 
-    print answered, total
-    pass
+    return stat
+
 
 if __name__ == "__main__":
     print "LC_Quad"
-    default(load_ds("1"))
-    default(load_ds("2"))
-    default(load_ds("3"))
-    default(load_ds("4"))
-    default(load_ds("5"))  # TYPE
-    default(load_ds("6"))  # BOOL
-    default(load_ds("7"))  # Bug fix
-    default(load_ds("8"))  # Two var-Fixed position
-    default(load_ds("9"))  # Fix dataset
-    default(load_ds("10"))  # Extend edge
-    default(load_ds("11"))  # Fix various bugs
-    default(load_ds("12"))  # Fix various bugs
-    result = diff(load_ds("11"), load_ds("12"), None, False)
-    print result
+    ds = load_ds("15")
 
-    print "\nWebQuestion"
-    default(load_ds("wq_1"))
-    default(load_ds("wq_2"))  # BOOL
-    default(load_ds("wq_3"))  # Two var-Fixed position
-    default(load_ds("wq_5"))  # Fix various bugs
+    print default(ds, 100)
+    print "answer_incorrect", filter(ds, lambda x:
+        x["answer"] == "answer_incorrect" if "answer" in x else False)
+
+    print "answer_no_path", filter(ds, lambda x:
+        x["answer"] == "answer_no_path" if "answer" in x else False)
+
+    print "No result", filter(ds, lambda x:
+        x["answer"] == "" if "answer" in x else False)
+
+
+    # print "\nWebQuestion"
+    # default(load_ds("wq_5"))  # Fix various bugs
     # diff(load_ds("wq_3"), load_ds("wq_5"), True, False)
