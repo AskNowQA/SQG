@@ -9,6 +9,7 @@ from common.graph.graph import Graph
 from common.stats import Stats
 from jerrl.jerrl import Jerrl
 import json
+import argparse
 
 
 def qg(kb, parser, qapair):
@@ -16,7 +17,7 @@ def qg(kb, parser, qapair):
 	print qapair.question
 
 	ask_query = "ASK " in qapair.sparql.query
-
+	count_query = "COUNT(" in qapair.sparql.query
 	jerrl = Jerrl()
 	entities, ontologies = jerrl.do(qapair)
 
@@ -31,7 +32,7 @@ def qg(kb, parser, qapair):
 		item = where[0]
 		print graph
 		print item[1]
-		raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), ask=ask_query)
+		raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
 		answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 		if answerset == qapair.answerset:
 			return "answer_correct"
@@ -41,7 +42,7 @@ def qg(kb, parser, qapair):
 				var = "?u_0"
 			elif item[0] == 0:
 				var = "?u_1"
-			raw_answer = kb.query_where(item[1], return_vars=var, ask=ask_query)
+			raw_answer = kb.query_where(item[1], return_vars=var, count=count_query, ask=ask_query)
 			answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 			if answerset == qapair.answerset:
 				return "answer_multiple_var_with_correct_answer"
@@ -49,7 +50,7 @@ def qg(kb, parser, qapair):
 	else:
 		for item in where:
 			print item[1]
-			raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), ask=ask_query)
+			raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
 			answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 			if answerset == qapair.answerset:
 				return "answer_multiple_path_with_correct_answer"
@@ -57,11 +58,20 @@ def qg(kb, parser, qapair):
 
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser(description='Generate SPARQL query')
+	parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=0, dest="dataset")
+	parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
+	parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
+	parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
+
+	args = parser.parse_args()
+
 	stats = Stats()
-	t = 0
+	t = args.dataset
+	output_file = args.file_name
 
 	if t == 0:
-		ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer5.json")
+		ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer6.json")
 		kb = DBpedia()
 		ds.load()
 		ds.parse()
@@ -77,45 +87,38 @@ if __name__ == "__main__":
 		ds.load()
 		ds.parse()
 
-
 	tmp = []
 	output = []
 	for qapair in ds.qapairs:
 		stats.inc("total")
-		# if stats["total"] - 1 not in []:
-		# 	continue
-		# if stats["total"] <= 4984:
-		# 	continue
-		output_row = {}
 
+		if len(args.list_id) > 0 and stats["total"] - 1 not in args.list_id:
+			continue
+
+		output_row = {}
 		output_row["question"] = qapair.question.text
 		output_row["id"] = qapair.id
-		output_row["no_answer"] = False
 		output_row["query"] = qapair.sparql.query
-		output_row["correct_answer"] = False
+		output_row["answer"] = ""
 		if qapair.answerset is None or len(qapair.answerset) == 0:
 			stats.inc("query_no_answer")
-			output_row["no_answer"] = True
-		elif "COUNT(" in qapair.sparql.query:
-			stats.inc("query_count")
-		elif qapair.answerset.number_of_answer() != 1:
-			stats.inc("query_multiple_answer")
+			output_row["answer"] = "no_answer"
 		else:
 			result = qg(ds.parser.kb, ds.parser, qapair)
 			stats.inc(result)
 			output_row["answer"] = result
 			print result
 
-		# if stats["total"] > 100:
-		# 	break
+		if args.max != -1 and stats["total"] > args.max:
+			break
 		print "-" * 10
 		print stats
 		print "-" * 10
 		output.append(output_row)
 
 		if stats["total"] % 100 == 0:
-			with open("output/tmp.json", "w") as data_file:
+			with open("output/{}.json".format(output_file), "w") as data_file:
 				json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
-	with open("output/tmp.json", "w") as data_file:
+	with open("output/{}.json".format(output_file), "w") as data_file:
 		json.dump(output, data_file, sort_keys=True, indent=4, separators=(',', ': '))
