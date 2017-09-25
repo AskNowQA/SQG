@@ -55,19 +55,25 @@ UNION {{ values ?m {{ 4 }} {{select <1> where {{ ?u1 {type} {rel} }} limit 1}} }
     def two_hop_graph(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
         relation1_uri = self.uri_to_sparql(relation1_uri)
         relation2_uri = self.uri_to_sparql(relation2_uri)
-        # if entity1_uri.is_generic():
         entity1_uri = self.uri_to_sparql(entity1_uri)
-        # if entity2_uri.is_generic():
         entity2_uri = self.uri_to_sparql(entity2_uri)
 
-        query = u"""{prefix}
-SELECT DISTINCT ?m WHERE {{
-{{ values ?m {{ 0 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {rel2} {ent1} }}  limit 1}} }}
-UNION {{ values ?m {{ 1 }} {{select <1> where {{ {ent1} {rel1} {ent2} . {ent1} {rel2} ?u1 }} limit 1}} }}
-UNION {{ values ?m {{ 2 }} {{select <1> where {{ {ent1} {rel1} {ent2} . {ent2} {rel2} ?u1 }} limit 1}} }}
-UNION {{ values ?m {{ 3 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {rel2} {ent2} }} limit 1}} }}
-UNION {{ values ?m {{ 4 }} {{select <1> where {{ {ent1} {rel1} {ent2} . ?u1 {type} {rel2} }} limit 1}} }}
-}}""".format(prefix=self.query_prefix(), rel1=relation1_uri, ent1=entity1_uri, ent2=entity2_uri, rel2=relation2_uri, type=self.type_uri)
+        query_types = ["{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}",
+                 "{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1",
+                 "{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1",
+                 "{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}",
+                 "{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]
+        where = ""
+        for i in range(len(query_types)):
+            where = where + "UNION {{ values ?m {{ {0} }} {{select <1> where {{ {1} }} limit 1}} }}\n".format(i,
+                query_types[i].format(rel1=relation1_uri,
+                                      ent1=entity1_uri,
+                                      ent2=entity2_uri,
+                                      rel2=relation2_uri,
+                                      type=self.type_uri))
+
+        where = where[6:]
+        query = u"""{prefix} SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), where=where)
 
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
