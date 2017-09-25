@@ -81,8 +81,23 @@ if __name__ == "__main__":
 		ds.load()
 		ds.parse()
 		ds.extend("./data/WebQuestionsSP/WebQSP.test.json")
-	elif t == 2:
+	elif t == 5:
+		ds = Qald(Qald.qald_5)
+		kb = DBpedia()
+		ds.load()
+		ds.parse()
+	elif t == 6:
 		ds = Qald(Qald.qald_6)
+		kb = DBpedia()
+		ds.load()
+		ds.parse()
+	elif t == 7:
+		ds = Qald(Qald.qald_7_largescale)
+		kb = DBpedia()
+		ds.load()
+		ds.parse()
+	elif t == 8:
+		ds = Qald(Qald.qald_7_multilingual)
 		kb = DBpedia()
 		ds.load()
 		ds.parse()
