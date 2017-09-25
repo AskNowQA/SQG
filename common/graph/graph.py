@@ -50,7 +50,7 @@ class Graph:
                 if result is not None:
                     for item in result:
                         m = int(item["m"]["value"])
-                        uri = entity_uri[1] if len(entity_uri) > 1 else 0  #int(item["callret-1"]["value"])
+                        uri = entity_uri[1] if len(entity_uri) > 1 else 0
                         if m == 0:
                             n_s = self.create_or_get_node(uri, True)
                             n_d = self.create_or_get_node(entity_uri[0])
@@ -61,17 +61,17 @@ class Graph:
                             n_s = self.create_or_get_node(entity_uri[0])
                             e = Edge(n_s, relation_uri, n_d)
                             self.add_edge(e)
+                        # elif m == 2:
+                        #     n_d = self.create_or_get_node(relation_uri)
+                        #     n_s = self.create_or_get_node(entity_uri[0])
+                        #     e = Edge(n_s, uri, n_d)
+                        #     # self.add_edge(e)
+                        # elif m == 3:
+                        #     n_d = self.create_or_get_node(entity_uri[0])
+                        #     n_s = self.create_or_get_node(relation_uri)
+                        #     e = Edge(n_s, uri, n_d)
+                        #     # self.add_edge(e)
                         elif m == 2:
-                            n_d = self.create_or_get_node(relation_uri)
-                            n_s = self.create_or_get_node(entity_uri[0])
-                            e = Edge(n_s, uri, n_d)
-                            # self.add_edge(e)
-                        elif m == 3:
-                            n_d = self.create_or_get_node(entity_uri[0])
-                            n_s = self.create_or_get_node(relation_uri)
-                            e = Edge(n_s, uri, n_d)
-                            # self.add_edge(e)
-                        elif m == 4:
                             n_d = self.create_or_get_node(relation_uri)
                             n_s = self.create_or_get_node(uri)
                             e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
@@ -130,33 +130,33 @@ class Graph:
             result = self.kb.two_hop_graph(ent1, edge.uri, ent2, relation_uri)
             if result is not None:
                 for item in result:
-                    m = int(item["m"]["value"])
-                    if m == 0:
-                        n_s = self.create_or_get_node(1, True)
-                        n_d = var_node
-                        e = Edge(n_s, relation_uri, n_d)
-                        output.add(e)
-                    elif m == 1:
-                        n_s = var_node
-                        n_d = self.create_or_get_node(1, True)
-                        e = Edge(n_s, relation_uri, n_d)
-                        output.add(e)
-                    elif m == 2:
-                        n_s = var_node
-                        n_d = self.create_or_get_node(1, True)
-                        e = Edge(n_s, relation_uri, n_d)
-                        output.add(e)
-                        self.suggest_retrieve_id = 1
-                    elif m == 3:
-                        n_s = self.create_or_get_node(1, True)
-                        n_d = var_node
-                        e = Edge(n_s, relation_uri, n_d)
-                        output.add(e)
-                    elif m == 4:
-                        n_d = self.create_or_get_node(relation_uri)
-                        n_s = self.create_or_get_node(1, True)
-                        e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
-                        output.add(e)
+                    if item[1]:
+                        if item[0] == 0:
+                            n_s = self.create_or_get_node(1, True)
+                            n_d = var_node
+                            e = Edge(n_s, relation_uri, n_d)
+                            output.add(e)
+                        elif item[0] == 1:
+                            n_s = var_node
+                            n_d = self.create_or_get_node(1, True)
+                            e = Edge(n_s, relation_uri, n_d)
+                            output.add(e)
+                        elif item[0] == 2:
+                            n_s = var_node
+                            n_d = self.create_or_get_node(1, True)
+                            e = Edge(n_s, relation_uri, n_d)
+                            output.add(e)
+                            self.suggest_retrieve_id = 1
+                        elif item[0] == 3:
+                            n_s = self.create_or_get_node(1, True)
+                            n_d = var_node
+                            e = Edge(n_s, relation_uri, n_d)
+                            output.add(e)
+                        elif item[0] == 4:
+                            n_d = self.create_or_get_node(relation_uri)
+                            n_s = self.create_or_get_node(1, True)
+                            e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
+                            output.add(e)
         return output
 
     def to_where_statement(self):
