@@ -204,7 +204,10 @@ class Graph:
 
         if len(paths) == 1:
             batch_edges = paths[0]
-            max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
+            max_generic_id = 0
+            ids = [edge.max_generic_id() for edge in batch_edges]
+            if len(ids) > 0:
+                max_generic_id = max(ids)
             if self.suggest_retrieve_id > max_generic_id:
                 self.suggest_retrieve_id = max_generic_id
             return [(self.suggest_retrieve_id, [edge.sparql_format(self.kb) for edge in batch_edges])]
