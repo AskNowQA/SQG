@@ -45,7 +45,7 @@ class KB(object):
         args = []
         for i in range(len(query_types)):
             args.append(
-                (self.endpoint, u"ASK WHERE {{ {} }}".format(query_types[i])))
+                (self.endpoint, u"{} ASK WHERE {{ {} }}".format(self.query_prefix(), query_types[i])))
         with closing(Pool(len(query_types))) as pool:
             query_results = pool.map(query, args)
             pool.terminate()
