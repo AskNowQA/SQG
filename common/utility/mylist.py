@@ -3,7 +3,7 @@ from collections import Counter
 
 class MyList(list):
     def __init__(self, *args):
-        super(MyList, self).__init__(args)
+        super(MyList, self).__init__(*args)
 
     def __sub__(self, other):
         try:
