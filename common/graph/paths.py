@@ -1,18 +1,21 @@
-class Paths:
-    def __init__(self, paths=[]):
-        self.paths = paths
+from path import Path
+
+
+class Paths(list):
+    def __init__(self, *args):
+        super(Paths, self).__init__(*args)
 
     def add(self, new_paths, validity_fn):
-        for path in new_paths.paths:
-            if (len(self.paths) == 0 or path not in self) and validity_fn(path):
-                self.paths.append(path)
+        for path in new_paths:
+            if (len(self) == 0 or path not in self) and validity_fn(path):
+                self.append(path)
 
     def extend(self, new_edge):
         new_output = []
-        if len(self.paths) == 0:
-            self.paths.append([])
-        for item in self.paths:
-            path = []
+        if len(self) == 0:
+            self.append([])
+        for item in self:
+            path = Path()
             for edge in item:
                 if edge.uri == new_edge.uri and \
                         edge.source_node.are_all_uris_generic() and \
@@ -25,10 +28,10 @@ class Paths:
         return Paths(new_output)
 
     def __contains__(self, new_path):
-        for i in range(len(self.paths)):
-            if len(self.paths[i]) == len(new_path):
+        for i in range(len(self)):
+            if len(self[i]) == len(new_path):
                 same_flag = True
-                for edge in self.paths[i]:
+                for edge in self[i]:
                     if edge not in new_path:
                         same_flag = False
                         break
