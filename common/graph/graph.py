@@ -1,8 +1,11 @@
 from node import Node
 from edge import Edge
+from path import Path
+from paths import Paths
 from common.uri import Uri
 from common.utility.mylist import MyList
 import itertools
+
 
 
 class Graph:
@@ -57,30 +60,18 @@ class Graph:
                             e = Edge(n_s, relation_uri, n_d)
                             self.add_edge(e)
                         elif m == 1:
-                            n_d = self.create_or_get_node(uri, True)
                             n_s = self.create_or_get_node(entity_uri[0])
+                            n_d = self.create_or_get_node(uri, True)
                             e = Edge(n_s, relation_uri, n_d)
                             self.add_edge(e)
-                        # elif m == 2:
-                        #     n_d = self.create_or_get_node(relation_uri)
-                        #     n_s = self.create_or_get_node(entity_uri[0])
-                        #     e = Edge(n_s, uri, n_d)
-                        #     # self.add_edge(e)
-                        # elif m == 3:
-                        #     n_d = self.create_or_get_node(entity_uri[0])
-                        #     n_s = self.create_or_get_node(relation_uri)
-                        #     e = Edge(n_s, uri, n_d)
-                        #     # self.add_edge(e)
                         elif m == 2:
-                            n_d = self.create_or_get_node(relation_uri)
                             n_s = self.create_or_get_node(uri)
+                            n_d = self.create_or_get_node(relation_uri)
                             e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                             self.add_edge(e)
 
     def find_minimal_subgraph(self, entity_uris, relation_uris, ask_query=False):
-        self.entity_uris, self.relation_uris = MyList(), MyList()
-        self.entity_uris.extend(entity_uris)
-        self.relation_uris.extend(relation_uris)
+        self.entity_uris, self.relation_uris = MyList(entity_uris), MyList(relation_uris)
 
         #Find subgraphs that are consist of at leat one entity and exactly one relation
         self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
@@ -163,7 +154,36 @@ class Graph:
         self.__generalize_nodes()
         self.__merge_edges()
         output = []
-        paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges, len(self.relation_uris), [])
+        paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges)
+
+        # Prune paths that do not contain all the entities
+        to_be_removed = set()
+        for i in range(len(paths)):
+            batch_edges = paths[i]
+            found_entities = set()
+            for edge in batch_edges:
+                for uri in self.entity_uris:
+                    if edge.has_uri(uri):
+                        found_entities.add(uri)
+            if len(found_entities) != len(self.entity_uris):
+                to_be_removed.add(i)
+        to_be_removed = list(to_be_removed)
+        to_be_removed.sort(reverse=True)
+        for i in to_be_removed:
+            paths.pop(i)
+
+        #Expand coverage by changing generic ids
+        # new_paths = []
+        # for path in paths:
+        #     for edge in path:
+        #         generic_node = None
+        #         if edge.source_node.are_all_uris_generic() and not edge.dest_node.are_all_uris_generic:
+        #             generic_node = edge.source_node
+        #         if edge.dest_node.are_all_uris_generic() and not edge.source_node.are_all_uris_generic:
+        #             generic_node = edge.dest_node
+        #
+        #         if generic_node is not None:
+        #             new_paths.append()
 
         if len(paths) == 1:
             batch_edges = paths[0]
@@ -185,25 +205,13 @@ class Graph:
                     output.append((max_generic_id, sparql_where))
         return output
 
-    def __path_in_paths(self, paths, new_path):
-        for i in range(len(paths)):
-            if len(paths[i]) == len(new_path):
-                same_flag = True
-                for edge in paths[i]:
-                    if edge not in new_path:
-                        same_flag = False
-                        break
-                if same_flag:
-                    return True
-        return False
+    def __find_paths(self, entity_uris, relation_uris, edges, force_entity=False, output_paths=Paths()):
+        new_output_paths = Paths()
 
-    def __find_paths(self, entity_uris, relation_uris, edges, number_of_left_relations, force_entity=False, output=[]):
-        new_output = []
-
-        if number_of_left_relations == 0:
-            if len(entity_uris) > 0 and len(self.relation_uris) > 0:
-                return self.__find_paths(entity_uris, self.relation_uris, edges, 1, force_entity=True, output=output)
-            return output
+        if len(relation_uris) == 0:
+            if len(entity_uris) > 0:
+                return Paths()
+            return output_paths
 
         used_relations = []
         for relation in relation_uris:
@@ -218,31 +226,12 @@ class Graph:
                     continue
                 if entities <= entity_uris:
                     new_paths = self.__find_paths(entity_uris - entities, relation_uris - used_relations,
-                                                          edges - {edge},
-                                                          number_of_left_relations - 1,
-                                                          force_entity=force_entity,
-                                                          output=self.__extend_output(edge, output))
-                    for path in new_paths:
-                        if len(new_output) == 0 or not self.__path_in_paths(new_output, path):
-                            new_output.append(path)
-        return new_output
+                                                  edges - {edge},
+                                                  force_entity=force_entity,
+                                                  output_paths=output_paths.extend(edge))
+                    new_output_paths.add(new_paths, lambda path: len(path) >= len(self.relation_uris))
 
-    def __extend_output(self, new_edge, output):
-        new_output = []
-        if len(output) == 0:
-            output.append([])
-        for item in output:
-            path = []
-            for edge in item:
-                if edge.uri == new_edge.uri and \
-                        edge.source_node.are_all_uris_generic() and \
-                        edge.dest_node.are_all_uris_generic() and \
-                        not (new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
-                    pass
-                else:
-                    path.append(edge)
-            new_output.append(path + [new_edge])
-        return new_output
+        return new_output_paths
 
     def __find_edges(self, edges, uri):
         return [edge for edge in edges if edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))]
