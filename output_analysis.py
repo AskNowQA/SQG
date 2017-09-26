@@ -43,19 +43,25 @@ def default(ds, n=-1):
 
 if __name__ == "__main__":
     print "LC_Quad"
-    ds = load_ds("15")
+    ds_1 = load_ds("15")
+    print default(ds_1, 4000)
 
-    print default(ds, 100)
-    print "answer_incorrect", filter(ds, lambda x:
-        x["answer"] == "answer_incorrect" if "answer" in x else False)
+    ds_2 = load_ds("16")
+    print default(ds_2, 4000)
 
-    print "answer_no_path", filter(ds, lambda x:
-        x["answer"] == "answer_no_path" if "answer" in x else False)
+    # print "answer_incorrect", filter(ds_1, lambda x:
+    #     x["answer"] == "answer_incorrect" if "answer" in x else False)
+    #
+    # print "answer_no_path", filter(ds_1, lambda x:
+    #     x["answer"] == "answer_no_path" if "answer" in x else False)
+    #
+    # print "No result", filter(ds_1, lambda x:
+    #     x["answer"] == "" if "answer" in x else False)
 
-    print "No result", filter(ds, lambda x:
-        x["answer"] == "" if "answer" in x else False)
 
+    print "\nWebQuestion"
+    wq_1 = load_ds("wq_7")
+    print default(wq_1, 4000)
 
-    # print "\nWebQuestion"
-    # default(load_ds("wq_5"))  # Fix various bugs
-    # diff(load_ds("wq_3"), load_ds("wq_5"), True, False)
+    wq_2 = load_ds("wg_9")
+    print default(wq_1, 4000)
