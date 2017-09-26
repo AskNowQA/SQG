@@ -199,7 +199,7 @@ class Graph:
 
         used_relations = []
         for relation in relation_uris:
-            used_relations = [relation]
+            used_relations = used_relations + [relation]
             for edge in self.__find_edges(edges, relation):
                 entities = MyList()
                 if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
