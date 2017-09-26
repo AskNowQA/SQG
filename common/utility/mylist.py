@@ -17,6 +17,6 @@ class MyList(list):
             for item in counts:
                 output.extend([item] * counts[item])
 
-            return self.__class__(*output)
+            return self.__class__(output)
         except:
             return []
