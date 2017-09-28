@@ -157,17 +157,34 @@ class Graph:
         paths = self.__find_paths(self.entity_uris, self.relation_uris, self.edges)
 
         # Expand coverage by changing generic ids
-        # new_paths = []
-        # for path in paths:
-        #     for edge in path:
-        #         generic_node = None
-        #         if edge.source_node.are_all_uris_generic() and not edge.dest_node.are_all_uris_generic:
-        #             generic_node = edge.source_node
-        #         if edge.dest_node.are_all_uris_generic() and not edge.source_node.are_all_uris_generic:
-        #             generic_node = edge.dest_node
-        #
-        #         if generic_node is not None:
-        #             new_paths.append()
+        new_paths = []
+        for path in paths:
+            to_be_updated_edges = []
+            generic_nodes = set()
+            for edge in path:
+                if edge.source_node.are_all_uris_generic():
+                    generic_nodes.add(edge.source_node)
+                if edge.dest_node.are_all_uris_generic():
+                    generic_nodes.add(edge.dest_node)
+
+                if edge.source_node.are_all_uris_generic() and not edge.dest_node.are_all_uris_generic():
+                    to_be_updated_edges.append(
+                        {"type": "source", "node": edge.source_node, "edge": edge})
+                if edge.dest_node.are_all_uris_generic() and not edge.source_node.are_all_uris_generic():
+                    to_be_updated_edges.append(
+                        {"type": "dest", "node": edge.dest_node, "edge": edge})
+
+            for new_node in generic_nodes:
+                for edge_info in to_be_updated_edges:
+                    if edge_info["node"] != new_node:
+                        if edge_info["type"] == "source":
+                            new_paths.append(path.replace_edge(edge_info["edge"], edge_info["edge"].copy(source_node=new_node)))
+                        if edge_info["type"] == "dest":
+                            new_paths.append(path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node)))
+
+        for path in new_paths:
+            paths.append(path)
+
 
         if len(paths) == 1:
             batch_edges = paths[0]
