@@ -28,7 +28,7 @@ class Paths(list):
     def extend(self, new_edge):
         new_output = []
         if len(self) == 0:
-            self.append([])
+            self.append(Path([]))
         for item in self:
             path = Path()
             for edge in item:
@@ -39,7 +39,7 @@ class Paths(list):
                     pass
                 else:
                     path.append(edge)
-            new_output.append(path + [new_edge])
+            new_output.append(Path(path + [new_edge]))
         return Paths(new_output)
 
     def __contains__(self, new_path):
