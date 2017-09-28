@@ -31,7 +31,7 @@ def qg(kb, parser, qapair):
 	elif len(where) == 1:
 		item = where[0]
 		print graph
-		print item[1]
+		print item
 		raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
 		answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 		if answerset == qapair.answerset:
@@ -49,11 +49,21 @@ def qg(kb, parser, qapair):
 			return "answer_incorrect"
 	else:
 		for item in where:
-			print item[1]
+			print item
 			raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
 			answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 			if answerset == qapair.answerset:
 				return "answer_multiple_path_with_correct_answer"
+			else:
+				var = ""
+				if item[0] == 1:
+					var = "?u_0"
+				elif item[0] == 0:
+					var = "?u_1"
+				raw_answer = kb.query_where(item[1], return_vars=var, count=count_query, ask=ask_query)
+				answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+				if answerset == qapair.answerset:
+					return "answer_multiple_path_and_var_with_correct_answer"
 		return "answer_multiple_path_without_correct_answer"
 
 
@@ -63,7 +73,6 @@ if __name__ == "__main__":
 	parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
 	parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
 	parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
-
 	args = parser.parse_args()
 
 	stats = Stats()
@@ -106,15 +115,12 @@ if __name__ == "__main__":
 	output = []
 	for qapair in ds.qapairs:
 		stats.inc("total")
-
 		if len(args.list_id) > 0 and stats["total"] - 1 not in args.list_id:
 			continue
-
-		output_row = {}
-		output_row["question"] = qapair.question.text
-		output_row["id"] = qapair.id
-		output_row["query"] = qapair.sparql.query
-		output_row["answer"] = ""
+		output_row = {"question": qapair.question.text,
+					"id": qapair.id,
+					"query": qapair.sparql.query,
+					"answer": ""}
 		if qapair.answerset is None or len(qapair.answerset) == 0:
 			stats.inc("query_no_answer")
 			output_row["answer"] = "no_answer"
