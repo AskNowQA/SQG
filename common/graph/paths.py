@@ -5,6 +5,21 @@ class Paths(list):
     def __init__(self, *args):
         super(Paths, self).__init__(*args)
 
+    def to_where(self, kb=None):
+        output = []
+        for batch_edges in self:
+            sparql_where = [edge.sparql_format(kb) for edge in batch_edges]
+            max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
+            if kb is not None:
+                result = kb.query_where(sparql_where, count=True)
+                if result is not None:
+                    result = int(result["results"]["bindings"][0]["callret-0"]["value"])
+                    if result > 0:
+                        output.append((max_generic_id, sparql_where))
+            else:
+                output.append((max_generic_id, sparql_where))
+        return output
+
     def add(self, new_paths, validity_fn):
         for path in new_paths:
             if (len(self) == 0 or path not in self) and validity_fn(path):

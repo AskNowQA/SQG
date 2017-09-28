@@ -179,15 +179,7 @@ class Graph:
                 self.suggest_retrieve_id = max_generic_id
             return [(self.suggest_retrieve_id, [edge.sparql_format(self.kb) for edge in batch_edges])]
 
-        for batch_edges in paths:
-            sparql_where = [edge.sparql_format(self.kb) for edge in batch_edges]
-            max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
-            result = self.kb.query_where(sparql_where, count=True)
-            if result is not None:
-                result = int(result["results"]["bindings"][0]["callret-0"]["value"])
-                if result > 0:
-                    output.append((max_generic_id, sparql_where))
-        return output
+        return paths.to_where(self.kb)
 
     def __find_paths(self, entity_uris, relation_uris, edges, output_paths=Paths()):
         new_output_paths = Paths([])
