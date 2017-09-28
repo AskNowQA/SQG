@@ -6,6 +6,11 @@ class Edge:
         self.source_node.add_outbound(self)
         self.dest_node.add_inbound(self)
 
+    def copy(self, source_node=None, uri=None, dest_node=None):
+        return Edge(self.source_node if source_node is None else source_node,
+                      self.uri if uri is None else uri,
+                      self.dest_node if dest_node is None else dest_node)
+
     def has_uri(self, uri):
         return self.uri == uri or self.source_node.has_uri(uri) or self.dest_node.has_uri(uri)
 
