@@ -114,7 +114,7 @@ if __name__ == "__main__":
                       "id": qapair.id,
                       "query": qapair.sparql.query,
                       "answer": "",
-                      "features": list(ds.parser.kb.query_features(qapair.sparql))}
+                      "features": list(qapair.sparql.query_features())}
 
         if qapair.answerset is None or len(qapair.answerset) == 0:
             stats.inc("query_no_answer")
