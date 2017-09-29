@@ -3,6 +3,8 @@ class Stats:
         self.dict = dict()
 
     def __getitem__(self, key):
+        if key not in self.dict:
+            return 0
         return self.dict[key]
 
     def inc(self, key):
