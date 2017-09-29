@@ -38,5 +38,7 @@ class Freebase(KB):
 			return "?s", raw_uri
 		elif raw_uri.find("ns:") >= 0:
 			return "?p", raw_uri
+		elif raw_uri.startswith("?"):
+			return "g", raw_uri
 		else:
 			return raw_uri, raw_uri
