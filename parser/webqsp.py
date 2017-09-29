@@ -27,7 +27,7 @@ class WebQSP:
 
 	def parse(self):
 		for raw_row in self.raw_data["Questions"]:
-			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"], raw_row["Parses"], raw_row, raw_row["QuestionId"], self.parser))
+			self.qapairs.append(QApair(raw_row["ProcessedQuestion"], raw_row["Parses"][0]["Answers"], raw_row["Parses"][0]["Sparql"], raw_row, raw_row["QuestionId"], self.parser))
 
 	def print_pairs(self, n = -1):
 		for item in self.qapairs[0:n]:
@@ -43,7 +43,6 @@ class WebQSPParser(AnswerParser):
 		return raw_question
 
 	def parse_sparql(self, raw_query):
-		raw_query = raw_query[0]["Sparql"] if "Sparql" in raw_query[0] else ""
 		raw_query = " ".join(raw_query.split("\n")[5:])
 		raw_query = raw_query[:raw_query.rfind("}")]
 		#remove comments from the sparql query
@@ -55,7 +54,7 @@ class WebQSPParser(AnswerParser):
 
 	def parse_answerset(self, raw_answers):
 		answer_rows = []
-		for raw_answer in raw_answers[0]["Answers"]:
+		for raw_answer in raw_answers:
 			answer_rows.append(AnswerRow(raw_answer, self.parse_answerrow))
 		return answer_rows
 
