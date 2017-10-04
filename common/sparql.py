@@ -13,8 +13,9 @@ class SPARQL:
         idx = sparql_query.find(WHERE)
         self.where_clause = ' '.join(sparql_query.strip("{}. ").replace(".", " ").split())
         if idx >= 0:
+            idx = sparql_query.find("{", idx)
             self.where_clause = ' '.join(
-                self.where_clause[idx + len(WHERE) + 1:])
+                self.where_clause[idx + 1:].split())
 
     def query_features(self):
         features = {"boolean": ["ask "],
