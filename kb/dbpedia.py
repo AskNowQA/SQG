@@ -19,6 +19,8 @@ class DBpedia(KB):
 			return "?p", raw_uri
 		elif raw_uri.find("rdf-syntax-ns#type") >= 0:
 			return "?t", raw_uri
+		elif raw_uri.startswith("?"):
+			return "g", raw_uri
 		else:
 			return "?u", raw_uri
 
