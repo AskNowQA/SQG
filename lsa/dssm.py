@@ -12,7 +12,7 @@ class DSSM:
         flags.DEFINE_string('summaries_dir', '/tmp/dssm-400-120-relu', 'Summaries directory')
         flags.DEFINE_float('learning_rate', 0.1, 'Initial learning rate.')
         flags.DEFINE_integer('max_steps', 1000, 'Number of steps to run trainer.')
-        flags.DEFINE_integer('epoch_steps', 10, "Number of steps in one epoch.")
+        flags.DEFINE_integer('epoch_steps', 100, "Number of steps in one epoch.")
         flags.DEFINE_integer('pack_size', 20, "Number of batches in one pickle pack.")
         flags.DEFINE_bool('gpu', 1, "Enable GPU or not")
 
@@ -41,68 +41,68 @@ class DSSM:
     def data_iterator(self, train_set, sparse_output=False):
         index_start = 0
         questions = train_set[0]
-        sparqls = train_set[1]
+        queries = train_set[1]
         while True:
             index_end = index_start + self.BS
             if index_end > len(questions):
                 index_start = 0
                 index_end = index_start + self.BS
 
-            questions_batch = questions[index_start:index_end]
-            sparqls_batch = sparqls[index_start:index_end]
+            question_batch = questions[index_start:index_end]
+            query_batch = queries[index_start:index_end]
 
             index_start += self.BS
             if sparse_output:
-                questions_batch = self.__to_sparstensor(questions_batch)
-                sparqls_batch = self.__to_sparstensor(sparqls_batch)
+                question_batch = self.__to_sparstensor(question_batch)
+                query_batch = self.__to_sparstensor(query_batch)
 
-            yield questions_batch, sparqls_batch, index_start
+            yield question_batch, query_batch, index_start
 
     def __model(self):
         with tf.name_scope('input'):
+            question_batch = tf.placeholder(tf.float32, shape=[self.BS, self.VOCAB_SIZE], name="question_batch")
             query_batch = tf.placeholder(tf.float32, shape=[self.BS, self.VOCAB_SIZE], name="query_batch")
-            doc_batch = tf.placeholder(tf.float32, shape=[self.BS, self.VOCAB_SIZE], name="doc_batch")
+            question_batch_sparse = self.__to_sparstensor2(question_batch)
             query_batch_sparse = self.__to_sparstensor2(query_batch)
-            doc_batch_sparse = self.__to_sparstensor2(doc_batch)
 
         with tf.name_scope('L1'):
             l1_par_range = np.sqrt(6.0 / (self.VOCAB_SIZE + self.L1_N))
             weight1 = tf.Variable(tf.random_uniform([self.VOCAB_SIZE, self.L1_N], -l1_par_range, l1_par_range),
                                   name="weight1")
             bias1 = tf.Variable(tf.random_uniform([self.L1_N], -l1_par_range, l1_par_range), name="bias1")
+            question_l1 = tf.sparse_tensor_dense_matmul(question_batch_sparse, weight1) + bias1
             query_l1 = tf.sparse_tensor_dense_matmul(query_batch_sparse, weight1) + bias1
-            doc_l1 = tf.sparse_tensor_dense_matmul(doc_batch_sparse, weight1) + bias1
+            question_l1_out = tf.nn.relu(question_l1)
             query_l1_out = tf.nn.relu(query_l1)
-            doc_l1_out = tf.nn.relu(doc_l1)
 
         with tf.name_scope('L2'):
             l2_par_range = np.sqrt(6.0 / (self.L1_N + self.L2_N))
             weight2 = tf.Variable(tf.random_uniform([self.L1_N, self.L2_N], -l2_par_range, l2_par_range),
                                   name="weight2")
             bias2 = tf.Variable(tf.random_uniform([self.L2_N], -l2_par_range, l2_par_range), name="bias2")
+            question_l2 = tf.matmul(question_l1_out, weight2) + bias2
             query_l2 = tf.matmul(query_l1_out, weight2) + bias2
-            doc_l2 = tf.matmul(doc_l1_out, weight2) + bias2
+            question_y = tf.nn.relu(question_l2)
             query_y = tf.nn.relu(query_l2)
-            doc_y = tf.nn.relu(doc_l2)
 
         with tf.name_scope('FD_rotate'):
             # Rotate FD+ to produce 50 FD-
-            temp = tf.tile(doc_y, [1, 1])
+            temp = tf.tile(query_y, [1, 1])
 
             for i in range(self.NEG):
                 rand = int((random.random() + i) * self.BS / self.NEG)
-                doc_y = tf.concat(axis=0,
-                                  values=[doc_y,
-                                          tf.slice(temp, [rand, 0], [self.BS - rand, -1]),
-                                          tf.slice(temp, [0, 0], [rand, -1])])
+                query_y = tf.concat(axis=0,
+                                    values=[query_y,
+                                            tf.slice(temp, [rand, 0], [self.BS - rand, -1]),
+                                            tf.slice(temp, [0, 0], [rand, -1])])
 
         with tf.name_scope('Cosine_Similarity'):
             # Cosine similarity
-            query_norm = tf.tile(tf.sqrt(tf.reduce_sum(tf.square(query_y), 1, True)), [self.NEG + 1, 1])
-            doc_norm = tf.sqrt(tf.reduce_sum(tf.square(doc_y), 1, True))
+            question_norm = tf.tile(tf.sqrt(tf.reduce_sum(tf.square(question_y), 1, True)), [self.NEG + 1, 1])
+            query_norm = tf.sqrt(tf.reduce_sum(tf.square(query_y), 1, True))
 
-            prod = tf.reduce_sum(tf.multiply(tf.tile(query_y, [self.NEG + 1, 1]), doc_y), 1, True)
-            norm_prod = tf.multiply(query_norm, doc_norm)
+            prod = tf.reduce_sum(tf.multiply(tf.tile(question_y, [self.NEG + 1, 1]), query_y), 1, True)
+            norm_prod = tf.multiply(question_norm, query_norm)
 
             cos_sim_raw = tf.truediv(prod, norm_prod)
             cos_sim = tf.transpose(tf.reshape(tf.transpose(cos_sim_raw), [self.NEG + 1, self.BS])) * self.gamma
@@ -115,10 +115,10 @@ class DSSM:
             loss = tf.negative(tf.divide(tf.reduce_sum(tf.log(hit_prob)), self.BS), name="loss_op")
             tf.summary.scalar('loss', loss)
 
-        return loss, query_batch, doc_batch
+        return loss, question_batch, query_batch
 
     def train(self, train_set):
-        loss, query_batch, doc_batch = self.__model()
+        loss, question_batch, query_batch = self.__model()
         with tf.name_scope('Training'):
             train_step = tf.train.GradientDescentOptimizer(self.FLAGS.learning_rate).minimize(loss)
 
@@ -135,14 +135,14 @@ class DSSM:
             train_writer = tf.summary.FileWriter(self.FLAGS.summaries_dir + '/train', sess.graph)
             start = time.time()
             for step in range(self.FLAGS.max_steps):
-                query_in, doc_in, index_start = iter_train.next()
-                sess.run(train_step, feed_dict={query_batch: query_in, doc_batch: doc_in})
+                question_in, query_in, index_start = iter_train.next()
+                sess.run(train_step, feed_dict={question_batch: question_in, query_batch: query_in})
 
                 if step % self.FLAGS.epoch_steps == 0:
                     end = time.time()
                     epoch_loss = 0
 
-                    loss_v = sess.run(loss, feed_dict={query_batch: query_in, doc_batch: doc_in})
+                    loss_v = sess.run(loss, feed_dict={question_batch: question_in, query_batch: query_in})
                     epoch_loss += loss_v
 
                     train_loss = sess.run(loss_summary, feed_dict={average_loss: epoch_loss})
@@ -160,7 +160,7 @@ class DSSM:
             print ("\nTotal time: %-3.3fs" % (end - start))
 
     def test(self, test_set):
-        saver = tf.train.import_meta_graph(self.model_path + "-1000.meta")
+        saver = tf.train.import_meta_graph(self.model_path + "-" + str(self.FLAGS.max_steps) + ".meta")
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         iter_test = self.data_iterator(test_set, False)
@@ -172,11 +172,12 @@ class DSSM:
             epoch_loss = 0
             graph = tf.get_default_graph()
             loss = graph.get_tensor_by_name("Loss/loss_op:0")
+            question_batch = graph.get_tensor_by_name("input/question_batch:0")
             query_batch = graph.get_tensor_by_name("input/query_batch:0")
-            doc_batch = graph.get_tensor_by_name("input/doc_batch:0")
             for i in range(self.FLAGS.pack_size):
-                query_in, doc_in, index_start = iter_test.next()
-                loss_v = sess.run(loss, feed_dict={query_batch: query_in, doc_batch: doc_in})
+                question_in, query_in, index_start = iter_test.next()
+                loss_v = sess.run(loss, feed_dict={question_batch: question_in, query_batch: query_in})
+                print loss_v
                 epoch_loss += loss_v
 
             epoch_loss /= self.FLAGS.pack_size
