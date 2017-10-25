@@ -1,16 +1,27 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
 from common.preprocessing.wordhashing import WordHashing
 from parser.webqsp import WebQSP
+from parser.lc_quad import LC_Qaud
 from lsa.dssm import DSSM
-import numpy as np
-import tensorflow as tf
+from jerrl.jerrl import Jerrl
 
 
-def preprocessing(ds):
+def preprocessing(qapairs):
+    jerrl = Jerrl()
     hashing = WordHashing()
     hashed_qapairs = {}
-    for qapair in ds.qapairs:
-        hashed_question = hashing.hash(qapair.question.text)
-        hashed_sparql = hashing.hash(qapair.sparql.where_clause)
+    for qapair in qapairs:
+        question = qapair.question.text
+        query = qapair.sparql.raw_query
+        counter = 0
+        for item in jerrl.mentions(qapair):
+            question = u"{0} {1} {2}".format(question[:item["start"]], str(counter), question[item["end"]:])
+            query = query.replace(item["uri"].raw_uri, str(counter))
+            counter += 1
+
+        hashed_question = hashing.hash(question)
+        hashed_sparql = hashing.hash(query)
         hashed_qapairs[qapair.id] = (hashed_question, hashed_sparql)
 
     VOCAB_SIZE = 50000  # len(hashing.ids)
@@ -29,18 +40,19 @@ def preprocessing(ds):
     return questions, sparqls
 
 
-ds_train = WebQSP()
-ds_train.load()
-ds_train.parse()
+ds = LC_Qaud()
+ds.load()
+ds.parse()
 
-ds_test = WebQSP("./data/WebQuestionsSP/WebQSP.test.json")
-ds_test.load()
-ds_test.parse()
+# ds_train, ds_test, _, _ = train_test_split(ds.qapairs, np.ones([len(ds.qapairs), 1]), test_size=0.2)
+
+ds_train = ds.qapairs[:4000]
+ds_test = ds.qapairs[4000:]
 
 model = DSSM()
 # questions, sparqls = preprocessing(ds_train)
 # model.train([questions, sparqls])
-questions, sparqls = preprocessing(ds_test)
-model.test([questions, sparqls])
+questions, queries = preprocessing(ds_test)
+model.test([questions, queries])
 # questions, sparqls = preprocessing(ds_test)
 # model.tmp([questions, sparqls])
