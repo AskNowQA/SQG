@@ -14,9 +14,9 @@ class Jerrl:
     def mentions(self, qapair):
         output = []
         for uri in qapair.sparql.uris:
-            s, e, dist = Jerrl.__substring_with_min_levenshtein_distance(uri.uri, qapair.question.text)
+            s, e, dist = Jerrl.__substring_with_min_levenshtein_distance(str(uri), qapair.question.text)
             if dist <= 5:
-                output.append((uri, (s, e)))
+                output.append({"uri": uri, "start": s, "end": e})
         return output
 
     @staticmethod
