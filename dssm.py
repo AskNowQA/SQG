@@ -25,7 +25,7 @@ def preprocessing(qapairs):
         hashed_qapairs[qapair.id] = (hashed_question, hashed_sparql)
 
     VOCAB_SIZE = 50000  # len(hashing.ids)
-    DATA_SIZE = len(ds.qapairs)
+    DATA_SIZE = len(qapairs)
     i = 0
     questions = np.zeros([DATA_SIZE, VOCAB_SIZE])
     sparqls = np.zeros([DATA_SIZE, VOCAB_SIZE])
@@ -44,15 +44,15 @@ ds = LC_Qaud()
 ds.load()
 ds.parse()
 
-# ds_train, ds_test, _, _ = train_test_split(ds.qapairs, np.ones([len(ds.qapairs), 1]), test_size=0.2)
+ds_train, ds_test, _, _ = train_test_split(ds.qapairs, np.ones([len(ds.qapairs), 1]), test_size=0.2)
 
-ds_train = ds.qapairs[:4000]
-ds_test = ds.qapairs[4000:]
+# ds_train = ds.qapairs[:4000]
+# ds_test = ds.qapairs[4000:]
 
-model = DSSM()
+model = DSSM(max_steps=10)
 # questions, sparqls = preprocessing(ds_train)
 # model.train([questions, sparqls])
-questions, queries = preprocessing(ds_test)
-model.test([questions, queries])
-# questions, sparqls = preprocessing(ds_test)
-# model.tmp([questions, sparqls])
+# questions, queries = preprocessing(ds_test)
+# model.test([questions, queries])
+questions, sparqls = preprocessing(ds_test)
+model.similarity(questions, sparqls)
