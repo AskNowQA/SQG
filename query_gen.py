@@ -27,15 +27,16 @@ def qg(kb, parser, qapair):
     print graph
     print "-----"
     where = graph.to_where_statement()
+    output_where = [" .".join(item[1]) for item in where]
     if len(where) == 0:
-        return "-without_path"
+        return "-without_path", output_where
     elif len(where) == 1:
         item = where[0]
         print item
         raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
         answerset = AnswerSet(raw_answer, parser.parse_queryresult)
         if answerset == qapair.answerset:
-            return "correct"
+            return "correct", output_where
         else:
             var = ""
             if item[0] == 1:
@@ -45,15 +46,16 @@ def qg(kb, parser, qapair):
             raw_answer = kb.query_where(item[1], return_vars=var, count=count_query, ask=ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
-                return "multiple_var_with_correct_answer"
-            return "-incorrect"
+                return "multiple_var_with_correct_answer", output_where
+            return "-incorrect", output_where
     else:
+
         for item in where:
             print item
             raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
-                return "multiple_path_with_correct_answer"
+                return "multiple_path_with_correct_answer", output_where
             else:
                 var = ""
                 if item[0] == 1:
@@ -63,8 +65,8 @@ def qg(kb, parser, qapair):
                 raw_answer = kb.query_where(item[1], return_vars=var, count=count_query, ask=ask_query)
                 answerset = AnswerSet(raw_answer, parser.parse_queryresult)
                 if answerset == qapair.answerset:
-                    return "multiple_path_and_var_with_correct_answer"
-        return "-multiple_path_without_correct_answer"
+                    return "multiple_path_and_var_with_correct_answer", output_where
+        return "-multiple_path_without_correct_answer", output_where
 
 
 if __name__ == "__main__":
@@ -115,15 +117,17 @@ if __name__ == "__main__":
                       "id": qapair.id,
                       "query": qapair.sparql.query,
                       "answer": "",
-                      "features": list(qapair.sparql.query_features())}
+                      "features": list(qapair.sparql.query_features()),
+                      "generated_queries": []}
 
         if qapair.answerset is None or len(qapair.answerset) == 0:
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result = qg(ds.parser.kb, ds.parser, qapair)
+            result, where = qg(ds.parser.kb, ds.parser, qapair)
             stats.inc(result)
             output_row["answer"] = result
+            output_row["generated_queries"] = where
             print result
 
         if args.max != -1 and stats["total"] > args.max:
