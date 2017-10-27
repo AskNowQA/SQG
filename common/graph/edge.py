@@ -5,11 +5,18 @@ class Edge:
         self.dest_node = dest_node
         self.source_node.add_outbound(self)
         self.dest_node.add_inbound(self)
+        self.__confidence = (
+                            self.source_node.confidence if self.source_node is not None else 1) * self.uri.confidence * (
+                                self.dest_node.confidence if self.dest_node is not None else 1)
+
+    @property
+    def confidence(self):
+        return self.__confidence
 
     def copy(self, source_node=None, uri=None, dest_node=None):
         return Edge(self.source_node if source_node is None else source_node,
-                      self.uri if uri is None else uri,
-                      self.dest_node if dest_node is None else dest_node)
+                    self.uri if uri is None else uri,
+                    self.dest_node if dest_node is None else dest_node)
 
     def has_uri(self, uri):
         return self.uri == uri or self.source_node.has_uri(uri) or self.dest_node.has_uri(uri)
@@ -34,7 +41,8 @@ class Edge:
         return max(s, d)
 
     def sparql_format(self, kb):
-        return u"{} {} {}".format(self.source_node.sparql_format(kb), self.uri.sparql_format(kb), self.dest_node.sparql_format(kb))
+        return u"{} {} {}".format(self.source_node.sparql_format(kb), self.uri.sparql_format(kb),
+                                  self.dest_node.sparql_format(kb))
 
     def full_path(self):
         return "{} --> {} --> {}".format(self.source_node.__str__(), self.uri.__str__(), self.dest_node.__str__())
@@ -42,8 +50,8 @@ class Edge:
     def generic_equal(self, other):
         if isinstance(other, Edge):
             return self.source_node.generic_equal(other.source_node) \
-                and self.dest_node.generic_equal(other.dest_node) \
-                and self.uri.generic_equal(other.uri)
+                   and self.dest_node.generic_equal(other.dest_node) \
+                   and self.uri.generic_equal(other.uri)
         return NotImplemented
 
     def __hash__(self):

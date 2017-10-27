@@ -1,9 +1,14 @@
 from path import Path
+import numpy as np
 
 
 class Paths(list):
     def __init__(self, *args):
         super(Paths, self).__init__(*args)
+
+    @property
+    def confidence(self):
+        return np.prod([path.confidence for path in self])
 
     def to_where(self, kb=None):
         output = []

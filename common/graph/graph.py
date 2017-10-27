@@ -178,13 +178,14 @@ class Graph:
                 for edge_info in to_be_updated_edges:
                     if edge_info["node"] != new_node:
                         if edge_info["type"] == "source":
-                            new_paths.append(path.replace_edge(edge_info["edge"], edge_info["edge"].copy(source_node=new_node)))
+                            new_paths.append(
+                                path.replace_edge(edge_info["edge"], edge_info["edge"].copy(source_node=new_node)))
                         if edge_info["type"] == "dest":
-                            new_paths.append(path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node)))
+                            new_paths.append(
+                                path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node)))
 
         for path in new_paths:
             paths.append(path)
-
 
         if len(paths) == 1:
             batch_edges = paths[0]
@@ -196,6 +197,7 @@ class Graph:
                 self.suggest_retrieve_id = max_generic_id
             return [(self.suggest_retrieve_id, [edge.sparql_format(self.kb) for edge in batch_edges])]
 
+        paths.sort(key=lambda x: x.confidence, reverse=True)
         return paths.to_where(self.kb)
 
     def __find_paths(self, entity_uris, relation_uris, edges, output_paths=Paths()):
