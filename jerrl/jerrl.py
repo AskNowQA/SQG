@@ -11,12 +11,12 @@ class Jerrl:
         return [u for u in qapair.sparql.uris if u.is_entity()], \
                [u for u in qapair.sparql.uris if u.is_ontology()]
 
-    def mentions(self, qapair):
+    def find_mentions(self, text, uris):
         output = []
-        for uri in qapair.sparql.uris:
-            s, e, dist = Jerrl.__substring_with_min_levenshtein_distance(uri.uri, qapair.question.text)
+        for uri in uris:
+            s, e, dist = Jerrl.__substring_with_min_levenshtein_distance(str(uri), text)
             if dist <= 5:
-                output.append((uri, (s, e)))
+                output.append({"uri": uri, "start": s, "end": e})
         return output
 
     @staticmethod
