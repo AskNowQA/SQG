@@ -18,11 +18,12 @@ def qg(kb, parser, qapair):
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
+    sort_query = "order by" in qapair.sparql.raw_query.lower()
     jerrl = Jerrl()
     entities, ontologies = jerrl.do(qapair)
 
     graph = Graph(kb)
-    graph.find_minimal_subgraph(entities, ontologies, ask_query)
+    graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
     print graph
     print "-----"
     where = graph.to_where_statement()

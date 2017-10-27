@@ -12,6 +12,7 @@ def query(args):
         return 0, None
     return r.status_code, r.json() if r.status_code == 200 else None
 
+
 class KB(object):
     def __init__(self, endpoint, default_graph_uri=""):
         self.endpoint = endpoint
@@ -29,7 +30,7 @@ class KB(object):
 
         return r.status_code, r.json() if r.status_code == 200 else None
 
-    def query_where(self, clauses, return_vars="*", count=False, ask=False):
+    def sparql_query(self, clauses, return_vars="*", count=False, ask=False):
         where = u"WHERE {{ {} }}".format(" .".join(clauses))
         if count:
             query = u"{} SELECT COUNT(DISTINCT {}) {}".format(self.query_prefix(), return_vars, where)
@@ -37,6 +38,11 @@ class KB(object):
             query = u"{} ASK {}".format(self.query_prefix(), where)
         else:
             query = u"{} SELECT DISTINCT {} {}".format(self.query_prefix(), return_vars, where)
+
+        return query
+
+    def query_where(self, clauses, return_vars="*", count=False, ask=False):
+        query = self.sparql_query(clauses, return_vars, count, ask)
         status, response = self.query(query)
         if status == 200:
             return response
@@ -68,8 +74,13 @@ class KB(object):
         where = ""
         for i in range(len(query_types)):
             where = where + u"UNION {{ values ?m {{ {} }} {{select <1> where {{ {} }} }} }}\n".format(i,
-                query_types[i].format(rel=relation_uri, ent1=entity1_uri, ent2=entity2_uri, type=self.type_uri,
-                     prefix=self.query_prefix()))
+                                                                                                      query_types[
+                                                                                                          i].format(
+                                                                                                          rel=relation_uri,
+                                                                                                          ent1=entity1_uri,
+                                                                                                          ent2=entity2_uri,
+                                                                                                          type=self.type_uri,
+                                                                                                          prefix=self.query_prefix()))
         where = where[6:]
         query = u"""{prefix}
 SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), where=where)
@@ -85,13 +96,13 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
         entity2_uri = self.uri_to_sparql(entity2_uri)
 
         query_types = [u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}",
-                 u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1",
-                 u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1",
-                 u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}",
-                 u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]
+                       u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1",
+                       u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1",
+                       u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}",
+                       u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]
         return self.__parallel_query([item.format(rel1=relation1_uri, ent1=entity1_uri,
-                              ent2=entity2_uri, rel2=relation2_uri,
-                              type=self.type_uri) for item in query_types])
+                                                  ent2=entity2_uri, rel2=relation2_uri,
+                                                  type=self.type_uri) for item in query_types])
 
     @staticmethod
     def shorten_prefix():

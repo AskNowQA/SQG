@@ -1,6 +1,13 @@
+import numpy as np
+
+
 class Path(list):
     def __init__(self, *args):
         super(Path, self).__init__(*args)
+
+    @property
+    def confidence(self):
+        return np.prod([edge.confidence for edge in self])
 
     def replace_edge(self, old_edge, new_edge):
         try:
