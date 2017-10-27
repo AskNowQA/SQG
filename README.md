@@ -32,3 +32,15 @@ We aimed to be KB independent, thus two datasets based on two different KB has b
 
 ![alt text][lc_quad]
 ![alt text][webq]
+
+## Web API
+
+We provide a RESTfull api for the query generator. You need to run this:
+``
+python qg_webserver.py
+``
+
+Here is an example of how to use the api:
+``
+curl -i -H "Content-Type: application/json" -X POST -d '{"question":"What is the hometown of Nader Guirat, where Josef Johansson was born too?", "relations": ["http://dbpedia.org/property/birthPlace", "http://dbpedia.org/ontology/hometown"], "entities":["http://dbpedia.org/resource/Josef_Johansson", "http://dbpedia.org/resource/Nader_Guirat"], "kb":"dbpedia"}' http://localhost:5000/qg/api/v1.0/query
+``
