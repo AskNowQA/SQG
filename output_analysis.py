@@ -44,11 +44,15 @@ def default(ds, n=-1):
 
 def bar_chart_per_feature(input_json):
     stats_overall = Stats()
+    stats_features = Stats()
     stats_with_answer = dict()
     stats_without_answer = dict()
     for item in input_json:
+        stats_overall.inc("total")
+        if "answer" in item:
+            stats_overall.inc(item["answer"])
         for f in item["features"]:
-            stats_overall.inc(f)
+            stats_features.inc(f)
             if item["answer"].startswith("-"):
                 if item["answer"] not in stats_without_answer:
                     stats_without_answer[item["answer"]] = Stats()
@@ -58,19 +62,21 @@ def bar_chart_per_feature(input_json):
                     stats_with_answer[item["answer"]] = Stats()
                 stats_with_answer[item["answer"]].inc(f)
 
-    print stats_overall
+    print stats_features
     print "-" * 10, "covered"
     stats_with_answer_keys = stats_with_answer.keys()
     stats_with_answer_keys.sort()
     for item in stats_with_answer_keys:
-        print item, stats_with_answer[item]
+        print "{}: {} -- ".format(item, stats_overall[item]), stats_with_answer[item]
     print "-" * 10, "not covered"
-    for item in stats_without_answer:
-        print item, stats_without_answer[item]
+    stats_without_answer_keys = stats_without_answer.keys()
+    stats_without_answer_keys.sort()
+    for item in stats_without_answer_keys:
+        print "{}: {} -- ".format(item, stats_overall[item]), stats_without_answer[item]
     print "-" * 100
 
-    keys = stats_overall.dict.keys()
-    ind = range(len(stats_overall.dict))
+    keys = stats_features.dict.keys()
+    ind = range(len(stats_features.dict))
     last = Stats()
     plt_idx = []
     colors = ["green", "yellowgreen", "lightgreen", "lime", "olive"]
@@ -78,7 +84,7 @@ def bar_chart_per_feature(input_json):
     fig = plt.figure()
     ax = plt.subplot(111)
 
-    overall = [stats_overall[key] for key in keys]
+    overall = [stats_features[key] for key in keys]
     p0 = ax.bar(ind, overall, 0.35, color='red')
 
     color_id = 0
@@ -98,8 +104,15 @@ def bar_chart_per_feature(input_json):
 
 
 if __name__ == "__main__":
-    # ds_1 = load_ds("17")
-    # bar_chart_per_feature(ds_1)
+    # ds_1 = load_ds("18")
+    # print default(ds_1)
+    # ds_1 = load_ds("19")
+    # print default(ds_1)
 
     ds_1 = load_ds("wq_13")
-    bar_chart_per_feature(ds_1)
+    print default(ds_1)
+    # bar_chart_per_feature(ds_1)
+
+    ds_1 = load_ds("wq_14")
+    print default(ds_1)
+
