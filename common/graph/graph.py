@@ -73,7 +73,7 @@ class Graph:
     def find_minimal_subgraph(self, entity_uris, relation_uris, ask_query=False, sort_query=False):
         self.entity_uris, self.relation_uris = MyList(entity_uris), MyList(relation_uris)
 
-        # Find subgraphs that are consist of at leat one entity and exactly one relation
+        # Find subgraphs that are consist of at least one entity and exactly one relation
         self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
 
         if len(self.edges) > 100:

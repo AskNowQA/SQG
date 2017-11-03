@@ -8,9 +8,18 @@ class Paths(list):
 
     @property
     def confidence(self):
+        """
+        Cumulative product of paths' confidence
+        :return:
+        """
         return np.prod([path.confidence for path in self])
 
     def to_where(self, kb=None):
+        """
+        Transform paths into where clauses
+        :param kb:
+        :return:
+        """
         output = []
         for batch_edges in self:
             sparql_where = [edge.sparql_format(kb) for edge in batch_edges]
@@ -26,28 +35,47 @@ class Paths(list):
         return output
 
     def add(self, new_paths, validity_fn):
+        """
+        Append new paths if they pass the validity check
+        :param new_paths:
+        :param validity_fn:
+        :return:
+        """
         for path in new_paths:
             if (len(self) == 0 or path not in self) and validity_fn(path):
                 self.append(path)
 
     def extend(self, new_edge):
+        """
+        Create a new <Paths> that contains path of current <Paths> which the new_edge if possible is appended to each
+        :param new_edge:
+        :return:
+        """
         new_output = []
         if len(self) == 0:
             self.append(Path([]))
         for item in self:
-            path = Path()
-            for edge in item:
-                if edge.uri == new_edge.uri and \
-                        edge.source_node.are_all_uris_generic() and \
-                        edge.dest_node.are_all_uris_generic() and \
-                        not (new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
-                    pass
-                else:
-                    path.append(edge)
-            new_output.append(Path(path + [new_edge]))
+            if item.addable(new_edge):
+                path = Path()
+                for edge in item:
+                    if edge.uri == new_edge.uri and \
+                            edge.source_node.are_all_uris_generic() and \
+                            edge.dest_node.are_all_uris_generic() and \
+                            not (new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
+                        pass
+                    else:
+                        path.append(edge)
+                new_output.append(Path(path + [new_edge]))
+            else:
+                new_output.append(item)
         return Paths(new_output)
 
     def __contains__(self, new_path):
+        """
+        Check whether the new path is already exists
+        :param new_path:
+        :return:
+        """
         for i in range(len(self)):
             if len(self[i]) == len(new_path):
                 same_flag = True
