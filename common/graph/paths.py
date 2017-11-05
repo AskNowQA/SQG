@@ -70,20 +70,3 @@ class Paths(list):
             else:
                 new_output.append(item)
         return Paths(new_output)
-
-    def __contains__(self, new_path):
-        """
-        Check whether the new path is already exists
-        :param new_path:
-        :return:
-        """
-        for i in range(len(self)):
-            if len(self[i]) == len(new_path):
-                same_flag = True
-                for edge in self[i]:
-                    if edge not in new_path:
-                        same_flag = False
-                        break
-                if same_flag:
-                    return True
-        return False

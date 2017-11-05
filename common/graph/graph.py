@@ -185,8 +185,14 @@ class Graph:
                             new_paths.append(
                                 path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node)))
 
-        for path in new_paths:
-            paths.append(path)
+        for new_path in new_paths:
+            generic_equal = False
+            for path in paths:
+                if path.generic_equal_with_substitutable_id(new_path):
+                    generic_equal = True
+                    break
+            if not generic_equal:
+                paths.append(new_path)
 
         if len(paths) == 1:
             batch_edges = paths[0]
