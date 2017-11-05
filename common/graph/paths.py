@@ -29,9 +29,9 @@ class Paths(list):
                 if result is not None:
                     result = int(result["results"]["bindings"][0]["callret-0"]["value"])
                     if result > 0:
-                        output.append((max_generic_id, sparql_where))
+                        output.append({"suggested_id": max_generic_id, "where": sparql_where})
             else:
-                output.append((max_generic_id, sparql_where))
+                output.append({"suggested_id": max_generic_id, "where": sparql_where})
         return output
 
     def add(self, new_paths, validity_fn):
@@ -61,7 +61,8 @@ class Paths(list):
                     if edge.uri == new_edge.uri and \
                             edge.source_node.are_all_uris_generic() and \
                             edge.dest_node.are_all_uris_generic() and \
-                            not (new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
+                            not (
+                                        new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
                         pass
                     else:
                         path.append(edge)

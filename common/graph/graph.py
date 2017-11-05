@@ -1,3 +1,4 @@
+from common.answerset import AnswerSet
 from node import Node
 from edge import Edge
 from path import Path
@@ -150,7 +151,7 @@ class Graph:
                             output.add(e)
         return output
 
-    def to_where_statement(self):
+    def to_where_statement(self, parse_queryresult, ask_query, count_query, sort_query):
         self.__generalize_nodes()
         self.__merge_edges()
         output = []
@@ -195,10 +196,26 @@ class Graph:
                 max_generic_id = max(ids)
             if self.suggest_retrieve_id > max_generic_id:
                 self.suggest_retrieve_id = max_generic_id
-            return [(self.suggest_retrieve_id, [edge.sparql_format(self.kb) for edge in batch_edges])]
+            return [{"suggested_id": self.suggest_retrieve_id,
+                     "where": [edge.sparql_format(self.kb) for edge in batch_edges]}]
 
         paths.sort(key=lambda x: x.confidence, reverse=True)
-        return paths.to_where(self.kb)
+        output = paths.to_where(self.kb)
+
+        # Remove queries with no answer
+        filtered_output = []
+        for item in output:
+            raw_answer = self.kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]),
+                                             count=count_query,
+                                             ask=ask_query)
+            answerset = AnswerSet(raw_answer, parse_queryresult)
+
+            # Do not include the query if it does not return any answer, except for boolean query
+            if len(answerset.answer_rows) > 0 or ask_query:
+                item["answer"] = answerset
+                filtered_output.append(item)
+
+        return filtered_output
 
     def __find_paths(self, entity_uris, relation_uris, edges, output_paths=Paths()):
         new_output_paths = Paths([])

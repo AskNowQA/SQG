@@ -26,43 +26,50 @@ def qg(kb, parser, qapair):
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
     print graph
     print "-----"
-    where = graph.to_where_statement()
-    output_where = [" .".join(item[1]) for item in where]
+    where = graph.to_where_statement(parser.parse_queryresult, ask_query, count_query, sort_query)
+    output_where = [" .".join(item["where"]) for item in where]
     if len(where) == 0:
         return "-without_path", output_where
     elif len(where) == 1:
         item = where[0]
         print item
-        raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
-        answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+        if "answer" in item:
+            answerset = item["answer"]
+        else:
+            raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]), count=count_query,
+                                        ask=ask_query)
+            answerset = AnswerSet(raw_answer, parser.parse_queryresult)
         if answerset == qapair.answerset:
             return "correct", output_where
         else:
             var = ""
-            if item[0] == 1:
+            if item["suggested_id"] == 1:
                 var = "?u_0"
-            elif item[0] == 0:
+            elif item["suggested_id"] == 0:
                 var = "?u_1"
-            raw_answer = kb.query_where(item[1], return_vars=var, count=count_query, ask=ask_query)
+            raw_answer = kb.query_where(item["where"], return_vars=var, count=count_query, ask=ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
                 return "multiple_var_with_correct_answer", output_where
             return "-incorrect", output_where
     else:
-
         for item in where:
             print item
-            raw_answer = kb.query_where(item[1], return_vars="?u_" + str(item[0]), count=count_query, ask=ask_query)
-            answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+            if "answer" in item:
+                answerset = item["answer"]
+            else:
+                raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]), count=count_query,
+                                            ask=ask_query)
+                answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
                 return "multiple_path_with_correct_answer", output_where
             else:
                 var = ""
-                if item[0] == 1:
+                if item["suggested_id"] == 1:
                     var = "?u_0"
-                elif item[0] == 0:
+                elif item["suggested_id"] == 0:
                     var = "?u_1"
-                raw_answer = kb.query_where(item[1], return_vars=var, count=count_query, ask=ask_query)
+                raw_answer = kb.query_where(item["where"], return_vars=var, count=count_query, ask=ask_query)
                 answerset = AnswerSet(raw_answer, parser.parse_queryresult)
                 if answerset == qapair.answerset:
                     return "multiple_path_and_var_with_correct_answer", output_where
