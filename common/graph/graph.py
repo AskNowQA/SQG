@@ -1,3 +1,4 @@
+from common.answerset import AnswerSet
 from node import Node
 from edge import Edge
 from path import Path
@@ -73,7 +74,7 @@ class Graph:
     def find_minimal_subgraph(self, entity_uris, relation_uris, ask_query=False, sort_query=False):
         self.entity_uris, self.relation_uris = MyList(entity_uris), MyList(relation_uris)
 
-        # Find subgraphs that are consist of at leat one entity and exactly one relation
+        # Find subgraphs that are consist of at least one entity and exactly one relation
         self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
 
         if len(self.edges) > 100:
@@ -150,7 +151,7 @@ class Graph:
                             output.add(e)
         return output
 
-    def to_where_statement(self):
+    def to_where_statement(self, parse_queryresult, ask_query, count_query, sort_query):
         self.__generalize_nodes()
         self.__merge_edges()
         output = []
@@ -177,15 +178,24 @@ class Graph:
             for new_node in generic_nodes:
                 for edge_info in to_be_updated_edges:
                     if edge_info["node"] != new_node:
+                        new_path = None
                         if edge_info["type"] == "source":
-                            new_paths.append(
-                                path.replace_edge(edge_info["edge"], edge_info["edge"].copy(source_node=new_node)))
+                            new_path = path.replace_edge(edge_info["edge"],
+                                                         edge_info["edge"].copy(source_node=new_node))
                         if edge_info["type"] == "dest":
-                            new_paths.append(
-                                path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node)))
+                            new_path = path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node))
+                        if new_path is not None and new_path not in new_paths:
+                            new_paths.append(new_path)
 
-        for path in new_paths:
-            paths.append(path)
+        for new_path in new_paths:
+            generic_equal = False
+            if new_path not in paths:
+                for path in paths:
+                    if path.generic_equal_with_substitutable_id(new_path):
+                        generic_equal = True
+                        break
+                if not generic_equal:
+                    paths.append(new_path)
 
         if len(paths) == 1:
             batch_edges = paths[0]
@@ -195,10 +205,26 @@ class Graph:
                 max_generic_id = max(ids)
             if self.suggest_retrieve_id > max_generic_id:
                 self.suggest_retrieve_id = max_generic_id
-            return [(self.suggest_retrieve_id, [edge.sparql_format(self.kb) for edge in batch_edges])]
+            return [{"suggested_id": self.suggest_retrieve_id,
+                     "where": [edge.sparql_format(self.kb) for edge in batch_edges]}]
 
         paths.sort(key=lambda x: x.confidence, reverse=True)
-        return paths.to_where(self.kb)
+        output = paths.to_where(self.kb)
+
+        # Remove queries with no answer
+        filtered_output = []
+        for item in output:
+            raw_answer = self.kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]),
+                                             count=count_query,
+                                             ask=ask_query)
+            answerset = AnswerSet(raw_answer, parse_queryresult)
+
+            # Do not include the query if it does not return any answer, except for boolean query
+            if len(answerset.answer_rows) > 0 or ask_query:
+                item["answer"] = answerset
+                filtered_output.append(item)
+
+        return filtered_output
 
     def __find_paths(self, entity_uris, relation_uris, edges, output_paths=Paths()):
         new_output_paths = Paths([])
