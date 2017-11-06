@@ -104,15 +104,19 @@ def bar_chart_per_feature(input_json):
 
 
 if __name__ == "__main__":
-    # ds_1 = load_ds("18")
-    # print default(ds_1)
-    # ds_1 = load_ds("19")
-    # print default(ds_1)
-
-    ds_1 = load_ds("wq_13")
+    ds_1 = load_ds("21")
     print default(ds_1)
+    multiple_path_with_correct_answer = filter(ds_1,
+                                               lambda item: item["answer"] == "multiple_path_with_correct_answer")
+
+    for item in multiple_path_with_correct_answer:
+        print item
+        print ds_1[item]["question"]
+        print ds_1[item]["query"]
+        print "\n".join(ds_1[item]["generated_queries"])
+        print
+
+    print len(multiple_path_with_correct_answer)
+    # ds_1 = load_ds("wq_14")
+    # print default(ds_1)
     # bar_chart_per_feature(ds_1)
-
-    ds_1 = load_ds("wq_14")
-    print default(ds_1)
-
