@@ -8,6 +8,7 @@ from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
 from jerrl.jerrl import Jerrl
+from common.query.querybuilder import QueryBuilder
 import json
 import argparse
 
@@ -23,10 +24,12 @@ def qg(kb, parser, qapair):
     entities, ontologies = jerrl.do(qapair)
 
     graph = Graph(kb)
+    queryBuilder = QueryBuilder()
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
     print graph
     print "-----"
-    where = graph.to_where_statement(parser.parse_queryresult, ask_query, count_query, sort_query)
+    where = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
+
     output_where = [" .".join(item["where"]) for item in where]
     if len(where) == 0:
         return "-without_path", output_where
@@ -58,7 +61,8 @@ def qg(kb, parser, qapair):
             if "answer" in item:
                 answerset = item["answer"]
             else:
-                raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]), count=count_query,
+                raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]),
+                                            count=count_query,
                                             ask=ask_query)
                 answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
