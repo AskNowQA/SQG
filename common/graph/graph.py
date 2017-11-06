@@ -178,21 +178,24 @@ class Graph:
             for new_node in generic_nodes:
                 for edge_info in to_be_updated_edges:
                     if edge_info["node"] != new_node:
+                        new_path = None
                         if edge_info["type"] == "source":
-                            new_paths.append(
-                                path.replace_edge(edge_info["edge"], edge_info["edge"].copy(source_node=new_node)))
+                            new_path = path.replace_edge(edge_info["edge"],
+                                                         edge_info["edge"].copy(source_node=new_node))
                         if edge_info["type"] == "dest":
-                            new_paths.append(
-                                path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node)))
+                            new_path = path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node))
+                        if new_path is not None and new_path not in new_paths:
+                            new_paths.append(new_path)
 
         for new_path in new_paths:
             generic_equal = False
-            for path in paths:
-                if path.generic_equal_with_substitutable_id(new_path):
-                    generic_equal = True
-                    break
-            if not generic_equal:
-                paths.append(new_path)
+            if new_path not in paths:
+                for path in paths:
+                    if path.generic_equal_with_substitutable_id(new_path):
+                        generic_equal = True
+                        break
+                if not generic_equal:
+                    paths.append(new_path)
 
         if len(paths) == 1:
             batch_edges = paths[0]
