@@ -78,7 +78,16 @@ class QueryBuilder:
                 item["answer"] = answerset
                 filtered_output.append(item)
 
-        return filtered_output
+        filtered_output_with_no_duplicate_answer = []
+        for n, ii in enumerate(filtered_output):
+            duplicate_answer = False
+            for item in filtered_output[n + 1:]:
+                if item["answer"] == ii["answer"]:
+                    duplicate_answer = True
+            if not duplicate_answer:
+                filtered_output_with_no_duplicate_answer.append(ii)
+
+        return filtered_output_with_no_duplicate_answer
 
     def __find_paths(self, graph, entity_uris, relation_uris, edges, output_paths=Paths()):
         new_output_paths = Paths([])
