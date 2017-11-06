@@ -1,4 +1,4 @@
-from common.uri import Uri
+from common.container.uri import Uri
 import numpy as np
 
 

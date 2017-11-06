@@ -1,5 +1,5 @@
 from parser.webqsp import WebQSP
-from common.stats import Stats
+from common.utility.stats import Stats
 
 
 def prepare_dataset(ds):

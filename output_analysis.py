@@ -1,5 +1,5 @@
 import json
-from common.stats import Stats
+from common.utility.stats import Stats
 import matplotlib.pyplot as plt
 
 

@@ -4,9 +4,9 @@ from parser.webqsp import WebQSP
 from parser.qald import Qald
 from kb.dbpedia import DBpedia
 from kb.freebase import Freebase
-from common.answerset import AnswerSet
+from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
-from common.stats import Stats
+from common.utility.stats import Stats
 from jerrl.jerrl import Jerrl
 import json
 import argparse

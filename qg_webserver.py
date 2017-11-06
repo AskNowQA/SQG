@@ -3,7 +3,7 @@ import flask
 from common.graph.graph import Graph
 from kb.dbpedia import DBpedia
 from kb.freebase import Freebase
-from common.uri import Uri
+from common.container.uri import Uri
 
 app = flask.Flask(__name__)
 

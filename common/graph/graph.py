@@ -1,9 +1,9 @@
-from common.answerset import AnswerSet
+from common.container.answerset import AnswerSet
 from node import Node
 from edge import Edge
 from path import Path
 from paths import Paths
-from common.uri import Uri
+from common.container.uri import Uri
 from common.utility.mylist import MyList
 import itertools
 
