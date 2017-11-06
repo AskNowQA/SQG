@@ -1,6 +1,6 @@
 import itertools
-from common.linkeditem import LinkedItem
-from common.uri import Uri
+from common.container.linkeditem import LinkedItem
+from common.container.uri import Uri
 
 
 class Jerrl:

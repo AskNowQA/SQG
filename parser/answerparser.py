@@ -1,6 +1,6 @@
-from common.answer import Answer
-from common.answerrow import AnswerRow
-from common.uri import Uri
+from common.container.answer import Answer
+from common.container.answerrow import AnswerRow
+from common.container.uri import Uri
 
 
 class AnswerParser(object):

@@ -1,6 +1,6 @@
 import json, re
-from common.qapair import QApair
-from common.uri import Uri
+from common.container.qapair import QApair
+from common.container.uri import Uri
 from kb.dbpedia import DBpedia
 from answerparser import AnswerParser
 

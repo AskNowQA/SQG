@@ -1,9 +1,9 @@
 import json
 import re
-from common.qapair import QApair
-from common.uri import Uri
-from common.answerrow import AnswerRow
-from common.answer import Answer
+from common.container.qapair import QApair
+from common.container.uri import Uri
+from common.container.answerrow import AnswerRow
+from common.container.answer import Answer
 from kb.freebase import Freebase
 from answerparser import AnswerParser
 
