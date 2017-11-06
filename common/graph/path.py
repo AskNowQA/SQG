@@ -86,7 +86,7 @@ class Path(list):
                                 edge2.dest_node) and edge1.dest_node.are_all_uris_generic() \
                                 and edge2.dest_node.are_all_uris_generic():
                             output.append(
-                                frozenset([edge1.source_node.first_uri_if_only(), edge2.source_node.first_uri_if_only()]))
+                                frozenset([edge1.dest_node.first_uri_if_only(), edge2.dest_node.first_uri_if_only()]))
                         if edge1.uri.is_generic() and edge1.uri.generic_equal(
                                 edge2.uri):
                             output.append(
