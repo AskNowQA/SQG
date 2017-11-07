@@ -1,6 +1,7 @@
 from node import Node
 from edge import Edge
 from common.container.uri import Uri
+from common.container.linkeditem import LinkedItem
 from common.utility.mylist import MyList
 import itertools
 
@@ -9,7 +10,7 @@ class Graph:
     def __init__(self, kb):
         self.kb = kb
         self.nodes, self.edges = set(), set()
-        self.entity_uris, self.relation_uris = [], []
+        self.entity_items, self.relation_items = [], []
         self.suggest_retrieve_id = 0
 
     def create_or_get_node(self, uris, mergable=False):
@@ -43,40 +44,43 @@ class Graph:
         if edge.dest_node.is_disconnected():
             self.remove_node(edge.dest_node)
 
-    def __one_hop_graph(self, entity_uris, relation_uris, number_of_entities=1):
-        for relation_uri in relation_uris:
-            for entity_uri in itertools.combinations(entity_uris, number_of_entities):
-                result = self.kb.one_hop_graph(entity_uri[0], relation_uri,
-                                               entity_uri[1] if len(entity_uri) > 1 else None)
-                if result is not None:
-                    for item in result:
-                        m = int(item["m"]["value"])
-                        uri = entity_uri[1] if len(entity_uri) > 1 else 0
-                        if m == 0:
-                            n_s = self.create_or_get_node(uri, True)
-                            n_d = self.create_or_get_node(entity_uri[0])
-                            e = Edge(n_s, relation_uri, n_d)
-                            self.add_edge(e)
-                        elif m == 1:
-                            n_s = self.create_or_get_node(entity_uri[0])
-                            n_d = self.create_or_get_node(uri, True)
-                            e = Edge(n_s, relation_uri, n_d)
-                            self.add_edge(e)
-                        elif m == 2:
-                            n_s = self.create_or_get_node(uri)
-                            n_d = self.create_or_get_node(relation_uri)
-                            e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
-                            self.add_edge(e)
+    def __one_hop_graph(self, entity_items, relation_items, number_of_entities=1):
+        for relation_item in relation_items:
+            for relation_uri in relation_item.uris:
+                for entity_uris in itertools.product(*[items.uris for items in entity_items]):
+                    for entity_uri in itertools.combinations(entity_uris, number_of_entities):
+                        result = self.kb.one_hop_graph(entity_uri[0], relation_uri,
+                                                       entity_uri[1] if len(entity_uri) > 1 else None)
+                        if result is not None:
+                            for item in result:
+                                m = int(item["m"]["value"])
+                                uri = entity_uri[1] if len(entity_uri) > 1 else 0
+                                if m == 0:
+                                    n_s = self.create_or_get_node(uri, True)
+                                    n_d = self.create_or_get_node(entity_uri[0])
+                                    e = Edge(n_s, relation_uri, n_d)
+                                    self.add_edge(e)
+                                elif m == 1:
+                                    n_s = self.create_or_get_node(entity_uri[0])
+                                    n_d = self.create_or_get_node(uri, True)
+                                    e = Edge(n_s, relation_uri, n_d)
+                                    self.add_edge(e)
+                                elif m == 2:
+                                    n_s = self.create_or_get_node(uri)
+                                    n_d = self.create_or_get_node(relation_uri)
+                                    e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
+                                    self.add_edge(e)
 
-    def find_minimal_subgraph(self, entity_uris, relation_uris, ask_query=False, sort_query=False):
-        self.entity_uris, self.relation_uris = MyList(entity_uris), MyList(relation_uris)
+    def find_minimal_subgraph(self, entity_items, relation_items, ask_query=False, sort_query=False):
+        self.entity_items, self.relation_items = MyList(entity_items), MyList(relation_items)
 
         # Find subgraphs that are consist of at least one entity and exactly one relation
-        self.__one_hop_graph(entity_uris, relation_uris, int(ask_query) + 1)
+        self.__one_hop_graph(entity_items, relation_items, int(ask_query) + 1)
 
         if len(self.edges) > 100:
             return
 
+        # It further extends the edges that have one generic node and one entity node
         for edge in itertools.islice(self.edges, 0, len(self.edges)):
             mergeable_node = None
             entity_node = None
@@ -92,17 +96,21 @@ class Graph:
                 entity_node = edge.dest_node
 
             if mergeable_node is not None and entity_node is not None:
-                self.__one_hop_graph(self.entity_uris - entity_node.uris,
-                                     self.relation_uris - [e.uri for e in entity_node.inbound + entity_node.outbound])
+                self.__one_hop_graph(
+                    self.entity_items - LinkedItem.list_contains_uris(self.entity_items, entity_node.uris),
+                    self.relation_items - LinkedItem.list_contains_uris(relation_items,
+                                                                        [e.uri for e in
+                                                                         entity_node.inbound + entity_node.outbound]))
 
         # Extend the existing edges with another hop
-        self.__extend_edges(self.edges, relation_uris)
+        self.__extend_edges(self.edges, relation_items)
 
-    def __extend_edges(self, edges, relation_uris):
+    def __extend_edges(self, edges, relation_items):
         new_edges = set()
-        for relation_uri in relation_uris:
-            for edge in edges:
-                new_edges.update(self.__extend_edge(edge, relation_uri))
+        for relation_item in relation_items:
+            for relation_uri in relation_item.uris:
+                for edge in edges:
+                    new_edges.update(self.__extend_edge(edge, relation_uri))
         for e in new_edges:
             self.add_edge(e)
 
@@ -152,10 +160,15 @@ class Graph:
         return Uri.generic_uri(uri)
 
     def generalize_nodes(self):
-        uris = self.entity_uris + self.relation_uris
+        """
+        if there are nodes which have none-generic uri that is not in the list of possible entity/relation,
+        such uris will be replaced by a generic uri
+        :return: None
+        """
+        uris = sum([items.uris for items in self.entity_items] + [items.uris for items in self.relation_items], [])
         for node in self.nodes:
             for uri in node.uris:
-                if not (uri in uris or uri.is_generic()):
+                if uri not in uris and not uri.is_generic():
                     generic_uri = self.__get_generic_uri(uri, node.inbound + node.outbound)
                     node.replace_uri(uri, generic_uri)
 
