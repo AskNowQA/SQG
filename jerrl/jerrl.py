@@ -8,8 +8,8 @@ class Jerrl:
         pass
 
     def do(self, qapair):
-        return [u for u in qapair.sparql.uris if u.is_entity()], \
-               [u for u in qapair.sparql.uris if u.is_ontology()]
+        return [LinkedItem("", [u]) for u in qapair.sparql.uris if u.is_entity()], \
+               [LinkedItem("", [u]) for u in qapair.sparql.uris if u.is_ontology()]
 
     def find_mentions(self, text, uris):
         output = []
