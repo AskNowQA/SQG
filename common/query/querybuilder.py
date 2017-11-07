@@ -57,10 +57,10 @@ class QueryBuilder:
             ids = [edge.max_generic_id() for edge in batch_edges]
             if len(ids) > 0:
                 max_generic_id = max(ids)
-            if self.suggest_retrieve_id > max_generic_id:
-                self.suggest_retrieve_id = max_generic_id
-            return [{"suggested_id": self.suggest_retrieve_id,
-                     "where": [edge.sparql_format(self.kb) for edge in batch_edges]}]
+            if graph.suggest_retrieve_id > max_generic_id:
+                graph.suggest_retrieve_id = max_generic_id
+            return [{"suggested_id": graph.suggest_retrieve_id,
+                     "where": [edge.sparql_format(graph.kb) for edge in batch_edges]}]
 
         paths.sort(key=lambda x: x.confidence, reverse=True)
         output = paths.to_where(graph.kb)
