@@ -1,15 +1,18 @@
 #!flask/bin/python
 import flask
-from kb.dbpedia import DBpedia
-from kb.freebase import Freebase
-from common.graph.graph import Graph
-from common.query.querybuilder import QueryBuilder
+import argparse
+from orchestrator import Orchestrator
 from common.container.uri import Uri
 from common.container.linkeditem import LinkedItem
 from parser.lc_quad import LC_QaudParser
 from parser.webqsp import WebQSPParser
+from learning.classifier.svmclassifier import SVMClassifier
+from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
 
 app = flask.Flask(__name__)
+queryBuilder = None
+kb = None
+classifier = None
 
 
 @app.route('/qg/api/v1.0/query', methods=['POST'])
@@ -20,16 +23,6 @@ def generate_query():
     question = flask.request.json['question']
     raw_entities = flask.request.json['entities']
     raw_relations = flask.request.json['relations']
-    kb = flask.request.json.get('kb', "dbpedia").lower()
-
-    if kb == "dbpedia":
-        kb = DBpedia()
-        parser = LC_QaudParser()
-    elif kb == "freebase":
-        kb = Freebase()
-        parser = WebQSPParser()
-    else:
-        flask.abort(400)
 
     entities = []
     for item in raw_entities:
@@ -41,15 +34,7 @@ def generate_query():
         uris = [Uri(uri["uri"], kb.parse_uri, uri["confidence"]) for uri in item["uris"]]
         relations.append(LinkedItem(item["surface"], uris))
 
-    ask_query = False
-    sort_query = False
-    count_query = False
-
-    graph = Graph(kb)
-    querybuilder = QueryBuilder()
-    graph.find_minimal_subgraph(entities, relations, ask_query, sort_query)
-    where = querybuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
-
+    where = queryBuilder.generate_query(question, entities, relations)
     return flask.jsonify(
         {'queries': [kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"])) for item in where]}), 201
 
@@ -60,4 +45,21 @@ def not_found(error):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Generate SPARQL query')
+    parser.add_argument("--kb", help="'dbpedia' (default) or 'freebase'", default="dbpedia", dest="kb")
+    parser.add_argument("--classifier", help="'svm' (default) or 'naivebayes'", default="svm", dest="classifier")
+    args = parser.parse_args()
+
+    if args.kb == "dbpedia":
+        parser = LC_QaudParser()
+    elif args.kb == "freebase":
+        parser = WebQSPParser()
+
+    kb = parser.kb
+    if args.classifier == "svm":
+        classifier = SVMClassifier()
+    elif args.classifier == "naivebayes":
+        classifier = NaiveBayesClassifier()
+
+    queryBuilder = Orchestrator(classifier, parser)
     app.run(debug=True)
