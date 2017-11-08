@@ -42,5 +42,5 @@ python qg_webserver.py
 
 Here is an example of how to use the api:
 ``
-curl -i -H "Content-Type: application/json" -X POST -d '{"question":"What is the hometown of Nader Guirat, where Josef Johansson was born too?", "relations": ["http://dbpedia.org/property/birthPlace", "http://dbpedia.org/ontology/hometown"], "entities":["http://dbpedia.org/resource/Josef_Johansson", "http://dbpedia.org/resource/Nader_Guirat"], "kb":"dbpedia"}' http://localhost:5000/qg/api/v1.0/query
+curl -i -H "Content-Type: application/json" -X POST -d '{"question":"What is the hometown of Nader Guirat, where Josef Johansson was born too?","relations":[{"surface":"","uris":[{"confidence":1,"uri":"http://dbpedia.org/property/birthPlace"}]},{"surface":"","uris":[{"confidence":1,"uri":"http://dbpedia.org/ontology/hometown"}]}],"entities":[{"surface":"","uris":[{"confidence":0.7,"uri":"http://dbpedia.org/resource/Josef_Johansson"},{"confidence":0.3,"uri":"http://dbpedia.org/resource/Barack_Obama"}]},{"surface":"","uris":[{"confidence":1,"uri":"http://dbpedia.org/resource/Nader_Guirat"}]}],"kb":"dbpedia"}' http://localhost:5000/qg/api/v1.0/query
 ``

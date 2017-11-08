@@ -1,4 +1,5 @@
 from common.container.answerset import AnswerSet
+from common.container.linkeditem import LinkedItem
 from common.graph.path import Path
 from common.graph.paths import Paths
 from common.utility.mylist import MyList
@@ -9,7 +10,7 @@ class QueryBuilder:
         graph.generalize_nodes()
         graph.merge_edges()
         output = []
-        paths = self.__find_paths(graph, graph.entity_uris, graph.relation_uris, graph.edges)
+        paths = self.__find_paths(graph, graph.entity_items, graph.relation_items, graph.edges)
 
         # Expand coverage by changing generic ids
         new_paths = []
@@ -89,28 +90,32 @@ class QueryBuilder:
 
         return filtered_output_with_no_duplicate_answer
 
-    def __find_paths(self, graph, entity_uris, relation_uris, edges, output_paths=Paths()):
+    def __find_paths(self, graph, entity_items, relation_items, edges, output_paths=Paths()):
         new_output_paths = Paths([])
 
-        if len(relation_uris) == 0:
-            if len(entity_uris) > 0:
+        if len(relation_items) == 0:
+            if len(entity_items) > 0:
                 return Paths()
             return output_paths
 
         used_relations = []
-        for relation in relation_uris:
-            used_relations = used_relations + [relation]
-            for edge in self.__find_edges(edges, relation):
-                entities = MyList()
-                if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
-                    entities.extend(edge.source_node.uris)
-                if not (edge.dest_node.are_all_uris_generic() or edge.uri.is_type()):
-                    entities.extend(edge.dest_node.uris)
+        for relation_item in relation_items:
+            for relation in relation_item.uris:
+                used_relations = used_relations + [relation]
+                for edge in self.__find_edges(edges, relation):
+                    entities = MyList()
+                    if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
+                        entities.extend(edge.source_node.uris)
+                    if not (edge.dest_node.are_all_uris_generic() or edge.uri.is_type()):
+                        entities.extend(edge.dest_node.uris)
 
-                new_paths = self.__find_paths(graph, entity_uris - entities, relation_uris - used_relations,
-                                              edges - {edge},
-                                              output_paths=output_paths.extend(edge))
-                new_output_paths.add(new_paths, lambda path: len(path) >= len(graph.relation_uris))
+                    new_paths = self.__find_paths(graph,
+                                                  entity_items - LinkedItem.list_contains_uris(entity_items, entities),
+                                                  relation_items - LinkedItem.list_contains_uris(relation_items,
+                                                                                                 used_relations),
+                                                  edges - {edge},
+                                                  output_paths=output_paths.extend(edge))
+                    new_output_paths.add(new_paths, lambda path: len(path) >= len(graph.relation_items))
 
         return new_output_paths
 

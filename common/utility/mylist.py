@@ -19,7 +19,7 @@ class MyList(list):
             l1 = Counter(self)
             l2 = Counter(other_)
             output = []
-            counts = l1-l2
+            counts = l1 - l2
             for item in counts:
                 output.extend([item] * counts[item])
 
