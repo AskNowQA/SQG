@@ -28,56 +28,41 @@ def qg(kb, parser, qapair):
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
     print graph
     print "-----"
-    where = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
+    wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
-    output_where = [" .".join(item["where"]) for item in where]
-    if len(where) == 0:
+    output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
+    if len(wheres) == 0:
         return "-without_path", output_where
-    elif len(where) == 1:
-        item = where[0]
-        print item
-        if "answer" in item:
-            answerset = item["answer"]
+    correct = False
+
+    for idx in range(len(wheres)):
+        where = wheres[idx]
+        if "answer" in where:
+            answerset = where["answer"]
+            target_var = where["target_var"]
         else:
-            raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]), count=count_query,
-                                        ask=ask_query)
+            target_var = "?u_" + str(item["suggested_id"])
+            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+
+        output_where[idx]["target_var"] = target_var
         if answerset == qapair.answerset:
-            return "correct", output_where
+            correct = True
+            output_where[idx]["correct"] = True
+            output_where[idx]["target_var"] = target_var
         else:
-            var = ""
-            if item["suggested_id"] == 1:
-                var = "?u_0"
-            elif item["suggested_id"] == 0:
-                var = "?u_1"
-            raw_answer = kb.query_where(item["where"], return_vars=var, count=count_query, ask=ask_query)
+            if target_var == "?u_0":
+                target_var = "?u_1"
+            else:
+                target_var = "?u_0"
+            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
-                return "multiple_var_with_correct_answer", output_where
-            return "-incorrect", output_where
-    else:
-        for item in where:
-            print item
-            if "answer" in item:
-                answerset = item["answer"]
-            else:
-                raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]),
-                                            count=count_query,
-                                            ask=ask_query)
-                answerset = AnswerSet(raw_answer, parser.parse_queryresult)
-            if answerset == qapair.answerset:
-                return "multiple_path_with_correct_answer", output_where
-            else:
-                var = ""
-                if item["suggested_id"] == 1:
-                    var = "?u_0"
-                elif item["suggested_id"] == 0:
-                    var = "?u_1"
-                raw_answer = kb.query_where(item["where"], return_vars=var, count=count_query, ask=ask_query)
-                answerset = AnswerSet(raw_answer, parser.parse_queryresult)
-                if answerset == qapair.answerset:
-                    return "multiple_path_and_var_with_correct_answer", output_where
-        return "-multiple_path_without_correct_answer", output_where
+                correct = True
+                output_where[idx]["correct"] = True
+                output_where[idx]["target_var"] = target_var
+
+    return "correct" if correct else "-incorrect", output_where
 
 
 if __name__ == "__main__":
