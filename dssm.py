@@ -4,7 +4,7 @@ from parser.lc_quad import LC_Qaud
 from lsa.dssm import DSSM
 from common.preprocessing.preprocessor import Preprocessor
 from common.graph.graph import Graph
-from jerrl.jerrl import Jerrl
+from linker.jerrl import Jerrl
 
 
 def qapairs_to_triple(qapairs):
