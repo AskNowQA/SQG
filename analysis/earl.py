@@ -2,6 +2,7 @@ from parser.lc_quad_linked import LC_Qaud_Linked
 from linker.earl import Earl
 from linker.jerrl import Jerrl
 from common.utility.stats import Stats
+from tqdm import tqdm
 
 
 def do(list1, list2):
@@ -30,9 +31,9 @@ if __name__ == "__main__":
     jerrl = Jerrl()
     earl = Earl("../data/LC-QUAD/EARL/output.json")
 
-    for qapair in ds.qapairs:
+    for qapair in tqdm(ds.qapairs):
         e1, r1 = jerrl.do(qapair)
-        e2, r2 = earl.do(qapair, 100)
+        e2, r2 = earl.do(qapair, force_gold=False, top=100)
         if len(e2) == 0:
             stats.inc("earl_no_entity")
         if len(r2) == 0:
