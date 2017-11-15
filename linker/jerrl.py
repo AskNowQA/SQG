@@ -8,8 +8,22 @@ class Jerrl:
         pass
 
     def do(self, qapair):
-        return [LinkedItem("", [u]) for u in qapair.sparql.uris if u.is_entity()], \
-               [LinkedItem("", [u]) for u in qapair.sparql.uris if u.is_ontology()]
+        entities = []
+        relations = []
+        for u in qapair.sparql.uris:
+            question = qapair.question.text
+            mentions = self.find_mentions(question, [u])
+            surface = ""
+            if len(mentions) > 0:
+                surface = question[mentions[0]["start"]:mentions[0]["end"]]
+
+            linked_item = LinkedItem(surface, [u])
+            if u.is_entity():
+                entities.append(linked_item)
+            if u.is_ontology():
+                relations.append(linked_item)
+
+        return entities, relations
 
     def find_mentions(self, text, uris):
         output = []
