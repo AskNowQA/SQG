@@ -1,30 +1,31 @@
-from parser.lc_quad import LC_Qaud
 from parser.lc_quad_linked import LC_Qaud_Linked
 from parser.webqsp import WebQSP
 from parser.qald import Qald
-from kb.dbpedia import DBpedia
-from kb.freebase import Freebase
 from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
-from jerrl.jerrl import Jerrl
+from linker.jerrl import Jerrl
+from linker.earl import Earl
 from common.query.querybuilder import QueryBuilder
 import json
 import argparse
+import logging
+import common.utility.utility
 
 
-def qg(kb, parser, qapair):
+def qg(linker, kb, parser, qapair):
     print qapair.sparql
     print qapair.question
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
     sort_query = "order by" in qapair.sparql.raw_query.lower()
-    jerrl = Jerrl()
-    entities, ontologies = jerrl.do(qapair)
+    entities, ontologies = linker.do(qapair)
 
     graph = Graph(kb)
     queryBuilder = QueryBuilder()
+
+    logger.info("start finding the minimal subgraph")
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
     print graph
     print "-----"
@@ -66,6 +67,9 @@ def qg(kb, parser, qapair):
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    common.utility.utility.setup_logging()
+
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=0, dest="dataset")
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
@@ -76,7 +80,7 @@ if __name__ == "__main__":
     stats = Stats()
     t = args.dataset
     output_file = args.file_name
-
+    linker = Jerrl()
     if t == 0:
         ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer6.json")
         ds.load()
@@ -120,7 +124,7 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(ds.parser.kb, ds.parser, qapair)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
