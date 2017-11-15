@@ -20,7 +20,7 @@ def qg(linker, kb, parser, qapair):
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
     sort_query = "order by" in qapair.sparql.raw_query.lower()
-    entities, ontologies = linker.do(qapair)
+    entities, ontologies = linker.do(qapair, force_gold=True)
 
     graph = Graph(kb)
     queryBuilder = QueryBuilder()
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     stats = Stats()
     t = args.dataset
     output_file = args.file_name
-    linker = Jerrl()
+    linker = Earl()
     if t == 0:
         ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer6.json")
         ds.load()
