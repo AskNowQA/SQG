@@ -14,12 +14,11 @@ class Earl:
             for item in self.raw_data:
                 self.questions[item["question"]] = item
 
-    def do(self, qapair):
+    def do(self, qapair, top=5):
         if qapair.question.text in self.questions:
             item = self.questions[qapair.question.text]
-            entities = self.__parse(item, "entities", 5)
-            relations = self.__parse(item, "relations", 5)
-
+            entities = self.__parse(item, "entities", top)
+            relations = self.__parse(item, "relations", top)
             return entities, relations
         else:
             return [], []
