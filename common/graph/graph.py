@@ -94,28 +94,6 @@ class Graph:
         if len(self.edges) > 100:
             return
 
-        # It further extends the edges that have one generic node and one entity node
-        self.logger.info("Extend edges with generic node")
-        for edge in itertools.islice(self.edges, 0, len(self.edges)):
-            mergeable_node = None
-            entity_node = None
-
-            if edge.source_node.mergable:
-                mergeable_node = edge.source_node
-            else:
-                entity_node = edge.source_node
-
-            if edge.dest_node.mergable:
-                mergeable_node = edge.dest_node
-            else:
-                entity_node = edge.dest_node
-
-            if mergeable_node is not None and entity_node is not None:
-                self.__one_hop_graph(
-                    self.entity_items - LinkedItem.list_contains_uris(self.entity_items, entity_node.uris),
-                    self.relation_items - LinkedItem.list_contains_uris(relation_items,
-                                                                        [e.uri for e in
-                                                                         entity_node.inbound + entity_node.outbound]))
         # Extend the existing edges with another hop
         self.logger.info("Extend edges with another hop")
         self.__extend_edges(self.edges, relation_items)
