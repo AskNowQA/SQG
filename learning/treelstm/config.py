@@ -18,7 +18,7 @@ def parse_args():
                         help='Size of TreeLSTM cell state')
     parser.add_argument('--hidden_dim', default=50, type=int,
                         help='Size of classifier MLP')
-    parser.add_argument('--num_classes', default=5, type=int,
+    parser.add_argument('--num_classes', default=2, type=int,
                         help='Number of classes in dataset')
     # training arguments
     parser.add_argument('--epochs', default=15, type=int,
