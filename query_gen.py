@@ -75,12 +75,17 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
+    parser.add_argument("--linker", help="0: gold linker, 1: EARL", type=int, default=-1, dest="linker")
     args = parser.parse_args()
 
     stats = Stats()
     t = args.dataset
     output_file = args.file_name
-    linker = Earl()
+    if args.linker == 0:
+        linker = Jerrl()
+    else:
+        linker = Earl()
+
     if t == 0:
         ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer6.json")
         ds.load()
