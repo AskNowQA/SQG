@@ -23,6 +23,8 @@ class LCQuadDataset(data.Dataset):
         self.ltrees = self.read_trees(os.path.join(path, 'a.parents'))
         self.rtrees = self.read_trees(os.path.join(path, 'b.parents'))
 
+        self.labels = self.read_labels(os.path.join(path, 'sim.txt'))
+
         self.size = len(self.lsentences)
 
     def __len__(self):
@@ -33,7 +35,7 @@ class LCQuadDataset(data.Dataset):
         rtree = deepcopy(self.rtrees[index])
         lsent = deepcopy(self.lsentences[index])
         rsent = deepcopy(self.rsentences[index])
-        label = 0  # deepcopy(self.labels[index])
+        label = deepcopy(self.labels[index])
         return (ltree, lsent, rtree, rsent, label)
 
     def read_sentences(self, filename):
@@ -77,6 +79,12 @@ class LCQuadDataset(data.Dataset):
                         prev = tree
                         idx = parent
         return root
+
+    def read_labels(self, filename):
+        with open(filename, 'r') as f:
+            labels = list(map(lambda x: float(x), f.readlines()))
+            labels = torch.Tensor(labels)
+        return labels
 
 
 # Dataset class for SICK dataset
