@@ -8,6 +8,8 @@
 output
 tmp
 train
+learning/treelstm/checkpoints/
+learning/treelstm/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
