@@ -30,8 +30,7 @@ from config import parse_args
 from trainer import Trainer
 
 
-# MAIN BLOCK
-def main():
+def main(load_checkpoint=False):
     global args
     args = parse_args()
     # global logger
@@ -111,7 +110,7 @@ def main():
         args.hidden_dim,
         args.num_classes,
         args.sparse)
-    criterion = nn.HingeEmbeddingLoss()  # nn.KLDivLoss()
+    criterion = nn.KLDivLoss()  # nn.HingeEmbeddingLoss()
     if args.cuda:
         model.cuda(), criterion.cuda()
     if args.optim == 'adam':
@@ -144,12 +143,19 @@ def main():
         emb = emb.cuda()
     model.emb.weight.data.copy_(emb)
 
+    checkpoint_filename = '%s.pt' % os.path.join(args.save, args.expname)
+    if load_checkpoint:
+        checkpoint = torch.load(checkpoint_filename)
+        model.load_state_dict(checkpoint['model'])
+        args.epochs = 1
+
     # create trainer object for training and testing
     trainer = Trainer(args, model, criterion, optimizer)
 
     best = -float('inf')
     for epoch in range(args.epochs):
-        train_loss = trainer.train(train_dataset)
+        if not load_checkpoint:
+            train_loss = trainer.train(train_dataset)
         train_loss, train_pred = trainer.test(train_dataset)
         dev_loss, dev_pred = trainer.test(dev_dataset)
         test_loss, test_pred = trainer.test(test_dataset)
@@ -168,12 +174,14 @@ def main():
 
         if best < test_pearson:
             best = test_pearson
+            logger.debug('==> New optimum found, checkpointing everything now...')
         checkpoint = {'model': trainer.model.state_dict(), 'optim': trainer.optimizer,
                       'pearson': test_pearson, 'mse': test_mse,
                       'args': args, 'epoch': epoch}
-        logger.debug('==> New optimum found, checkpointing everything now...')
-        torch.save(checkpoint, '%s.pt' % os.path.join(args.save, args.expname))
+
+        if not load_checkpoint:
+            torch.save(checkpoint, checkpoint_filename)
 
 
 if __name__ == "__main__":
-    main()
+    main(load_checkpoint=False)
