@@ -105,8 +105,8 @@ def split(filepath, dst_dir):
             i = item["id"]
             a = item["question"]
             for query in item["generated_queries"]:
-                b = query
-                sim = "0"
+                b = query["query"]
+                sim = str(1 if query["correct"] else -1)
                 idfile.write(i + '\n')
                 afile.write(a.encode('ascii', 'ignore') + '\n')
                 bfile.write(b.encode('ascii', 'ignore') + '\n')
@@ -140,14 +140,24 @@ if __name__ == '__main__':
         os.path.join(lib_dir, 'stanford-parser/stanford-parser-3.5.1-models.jar')])
 
     # split into separate files
-    split(os.path.join(lc_quad_dir, 'LCQuad_train.json'), train_dir)
-    # split(os.path.join(lc_quad_dir, 'SICK_trial.txt'), dev_dir)
-    # split(os.path.join(lc_quad_dir, 'SICK_test_annotated.txt'), test_dir)
+    train_filepath = os.path.join(lc_quad_dir, 'LCQuad_train.json')
+    trail_filepath = os.path.join(lc_quad_dir, 'LCQuad_trial.json')
+    test_filepath = os.path.join(lc_quad_dir, 'LCQuad_test.json')
+
+    ds = json.load(open("../../../output/25.json"))
+    # 70, 20, 10
+    json.dump(ds[:3500], open(train_filepath, "w"))
+    json.dump(ds[3500:4500], open(trail_filepath, "w"))
+    json.dump(ds[4500:], open(test_filepath, "w"))
+
+    split(train_filepath, train_dir)
+    split(trail_filepath, dev_dir)
+    split(test_filepath, test_dir)
 
     # parse sentences
     parse(train_dir, cp=classpath)
-    # parse(dev_dir, cp=classpath)
-    # parse(test_dir, cp=classpath)
+    parse(dev_dir, cp=classpath)
+    parse(test_dir, cp=classpath)
 
     # get vocabulary
     build_vocab(
