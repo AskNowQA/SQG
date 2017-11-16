@@ -8,7 +8,7 @@ from tqdm import tqdm
 def do(list1, list2):
     miss_match = False
     for item in list1:
-        target_uri = e1[0].uris[0]
+        target_uri = item.uris[0]
         found = False
         for e2_item in list2:
             if target_uri in e2_item.uris:
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         if not e:
             stats.inc("matched_entity")
         if not r:
-            stats.inc("matched_entity")
+            stats.inc("matched_relation")
         if not e and not r:
             stats.inc("matched_both")
 
