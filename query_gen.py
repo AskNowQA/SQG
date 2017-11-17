@@ -14,8 +14,8 @@ import common.utility.utility
 
 
 def qg(linker, kb, parser, qapair):
-    print qapair.sparql
-    print qapair.question
+    logger.info(qapair.sparql)
+    logger.info(qapair.question.text)
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
@@ -27,8 +27,7 @@ def qg(linker, kb, parser, qapair):
 
     logger.info("start finding the minimal subgraph")
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
-    print graph
-    print "-----"
+    logger.info(graph)
     wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
     output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
@@ -75,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
-    parser.add_argument("--linker", help="0: gold linker, 1: EARL", type=int, default=-1, dest="linker")
+    parser.add_argument("--linker", help="0: gold linker, 1: EARL", type=int, default=0, dest="linker")
     args = parser.parse_args()
 
     stats = Stats()
@@ -133,13 +132,13 @@ if __name__ == "__main__":
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
-            print result
+            logger.info(result)
 
         if args.max != -1 and stats["total"] > args.max:
             break
-        print "-" * 10
-        print stats
-        print "-" * 10
+        # print "-" * 10
+        logger.info(stats)
+        # print "-" * 10
         output.append(output_row)
 
         if stats["total"] % 100 == 0:
