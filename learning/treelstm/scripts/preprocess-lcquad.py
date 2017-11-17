@@ -67,7 +67,11 @@ def query_parse(filepath):
                                 vars[item].parent.children = [root_node, children[1]]
                             else:
                                 vars[item].parent.children = [children[0], root_node]
-                        vars[item] = [node for node in leveled if node.name == item][0]
+                            vars[item] = [node for node in leveled if node.name == item][0]
+                            break
+                        else:
+                            vars[item] = [node for node in leveled if node.name == item][0]
+
                 if root is None:
                     root = root_node
 
@@ -106,6 +110,9 @@ def split(filepath, dst_dir):
             a = item["question"]
             for query in item["generated_queries"]:
                 b = query["query"]
+                # Empty query should be ignored
+                if len(b) < 5:
+                    continue
                 sim = str(1 if query["correct"] else -1)
                 idfile.write(i + '\n')
                 afile.write(a.encode('ascii', 'ignore') + '\n')
@@ -144,7 +151,7 @@ if __name__ == '__main__':
     trail_filepath = os.path.join(lc_quad_dir, 'LCQuad_trial.json')
     test_filepath = os.path.join(lc_quad_dir, 'LCQuad_test.json')
 
-    ds = json.load(open("../../../output/25.json"))
+    ds = json.load(open("../../../output/lc_quad.json"))
     # 70, 20, 10
     json.dump(ds[:3500], open(train_filepath, "w"))
     json.dump(ds[3500:4500], open(trail_filepath, "w"))
