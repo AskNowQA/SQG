@@ -69,13 +69,15 @@ class QueryBuilder:
         # Remove queries with no answer
         filtered_output = []
         for item in output:
-            raw_answer = graph.kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]),
+            target_var = "?u_" + str(item["suggested_id"])
+            raw_answer = graph.kb.query_where(item["where"], return_vars=target_var,
                                               count=count_query,
                                               ask=ask_query)
             answerset = AnswerSet(raw_answer, parse_queryresult)
 
             # Do not include the query if it does not return any answer, except for boolean query
             if len(answerset.answer_rows) > 0 or ask_query:
+                item["target_var"] = target_var
                 item["answer"] = answerset
                 filtered_output.append(item)
 

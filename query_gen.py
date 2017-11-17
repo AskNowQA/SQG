@@ -1,96 +1,89 @@
-from parser.lc_quad import LC_Qaud
 from parser.lc_quad_linked import LC_Qaud_Linked
 from parser.webqsp import WebQSP
 from parser.qald import Qald
-from kb.dbpedia import DBpedia
-from kb.freebase import Freebase
 from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
-from jerrl.jerrl import Jerrl
+from linker.jerrl import Jerrl
+from linker.earl import Earl
 from common.query.querybuilder import QueryBuilder
 import json
 import argparse
+import logging
+import common.utility.utility
 
 
-def qg(kb, parser, qapair):
-    print qapair.sparql
-    print qapair.question
+def qg(linker, kb, parser, qapair):
+    logger.info(qapair.sparql)
+    logger.info(qapair.question.text)
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
     sort_query = "order by" in qapair.sparql.raw_query.lower()
-    jerrl = Jerrl()
-    entities, ontologies = jerrl.do(qapair)
+    entities, ontologies = linker.do(qapair, force_gold=True)
 
     graph = Graph(kb)
     queryBuilder = QueryBuilder()
-    graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
-    print graph
-    print "-----"
-    where = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
-    output_where = [" .".join(item["where"]) for item in where]
-    if len(where) == 0:
+    logger.info("start finding the minimal subgraph")
+    graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
+    logger.info(graph)
+    wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
+
+    output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
+    if len(wheres) == 0:
         return "-without_path", output_where
-    elif len(where) == 1:
-        item = where[0]
-        print item
-        if "answer" in item:
-            answerset = item["answer"]
+    correct = False
+
+    for idx in range(len(wheres)):
+        where = wheres[idx]
+        if "answer" in where:
+            answerset = where["answer"]
+            target_var = where["target_var"]
         else:
-            raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]), count=count_query,
-                                        ask=ask_query)
+            target_var = "?u_" + str(item["suggested_id"])
+            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+
+        output_where[idx]["target_var"] = target_var
         if answerset == qapair.answerset:
-            return "correct", output_where
+            correct = True
+            output_where[idx]["correct"] = True
+            output_where[idx]["target_var"] = target_var
         else:
-            var = ""
-            if item["suggested_id"] == 1:
-                var = "?u_0"
-            elif item["suggested_id"] == 0:
-                var = "?u_1"
-            raw_answer = kb.query_where(item["where"], return_vars=var, count=count_query, ask=ask_query)
+            if target_var == "?u_0":
+                target_var = "?u_1"
+            else:
+                target_var = "?u_0"
+            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
-                return "multiple_var_with_correct_answer", output_where
-            return "-incorrect", output_where
-    else:
-        for item in where:
-            print item
-            if "answer" in item:
-                answerset = item["answer"]
-            else:
-                raw_answer = kb.query_where(item["where"], return_vars="?u_" + str(item["suggested_id"]),
-                                            count=count_query,
-                                            ask=ask_query)
-                answerset = AnswerSet(raw_answer, parser.parse_queryresult)
-            if answerset == qapair.answerset:
-                return "multiple_path_with_correct_answer", output_where
-            else:
-                var = ""
-                if item["suggested_id"] == 1:
-                    var = "?u_0"
-                elif item["suggested_id"] == 0:
-                    var = "?u_1"
-                raw_answer = kb.query_where(item["where"], return_vars=var, count=count_query, ask=ask_query)
-                answerset = AnswerSet(raw_answer, parser.parse_queryresult)
-                if answerset == qapair.answerset:
-                    return "multiple_path_and_var_with_correct_answer", output_where
-        return "-multiple_path_without_correct_answer", output_where
+                correct = True
+                output_where[idx]["correct"] = True
+                output_where[idx]["target_var"] = target_var
+
+    return "correct" if correct else "-incorrect", output_where
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    common.utility.utility.setup_logging()
+
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=0, dest="dataset")
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
+    parser.add_argument("--linker", help="0: gold linker, 1: EARL", type=int, default=0, dest="linker")
     args = parser.parse_args()
 
     stats = Stats()
     t = args.dataset
     output_file = args.file_name
+    if args.linker == 0:
+        linker = Jerrl()
+    else:
+        linker = Earl()
 
     if t == 0:
         ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer6.json")
@@ -135,17 +128,17 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(ds.parser.kb, ds.parser, qapair)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
-            print result
+            logger.info(result)
 
         if args.max != -1 and stats["total"] > args.max:
             break
-        print "-" * 10
-        print stats
-        print "-" * 10
+        # print "-" * 10
+        logger.info(stats)
+        # print "-" * 10
         output.append(output_row)
 
         if stats["total"] % 100 == 0:

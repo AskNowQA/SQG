@@ -1,7 +1,7 @@
 import json
 from common.utility.stats import Stats
 import matplotlib.pyplot as plt
-
+import argparse
 
 def load_ds(name):
     with open("output/{}.json".format(name)) as data_file:
@@ -104,19 +104,25 @@ def bar_chart_per_feature(input_json):
 
 
 if __name__ == "__main__":
-    ds_1 = load_ds("21")
+
+    parser = argparse.ArgumentParser(description='Analyse the output of query generator')
+    parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
+    args = parser.parse_args()
+
+    ds_1 = load_ds(args.file_name)
     print default(ds_1)
-    multiple_path_with_correct_answer = filter(ds_1,
-                                               lambda item: item["answer"] == "multiple_path_with_correct_answer")
 
-    for item in multiple_path_with_correct_answer:
-        print item
-        print ds_1[item]["question"]
-        print ds_1[item]["query"]
-        print "\n".join(ds_1[item]["generated_queries"])
-        print
-
-    print len(multiple_path_with_correct_answer)
+    # multiple_path_with_correct_answer = filter(ds_1,
+    #                                            lambda item: item["answer"] == "multiple_path_with_correct_answer")
+    #
+    # for item in multiple_path_with_correct_answer:
+    #     print item
+    #     print ds_1[item]["question"]
+    #     print ds_1[item]["query"]
+    #     print "\n".join(ds_1[item]["generated_queries"])
+    #     print
+    #
+    # print len(multiple_path_with_correct_answer)
     # ds_1 = load_ds("wq_14")
     # print default(ds_1)
     # bar_chart_per_feature(ds_1)

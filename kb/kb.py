@@ -18,6 +18,8 @@ class KB(object):
         self.endpoint = endpoint
         self.default_graph_uri = default_graph_uri
         self.type_uri = "type_uri"
+        self.one_hop_cache = dict()
+        self.two_hop_cache = dict()
 
     def query(self, q):
         payload = (
@@ -68,6 +70,10 @@ class KB(object):
             entity2_uri = "?u1"
         else:
             entity2_uri = self.uri_to_sparql(entity2_uri)
+
+        cache_id = " ".join([relation_uri, entity1_uri, entity2_uri])
+        if cache_id in self.one_hop_cache:
+            return self.one_hop_cache[cache_id]
         query_types = [u"{ent2} {rel} {ent1}",
                        u"{ent1} {rel} {ent2}",
                        u"?u1 {type} {rel}"]
@@ -87,7 +93,9 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
 
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
-            return response["results"]["bindings"]
+            output = response["results"]["bindings"]
+            self.one_hop_cache[cache_id] = output
+            return output
 
     def two_hop_graph(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
         relation1_uri = self.uri_to_sparql(relation1_uri)
@@ -95,14 +103,20 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
         entity1_uri = self.uri_to_sparql(entity1_uri)
         entity2_uri = self.uri_to_sparql(entity2_uri)
 
+        cache_id = " ".join([relation1_uri, relation2_uri, entity1_uri, entity2_uri])
+        if cache_id in self.two_hop_cache:
+            return self.two_hop_cache[cache_id]
+
         query_types = [u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}",
                        u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1",
                        u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1",
                        u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}",
                        u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]
-        return self.__parallel_query([item.format(rel1=relation1_uri, ent1=entity1_uri,
-                                                  ent2=entity2_uri, rel2=relation2_uri,
-                                                  type=self.type_uri) for item in query_types])
+        output = self.__parallel_query([item.format(rel1=relation1_uri, ent1=entity1_uri,
+                                                    ent2=entity2_uri, rel2=relation2_uri,
+                                                    type=self.type_uri) for item in query_types])
+        self.two_hop_cache[cache_id] = output
+        return output
 
     @staticmethod
     def shorten_prefix():

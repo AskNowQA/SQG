@@ -1,4 +1,4 @@
-from jerrl.jerrl import Jerrl
+from linker.jerrl import Jerrl
 from common.preprocessing.wordhashing import WordHashing
 import numpy as np
 
