@@ -30,7 +30,7 @@ from config import parse_args
 from trainer import Trainer
 
 
-def main(load_checkpoint=False):
+def main():
     global args
     args = parse_args()
     # global logger
@@ -144,7 +144,7 @@ def main(load_checkpoint=False):
     model.emb.weight.data.copy_(emb)
 
     checkpoint_filename = '%s.pt' % os.path.join(args.save, args.expname)
-    if load_checkpoint:
+    if args.mode == "test":
         checkpoint = torch.load(checkpoint_filename)
         model.load_state_dict(checkpoint['model'])
         args.epochs = 1
@@ -154,23 +154,22 @@ def main(load_checkpoint=False):
 
     best = -float('inf')
     for epoch in range(args.epochs):
-        if not load_checkpoint:
+        if args.mode == "train":
             train_loss = trainer.train(train_dataset)
         train_loss, train_pred = trainer.test(train_dataset)
         dev_loss, dev_pred = trainer.test(dev_dataset)
         test_loss, test_pred = trainer.test(test_dataset)
 
-        train_pearson = metrics.pearson(train_pred, train_dataset.labels)
-        train_mse = metrics.mse(train_pred, train_dataset.labels)
         logger.info(
-            '==> Epoch {}, Train \tLoss: {}\tPearson: {}\tMSE: {}'.format(epoch, train_loss, train_pearson, train_mse))
-        dev_pearson = metrics.pearson(dev_pred, dev_dataset.labels)
-        dev_mse = metrics.mse(dev_pred, dev_dataset.labels)
-        logger.info('==> Epoch {}, Dev \tLoss: {}\tPearson: {}\tMSE: {}'.format(epoch, dev_loss, dev_pearson, dev_mse))
+            '==> Epoch {}, Train \tLoss: {} {}'.format(epoch, train_loss,
+                                                       metrics.all(train_pred, train_dataset.labels)))
+        logger.info(
+            '==> Epoch {}, Dev \tLoss: {} {}'.format(epoch, train_loss, metrics.all(dev_pred, dev_dataset.labels)))
+        logger.info(
+            '==> Epoch {}, Test \tLoss: {} {}'.format(epoch, train_loss, metrics.all(test_pred, test_dataset.labels)))
+
         test_pearson = metrics.pearson(test_pred, test_dataset.labels)
         test_mse = metrics.mse(test_pred, test_dataset.labels)
-        logger.info(
-            '==> Epoch {}, Test \tLoss: {}\tPearson: {}\tMSE: {}'.format(epoch, test_loss, test_pearson, test_mse))
 
         if best < test_pearson:
             best = test_pearson
@@ -179,9 +178,9 @@ def main(load_checkpoint=False):
                       'pearson': test_pearson, 'mse': test_mse,
                       'args': args, 'epoch': epoch}
 
-        if not load_checkpoint:
+        if args.mode == "train":
             torch.save(checkpoint, checkpoint_filename)
 
 
 if __name__ == "__main__":
-    main(load_checkpoint=False)
+    main()

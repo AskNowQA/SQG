@@ -3,12 +3,16 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch TreeLSTM for Question-Query Similarity on Dependency Trees')
     #
+    parser.add_argument('--mode', default='train',
+                        help='mode: `train` or `test`')
     parser.add_argument('--data', default='data/lc_quad/',
                         help='path to dataset')
     parser.add_argument('--glove', default='data/glove/',
                         help='directory with GLOVE embeddings')
     parser.add_argument('--save', default='checkpoints/',
                         help='directory to save checkpoints in')
+    parser.add_argument('--load', default='checkpoints/',
+                        help='directory to load checkpoints in')
     parser.add_argument('--expname', type=str, default='test',
                         help='Name to identify experiment')
     # model arguments
