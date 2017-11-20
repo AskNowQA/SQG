@@ -160,30 +160,20 @@ def main():
     for epoch in range(args.epochs):
         if args.mode == "train":
             train_loss = trainer.train(train_dataset)
-
             train_loss, train_pred = trainer.test(train_dataset)
             logger.info(
                 '==> Epoch {}, Train \tLoss: {} {}'.format(epoch, train_loss,
                                                            metrics.all(train_pred, train_dataset.labels)))
             checkpoint = {'model': trainer.model.state_dict(), 'optim': trainer.optimizer,
-                          'pearson': test_pearson, 'mse': test_mse,
                           'args': args, 'epoch': epoch}
             torch.save(checkpoint, checkpoint_filename)
 
         dev_loss, dev_pred = trainer.test(dev_dataset)
         test_loss, test_pred = trainer.test(test_dataset)
-
         logger.info(
             '==> Epoch {}, Dev \tLoss: {} {}'.format(epoch, dev_loss, metrics.all(dev_pred, dev_dataset.labels)))
         logger.info(
             '==> Epoch {}, Test \tLoss: {} {}'.format(epoch, test_loss, metrics.all(test_pred, test_dataset.labels)))
-
-        test_pearson = metrics.pearson(test_pred, test_dataset.labels)
-        test_mse = metrics.mse(test_pred, test_dataset.labels)
-
-        if best < test_pearson:
-            best = test_pearson
-            logger.debug('==> New optimum found, checkpointing everything now...')
 
 
 if __name__ == "__main__":
