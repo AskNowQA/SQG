@@ -14,14 +14,16 @@ class Metrics():
 
     def f1(self, predictions, labels):
         try:
+            predictions = torch.FloatTensor(map(round, predictions))
             true = labels == predictions
             false = labels != predictions
-            assert torch.sum(true) + torch.sum(false) == len(predictions)
-            true_positive = torch.sum(true[labels == 1])
-            true_negative = torch.sum(true[labels == -1])
 
-            false_positive = torch.sum(false[labels == 1])
-            false_negative = torch.sum(false[labels == -1])
+            assert torch.sum(true) + torch.sum(false) == len(predictions)
+            true_positive = torch.sum(true[labels == 2])
+            true_negative = torch.sum(true[labels == 1])
+
+            false_positive = torch.sum(false[labels == 2])
+            false_negative = torch.sum(false[labels == 1])
 
             precision = 1.0 * true_positive / (true_positive + false_positive)
             recall = 1.0 * true_positive / (true_positive + false_negative)
