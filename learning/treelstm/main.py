@@ -111,8 +111,12 @@ def main():
         args.num_classes,
         args.sparse)
     criterion = nn.KLDivLoss()  # nn.HingeEmbeddingLoss()
+
     if args.cuda:
         model.cuda(), criterion.cuda()
+    else:
+        torch.set_num_threads(4)
+    logger.info("number of available cores: {}".format(torch.get_num_threads()))
     if args.optim == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
     elif args.optim == 'adagrad':
@@ -156,30 +160,31 @@ def main():
     for epoch in range(args.epochs):
         if args.mode == "train":
             train_loss = trainer.train(train_dataset)
-        train_loss, train_pred = trainer.test(train_dataset)
+
+            train_loss, train_pred = trainer.test(train_dataset)
+            logger.info(
+                '==> Epoch {}, Train \tLoss: {} {}'.format(epoch, train_loss,
+                                                           metrics.all(train_pred, train_dataset.labels)))
+
+            test_pearson = metrics.pearson(test_pred, test_dataset.labels)
+            test_mse = metrics.mse(test_pred, test_dataset.labels)
+
+            if best < test_pearson:
+                best = test_pearson
+                logger.debug('==> New optimum found, checkpointing everything now...')
+
+            checkpoint = {'model': trainer.model.state_dict(), 'optim': trainer.optimizer,
+                          'pearson': test_pearson, 'mse': test_mse,
+                          'args': args, 'epoch': epoch}
+            torch.save(checkpoint, checkpoint_filename)
+
         dev_loss, dev_pred = trainer.test(dev_dataset)
         test_loss, test_pred = trainer.test(test_dataset)
 
         logger.info(
-            '==> Epoch {}, Train \tLoss: {} {}'.format(epoch, train_loss,
-                                                       metrics.all(train_pred, train_dataset.labels)))
+            '==> Epoch {}, Dev \tLoss: {} {}'.format(epoch, dev_loss, metrics.all(dev_pred, dev_dataset.labels)))
         logger.info(
-            '==> Epoch {}, Dev \tLoss: {} {}'.format(epoch, train_loss, metrics.all(dev_pred, dev_dataset.labels)))
-        logger.info(
-            '==> Epoch {}, Test \tLoss: {} {}'.format(epoch, train_loss, metrics.all(test_pred, test_dataset.labels)))
-
-        test_pearson = metrics.pearson(test_pred, test_dataset.labels)
-        test_mse = metrics.mse(test_pred, test_dataset.labels)
-
-        if best < test_pearson:
-            best = test_pearson
-            logger.debug('==> New optimum found, checkpointing everything now...')
-        checkpoint = {'model': trainer.model.state_dict(), 'optim': trainer.optimizer,
-                      'pearson': test_pearson, 'mse': test_mse,
-                      'args': args, 'epoch': epoch}
-
-        if args.mode == "train":
-            torch.save(checkpoint, checkpoint_filename)
+            '==> Epoch {}, Test \tLoss: {} {}'.format(epoch, test_loss, metrics.all(test_pred, test_dataset.labels)))
 
 
 if __name__ == "__main__":
