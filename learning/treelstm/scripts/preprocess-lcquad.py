@@ -113,7 +113,7 @@ def split(filepath, dst_dir):
                 # Empty query should be ignored
                 if len(b) < 5:
                     continue
-                sim = str(1 if query["correct"] else -1)
+                sim = str(2 if query["correct"] else 1)
                 idfile.write(i + '\n')
                 afile.write(a.encode('ascii', 'ignore') + '\n')
                 bfile.write(b.encode('ascii', 'ignore') + '\n')
