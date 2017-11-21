@@ -7,6 +7,9 @@ import os
 import glob
 import json
 import anytree
+from tqdm import tqdm
+from common.utility.utility import find_mentions
+from parser.lc_quad_linked import LC_Qaud_LinkedParser
 
 
 def make_dirs(dirs):
@@ -47,7 +50,7 @@ def query_parse(filepath):
     with open(filepath) as datafile, \
             open(tokpath, 'w') as tokfile, \
             open(parentpath, 'w') as parentfile:
-        for line in datafile:
+        for line in tqdm(datafile):
             clauses = line.split(" .")
             vars = dict()
             root = None
@@ -98,6 +101,27 @@ def build_vocab(filepaths, dst_path, lowercase=True):
             f.write(w + '\n')
 
 
+def generalize_question(a, b):
+    # replace entity mention in question with a generic symbol
+    parser = LC_Qaud_LinkedParser()
+
+    _, _, uris = parser.parse_sparql(b)
+    uris = [uri for uri in uris if uri.is_entity()]
+
+    i = 0
+    for item in find_mentions(a, uris):
+        a = "{} #en{} {}".format(a[:item["start"]], "t" * (i + 1), a[item["end"]:])
+        b = b.replace(item["uri"].raw_uri, "#en{}".format("t" * (i + 1)))
+
+    # remove extra info from the relation's uri and remaining entities
+    for item in ["http://dbpedia.org/resource/", "http://dbpedia.org/ontology/",
+                 "http://dbpedia.org/property/", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"]:
+        b = b.replace(item, "")
+    b = b.replace("<", "").replace(">", "")
+
+    return a, b
+
+
 def split(filepath, dst_dir):
     with open(filepath) as datafile, \
             open(os.path.join(dst_dir, 'a.txt'), 'w') as afile, \
@@ -105,11 +129,12 @@ def split(filepath, dst_dir):
             open(os.path.join(dst_dir, 'id.txt'), 'w') as idfile, \
             open(os.path.join(dst_dir, 'sim.txt'), 'w') as simfile:
         dataset = json.load(datafile)
-        for item in dataset:
+        for item in tqdm(dataset):
             i = item["id"]
             a = item["question"]
             for query in item["generated_queries"]:
-                b = query["query"]
+                a, b = generalize_question(a, query["query"])
+
                 # Empty query should be ignored
                 if len(b) < 5:
                     continue
@@ -152,18 +177,28 @@ if __name__ == '__main__':
     test_filepath = os.path.join(lc_quad_dir, 'LCQuad_test.json')
 
     ds = json.load(open("../../../output/lc_quad.json"))
-    # 70, 20, 10
-    json.dump(ds[:3500], open(train_filepath, "w"))
-    json.dump(ds[3500:4500], open(trail_filepath, "w"))
-    json.dump(ds[4500:], open(test_filepath, "w"))
+    total = len(ds)
+    train_size = int(.7 * total)
+    dev_size = int(.2 * total)
+    test_size = int(.1 * total)
 
+    json.dump(ds[:train_size], open(train_filepath, "w"))
+    json.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
+    json.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
+
+    print('Split train set')
     split(train_filepath, train_dir)
+    print('Split dev set')
     split(trail_filepath, dev_dir)
+    print('Split test set')
     split(test_filepath, test_dir)
 
     # parse sentences
+    print("parse train set")
     parse(train_dir, cp=classpath)
+    print("parse dev set")
     parse(dev_dir, cp=classpath)
+    print("parse test set")
     parse(test_dir, cp=classpath)
 
     # get vocabulary
