@@ -49,12 +49,13 @@ class WebQSPParser(AnswerParser):
         for t in re.findall("\#[^\n]*", raw_query):
             raw_query = raw_query.replace(t, " ")
 
-        raw_query = raw_query[raw_query.find("WHERE {") + 7:]
-        if raw_query.split("\n")[2].startswith("FILTER"):
-            raw_query = " ".join(raw_query.split("\n")[3:])
-        else:
-            raw_query = raw_query.replace("\n", " ")
-        raw_query = raw_query[:raw_query.rfind("}")]
+        if "WHERE {" in raw_query:
+            raw_query = raw_query[raw_query.find("WHERE {") + 7:]
+            if raw_query.split("\n")[2].startswith("FILTER"):
+                raw_query = " ".join(raw_query.split("\n")[3:])
+            else:
+                raw_query = raw_query.replace("\n", " ")
+            raw_query = raw_query[:raw_query.rfind("}")]
         uris = [Uri(raw_uri, Freebase.parse_uri) for raw_uri in re.findall('(ns:[^ ]*|\?[^ ]*)', raw_query)]
         supported = not any(substring in raw_query.upper() for substring in ["EXISTS", "UNION", "FILTER"])
         return raw_query, supported, uris
