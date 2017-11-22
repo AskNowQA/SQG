@@ -19,7 +19,7 @@ from model import *
 from tree import Tree
 from vocab import Vocab
 # DATASET CLASS FOR SICK DATASET
-from dataset import LCQuadDataset
+from dataset import QGDataset
 # METRICS CLASS FOR EVALUATION
 from metrics import Metrics
 # UTILITY FUNCTIONS
@@ -66,39 +66,39 @@ def main():
     test_dir = os.path.join(args.data, 'test/')
 
     # write unique words from all token files
-    lcquad_vocab_file = os.path.join(args.data, 'lc_quad.vocab')
-    if not os.path.isfile(lcquad_vocab_file):
+    dataset_vocab_file = os.path.join(args.data, 'dataset.vocab')
+    if not os.path.isfile(dataset_vocab_file):
         token_files_a = [os.path.join(split, 'a.toks') for split in [train_dir, dev_dir, test_dir]]
         token_files_b = [os.path.join(split, 'b.toks') for split in [train_dir, dev_dir, test_dir]]
         token_files = token_files_a + token_files_b
-        lcquad_vocab_file = os.path.join(args.data, 'lc_quad.vocab')
-        build_vocab(token_files, lcquad_vocab_file)
+        dataset_vocab_file = os.path.join(args.data, 'dataset.vocab')
+        build_vocab(token_files, dataset_vocab_file)
 
     # get vocab object from vocab file previously written
-    vocab = Vocab(filename=lcquad_vocab_file,
+    vocab = Vocab(filename=dataset_vocab_file,
                   data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
-    logger.debug('==> LC-Quad vocabulary size : %d ' % vocab.size())
+    logger.debug('==> Dataset vocabulary size : %d ' % vocab.size())
 
-    # load LC_quad dataset splits
-    train_file = os.path.join(args.data, 'lcquad_train.pth')
+    # load dataset splits
+    train_file = os.path.join(args.data, 'dataset_train.pth')
     if os.path.isfile(train_file):
         train_dataset = torch.load(train_file)
     else:
-        train_dataset = LCQuadDataset(train_dir, vocab, args.num_classes)
+        train_dataset = QGDataset(train_dir, vocab, args.num_classes)
         torch.save(train_dataset, train_file)
     logger.debug('==> Size of train data   : %d ' % len(train_dataset))
-    dev_file = os.path.join(args.data, 'lcquad_dev.pth')
+    dev_file = os.path.join(args.data, 'dataset_dev.pth')
     if os.path.isfile(dev_file):
         dev_dataset = torch.load(dev_file)
     else:
-        dev_dataset = LCQuadDataset(dev_dir, vocab, args.num_classes)
+        dev_dataset = QGDataset(dev_dir, vocab, args.num_classes)
         torch.save(dev_dataset, dev_file)
     logger.debug('==> Size of dev data     : %d ' % len(dev_dataset))
-    test_file = os.path.join(args.data, 'lcquad_test.pth')
+    test_file = os.path.join(args.data, 'dataset_test.pth')
     if os.path.isfile(test_file):
         test_dataset = torch.load(test_file)
     else:
-        test_dataset = LCQuadDataset(test_dir, vocab, args.num_classes)
+        test_dataset = QGDataset(test_dir, vocab, args.num_classes)
         torch.save(test_dataset, test_file)
     logger.debug('==> Size of test data    : %d ' % len(test_dataset))
 
@@ -127,7 +127,7 @@ def main():
 
     # for words common to dataset vocab and GLOVE, use GLOVE vectors
     # for other words in dataset vocab, use random normal vectors
-    emb_file = os.path.join(args.data, 'lcquad_embed.pth')
+    emb_file = os.path.join(args.data, 'dataset_embed.pth')
     if os.path.isfile(emb_file):
         emb = torch.load(emb_file)
     else:
@@ -156,7 +156,6 @@ def main():
     # create trainer object for training and testing
     trainer = Trainer(args, model, criterion, optimizer)
 
-    best = -float('inf')
     for epoch in range(args.epochs):
         if args.mode == "train":
             train_loss = trainer.train(train_dataset)
