@@ -1,5 +1,5 @@
 from copy import deepcopy
-
+from sklearn.metrics import precision_recall_fscore_support
 import torch
 
 
@@ -14,20 +14,9 @@ class Metrics():
 
     def f1(self, predictions, labels):
         try:
-            predictions = torch.FloatTensor(map(round, predictions))
-            true = labels == predictions
-            false = labels != predictions
-
-            assert torch.sum(true) + torch.sum(false) == len(predictions)
-            true_positive = torch.sum(true[labels == 2])
-            true_negative = torch.sum(true[labels == 1])
-
-            false_positive = torch.sum(false[labels == 2])
-            false_negative = torch.sum(false[labels == 1])
-
-            precision = 1.0 * true_positive / (true_positive + false_positive)
-            recall = 1.0 * true_positive / (true_positive + false_negative)
-            f1 = 2.0 * (precision * recall) / (precision + recall)
+            y_true = list(labels)
+            y_pred = map(round, predictions)
+            precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average='macro')
             return precision, recall, f1
         except:
             return 0, 0, 0
