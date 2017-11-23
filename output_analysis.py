@@ -40,6 +40,7 @@ def default(ds, n=-1):
         if stat["total"] == n:
             break
         if "generated_queries" in data:
+            stat.inc("has_queries")
             stat.inc("generated_queries", len(data["generated_queries"]))
 
     return stat
