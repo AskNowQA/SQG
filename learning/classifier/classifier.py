@@ -7,9 +7,6 @@ class Classifier(object):
         self.model = None
         pass
 
-    # def __pipeline(self):
-    #     pass
-
     @property
     def is_trained(self):
         return self.model is not None
