@@ -3,6 +3,7 @@ from common.utility.stats import Stats
 import matplotlib.pyplot as plt
 import argparse
 
+
 def load_ds(name):
     with open("output/{}.json".format(name)) as data_file:
         return json.load(data_file)
@@ -38,6 +39,8 @@ def default(ds, n=-1):
             stat.inc(data["answer"])
         if stat["total"] == n:
             break
+        if "generated_queries" in data:
+            stat.inc("generated_queries", len(data["generated_queries"]))
 
     return stat
 
@@ -104,7 +107,6 @@ def bar_chart_per_feature(input_json):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description='Analyse the output of query generator')
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     args = parser.parse_args()
