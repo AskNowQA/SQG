@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
     base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     data_dir = os.path.join(base_dir, 'data')
-    lc_quad_dir = os.path.join(data_dir, 'lc_quad')
+    lc_quad_dir = os.path.join(data_dir, 'lc_quad_gold')
     lib_dir = os.path.join(base_dir, 'lib')
     train_dir = os.path.join(lc_quad_dir, 'train')
     dev_dir = os.path.join(lc_quad_dir, 'dev')
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     trail_filepath = os.path.join(lc_quad_dir, 'LCQuad_trial.json')
     test_filepath = os.path.join(lc_quad_dir, 'LCQuad_test.json')
 
-    ds = json.load(open("../../../output/lc_quad.json"))
+    ds = json.load(open("../../../output/lc_quad_gold.json"))
     total = len(ds)
     train_size = int(.7 * total)
     dev_size = int(.2 * total)
