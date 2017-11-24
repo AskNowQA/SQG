@@ -106,6 +106,7 @@ if __name__ == "__main__":
         ds = Qald(Qald.qald_7_largescale)
         ds.load()
         ds.parse()
+        ds.extend(Qald.qald_7_largescale_test)
     elif t == 8:
         ds = Qald(Qald.qald_7_multilingual)
         ds.load()
