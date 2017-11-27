@@ -60,6 +60,9 @@ if __name__ == "__main__":
         if not e and not r:
             stats.inc("matched_both")
 
+        if len(e1) == len(e2) and len(r1) == len(r2) and not e and not r:
+            stats.inc("matched_both_and_len")
+
         stats.inc("total")
 
     print stats
