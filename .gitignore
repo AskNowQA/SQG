@@ -10,6 +10,8 @@ tmp
 train
 learning/treelstm/checkpoints/
 learning/treelstm/data/
+learning/cdssm/checkpoints/
+learning/cdssm/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
