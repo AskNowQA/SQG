@@ -1,4 +1,4 @@
-import ujson, os, string
+import ujson, os, string, codecs
 from unidecode import unidecode
 from l3wtransformer import L3wTransformer
 from collections import Counter
@@ -58,15 +58,15 @@ def minimize_uri_in_chain(core_chain):
 def combine(lc_quad_dir, file_path):
     dataset = {}
     # Read Questions
-    with open(os.path.join(lc_quad_dir, "lcquad.multilin")) as questions_file:
+    with codecs.open(os.path.join(lc_quad_dir, "lcquad.multilin"), 'r', 'utf-8') as questions_file:
         question_id, question = "", ""
         lines = questions_file.readlines()
         for line in lines:
             if ":" in line:
                 idx = line.index(":")
                 if ".P" not in line[:idx]:  # Is it a question
-                    question_id, question = unicode(line[:idx], errors="ignore"), line[idx + 1:]
-                    dataset[question_id] = {"question": clean_text(question), "parses": []}
+                    question_id, question = clean_text(line[:idx]), line[idx + 1:]
+                    dataset[question_id] = {"question": question, "parses": []}
                 else:  # Otherwise it is a parse
                     dataset[question_id]["parses"].append({"target_parse": line[idx + 1:], "core_chains": []})
 
@@ -76,7 +76,7 @@ def combine(lc_quad_dir, file_path):
     for id in core_chains.keys():
         question_id, parse_id = id.split(".")
         parse_id = int(parse_id[1:]) - 1
-        question_id = unidecode(question_id)
+        question_id = unidecode(question_id).lower()
         target_parse = dataset[question_id]["parses"][parse_id]["target_parse"]
         target_core_chain = extract_core_chain(target_parse)
         found = False
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         combine(lc_quad_dir, lc_quad_combined)
 
     ds = ujson.load(open(lc_quad_combined))
-    ds = [ds["Q{}".format(item + 1)] for item in range(5)]  # len(ds)
+    ds = [ds["q{}".format(item + 1)] for item in range(len(ds))]
 
     print("Load dataframe from combined dataset")
     df = pd.io.json.json_normalize(ds, record_path=['parses', 'core_chains'], meta=["question"])
