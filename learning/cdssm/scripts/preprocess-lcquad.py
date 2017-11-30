@@ -1,9 +1,10 @@
-import json, os, string
+import ujson, os, string
 from unidecode import unidecode
 from l3wtransformer import L3wTransformer
 from collections import Counter
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
 
 
 def make_dirs(dirs):
@@ -12,21 +13,129 @@ def make_dirs(dirs):
             os.makedirs(d)
 
 
-def split(ds, size, dst_dir):
-    with open(os.path.join(dst_dir, 'hashed_questions.txt'), 'w') as hashed_file:
-        for item in tqdm(ds):
-            item_ = [i for i in item if i <= size]
-            counter = np.array([[k, v] for k, v in Counter(item_).items()])
-            vect = np.zeros(size + 1, dtype=int)
-            vect[counter[:, 0]] = counter[:, 1]
-            hashed_file.write(" ".join(map(str, vect)) + "\n")
+def extract_core_chain(parse, replace_property=True):
+    items = parse.split()
+    items = items[1:]  # Ignore the first one which is supposed to entity
+    ignoring = False
+    ignore_next_token = False
+    output = []
+    for item in items:
+        if item == "<<EQUALS>>":
+            ignore_next_token = True
+            continue
+        if ignore_next_token:
+            ignore_next_token = False
+            continue
+        if item == "<<BRANCH>>":
+            ignoring = True
+        if item == "<<JOIN>>":
+            ignoring = False
+        if not ignoring and "<<" not in item:
+            if replace_property:
+                output.append(item.replace("/property/", "/ontology/"))
+            else:
+                output.append(item)
+    return output
+
+
+def get_core_chain_score(core_chain, target_core_chain):
+    return core_chain == target_core_chain
+
+
+def clean_text(text):
+    return unidecode(text.replace("\n", "").lower()).translate(None, string.punctuation)
+
+
+def minimize_uri_in_chain(core_chain):
+    text = " ".join(core_chain)
+
+    text = text.replace("<http://dbpedia.org/ontology/", "o/") \
+        .replace("<http://dbpedia.org/resource/", "r/") \
+        .replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "/type")
+    return clean_text(text)
+
+
+def combine(lc_quad_dir, file_path):
+    dataset = {}
+    # Read Questions
+    with open(os.path.join(lc_quad_dir, "lcquad.multilin")) as questions_file:
+        question_id, question = "", ""
+        lines = questions_file.readlines()
+        for line in lines:
+            if ":" in line:
+                idx = line.index(":")
+                if ".P" not in line[:idx]:  # Is it a question
+                    question_id, question = unicode(line[:idx], errors="ignore"), line[idx + 1:]
+                    dataset[question_id] = {"question": clean_text(question), "parses": []}
+                else:  # Otherwise it is a parse
+                    dataset[question_id]["parses"].append({"target_parse": line[idx + 1:], "core_chains": []})
+
+    core_chains = ujson.load(open(os.path.join(lc_quad_dir, "lcquad.multilin.chains")))
+    not_found = 0
+    # Load core-chains
+    for id in core_chains.keys():
+        question_id, parse_id = id.split(".")
+        parse_id = int(parse_id[1:]) - 1
+        question_id = unidecode(question_id)
+        target_parse = dataset[question_id]["parses"][parse_id]["target_parse"]
+        target_core_chain = extract_core_chain(target_parse)
+        found = False
+        for core_chain in core_chains[id]:
+            score = int(get_core_chain_score(core_chain, target_core_chain))
+            if score:
+                found = True
+            dataset[question_id]["parses"][parse_id]["core_chains"].append(
+                {"score": score, "chain": minimize_uri_in_chain(core_chain)})
+        if not found:
+            not_found += 1
+            print question_id
+    assert not_found == 0
+
+    with open(file_path, 'w') as outfile:
+        ujson.dump(dataset, outfile, indent=4)
+
+
+def count_n_gram_hash(input, l3wt, size):
+    item = l3wt.texts_to_sequences([input])[0]
+    item_ = [i for i in item if i <= size]
+    counter = np.array([[k, v] for k, v in Counter(item_).items()])
+    vect = np.zeros(size + 1, dtype=int)
+    vect[counter[:, 0]] = counter[:, 1]
+    return " ".join(map(str, vect))
+
+
+def split(df, l3wt, dst_dir):
+    size = len(l3wt.indexed_lookup_table)
+    with open(os.path.join(dst_dir, 'hashed_questions.txt'), 'w') as hashed_questions_file, \
+            open(os.path.join(dst_dir, 'hashed_queries.txt'), 'w') as hashed_query_file, \
+            open(os.path.join(dst_dir, 'sim.txt'), 'w') as sim_file:
+        last_question = ""
+        last_question_hashed = ""
+        for index, row in tqdm(df.iterrows(), total=len(df)):
+            question = row["question"]
+            if last_question == question:
+                hashed = last_question_hashed
+            else:
+                hashed = count_n_gram_hash(question, l3wt, size)
+            hashed_questions_file.write(hashed + "\n")
+            hashed_query_file.write(count_n_gram_hash(row["chain"], l3wt, size) + "\n")
+            sim_file.write(str(row["score"]) + "\n")
+
+            last_question_hashed = hashed
+            last_question = question
 
 
 if __name__ == "__main__":
+    # tmp = " <http://dbpedia.org/resource/West_Germany> :-<http://dbpedia.org/property/recorded> <<EQUALS>> <http://dbpedia.org/resource/Don\\'t_Bring_Me_Down> <<RETURN>>"
+    # print extract_core_chain(tmp)
+    # q = 1 / 0
+
     base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     data_dir = os.path.join(base_dir, 'data')
     lc_quad_dir = os.path.join(data_dir, 'lc_quad')
-    lib_dir = os.path.join(base_dir, 'lib')
+    lc_quad_combined = os.path.join(lc_quad_dir, 'lcquad.multilin.chains.json')
+    vocab_filepath = os.path.join(lc_quad_dir, 'vocab.pk')
+
     train_dir = os.path.join(lc_quad_dir, 'train')
     dev_dir = os.path.join(lc_quad_dir, 'dev')
     test_dir = os.path.join(lc_quad_dir, 'test')
@@ -36,25 +145,38 @@ if __name__ == "__main__":
     trail_filepath = os.path.join(lc_quad_dir, 'LCQuad_trial.json')
     test_filepath = os.path.join(lc_quad_dir, 'LCQuad_test.json')
 
-    ds = json.load(open("../../../output/lc_quad.json"))
+    print("Combine questions and core-chains")
+    if not os.path.isfile(lc_quad_combined):
+        combine(lc_quad_dir, lc_quad_combined)
+
+    ds = ujson.load(open(lc_quad_combined))
+    ds = [ds["Q{}".format(item + 1)] for item in range(5)]  # len(ds)
+
+    print("Load dataframe from combined dataset")
+    df = pd.io.json.json_normalize(ds, record_path=['parses', 'core_chains'], meta=["question"])
+
     l3wt = L3wTransformer()
-    questions = [unidecode(item["question"].lower()).translate(None, string.punctuation) for item in ds]
-    l3wt.fit_on_texts(questions)
-    hashed_questions = l3wt.texts_to_sequences(questions)
-    l3wt.save(os.path.join(lc_quad_dir, 'vocab.pk'))
+    if not os.path.isfile(vocab_filepath):
+        print("Fit letter 3-gram on questions and chains")
+        l3wt.fit_on_texts(list(df["chain"].values) + list(df["question"].values))
+        print("Save the vocab file")
+        l3wt.save(vocab_filepath)
+    else:
+        print("load 3-gram model")
+        l3wt.load(vocab_filepath)
     vocab_size = len(l3wt.indexed_lookup_table)
 
-    total = len(ds)
+    total = len(df)
     train_size = int(.7 * total)
     dev_size = int(.2 * total)
     test_size = int(.1 * total)
 
-    json.dump(ds[:train_size], open(train_filepath, "w"))
-    json.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
-    json.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
+    ujson.dump(ds[:train_size], open(train_filepath, "w"))
+    ujson.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
+    ujson.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
     print('Split train set')
-    split(hashed_questions[:train_size], vocab_size, train_dir)
+    split(df.loc[:train_size], l3wt, train_dir)
     print('Split dev set')
-    split(hashed_questions[train_size:train_size + dev_size], vocab_size, dev_dir)
+    split(df.loc[train_size:train_size + dev_size], l3wt, dev_dir)
     print('Split test set')
-    split(hashed_questions[train_size + dev_size:], vocab_size, test_dir)
+    split(df.loc[train_size + dev_size:], l3wt, test_dir)
