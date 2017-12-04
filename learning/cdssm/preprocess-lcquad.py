@@ -5,6 +5,8 @@ from collections import Counter
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+import torch
+from
 
 
 def make_dirs(dirs):
@@ -96,16 +98,20 @@ def combine(lc_quad_dir, file_path):
 
 
 def count_n_gram_hash(input, l3wt, size):
-    item = l3wt.texts_to_sequences([input])[0]
-    item_ = [i for i in item if i <= size]
-    counter = np.array([[k, v] for k, v in Counter(item_).items()])
-    vect = np.zeros(size + 1, dtype=int)
-    vect[counter[:, 0]] = counter[:, 1]
-    return " ".join(map(str, vect))
+    item = l3wt.texts_to_sequences(input.split())
+    item = [i[:-1] for i in item]
+    output = []
+    for item_ in item:  # for each words
+        counter = np.array([[k, v] for k, v in Counter(item_).items()])
+        idx = torch.LongTensor([len(counter[:, 0]) * [0], counter[:, 0]])
+        values = torch.IntTensor(counter[:, 1])
+        output.append(torch.sparse.IntTensor(idx, values, torch.Size([1, size])))
+    return output
 
 
 def split(df, l3wt, dst_dir):
     size = len(l3wt.indexed_lookup_table)
+    dataset = QGDataset()
     with open(os.path.join(dst_dir, 'hashed_questions.txt'), 'w') as hashed_questions_file, \
             open(os.path.join(dst_dir, 'hashed_queries.txt'), 'w') as hashed_query_file, \
             open(os.path.join(dst_dir, 'sim.txt'), 'w') as sim_file:
@@ -114,14 +120,13 @@ def split(df, l3wt, dst_dir):
         for index, row in tqdm(df.iterrows(), total=len(df)):
             question = row["question"]
             if last_question == question:
-                hashed = last_question_hashed
+                hashed_question = last_question_hashed
             else:
-                hashed = count_n_gram_hash(question, l3wt, size)
-            hashed_questions_file.write(hashed + "\n")
-            hashed_query_file.write(count_n_gram_hash(row["chain"], l3wt, size) + "\n")
-            sim_file.write(str(row["score"]) + "\n")
+                hashed_question = count_n_gram_hash(question, l3wt, size)
 
-            last_question_hashed = hashed
+            hashed_query = count_n_gram_hash(row["chain"], l3wt, size)
+            dataset.add(hashed_question, hashed_query, row["score"])
+            last_question_hashed = hashed_question
             last_question = question
 
 
@@ -163,7 +168,7 @@ if __name__ == "__main__":
         l3wt.save(vocab_filepath)
     else:
         print("load 3-gram model")
-        l3wt.load(vocab_filepath)
+        l3wt = L3wTransformer.load(vocab_filepath)
     vocab_size = len(l3wt.indexed_lookup_table)
 
     total = len(df)
