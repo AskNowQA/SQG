@@ -1,9 +1,6 @@
 from tqdm import tqdm
-
 import torch
 from torch.autograd import Variable as Var
-
-from utils import map_label_to_target
 
 
 class Trainer(object):
@@ -22,13 +19,13 @@ class Trainer(object):
         loss, k = 0.0, 0
         indices = torch.randperm(len(dataset))
         for idx in tqdm(range(len(dataset)), desc='Training epoch ' + str(self.epoch + 1) + ''):
-            left_y, lsent, right_y, rsent, label = dataset[indices[idx]]
-            linput, rinput = Var(lsent), Var(rsent)
-            target = Var(map_label_to_target(label, dataset.num_classes))
+            left, right, label = dataset[indices[idx]]
+            linput, rinput = Var(left), Var(right)
+            target = Var(torch.FloatTensor([label]))
             if self.args.cuda:
                 linput, rinput = linput.cuda(), rinput.cuda()
                 target = target.cuda()
-            output = self.model(left_y, linput, right_y, rinput)
+            output = self.model(linput, rinput)
             err = self.criterion(output, target)
             loss += err.data[0]
             err.backward()
