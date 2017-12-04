@@ -120,10 +120,12 @@ def count_n_gram_hash(input, l3wt):
     return torch.from_numpy(np.concatenate(three_grams, 1))
 
 
-def split(df, l3wt, dst_dir):
+def split(df, l3wt, dst_dir, batch_size=100000):
     vocab_size = len(l3wt.indexed_lookup_table)
     last_question = ""
     last_question_hashed = ""
+    batch = []
+    batch_id = 0
     for index, row in tqdm(df.iterrows(), total=len(df)):
         question = clean_text(row["question"])
         if last_question == question:
@@ -134,8 +136,12 @@ def split(df, l3wt, dst_dir):
         hashed_query = count_n_gram_hash(row["chain"], l3wt)
         last_question_hashed = hashed_question
         last_question = question
+        batch.append([hashed_question, hashed_query, row["score"]])
 
-        torch.save([hashed_question, hashed_query, row["score"]], os.path.join(dst_dir, "{}".format(index)))
+        if index % batch_size == 0:
+            torch.save(batch, os.path.join(dst_dir, "{}".format(batch_id)))
+            batch = []
+            batch_id += 1
 
 
 if __name__ == "__main__":
