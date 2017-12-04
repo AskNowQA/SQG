@@ -164,7 +164,7 @@ if __name__ == "__main__":
         combine(lc_quad_dir, lc_quad_combined)
 
     ds = ujson.load(open(lc_quad_combined))
-    ds = [ds["q{}".format(item + 1)] for item in range(100)]  # len(ds)
+    ds = [ds["q{}".format(item + 1)] for item in range(len(ds))]
 
     print("Load dataframe from combined dataset")
     df = pd.io.json.json_normalize(ds, record_path=['parses', 'core_chains'], meta=["question"])
