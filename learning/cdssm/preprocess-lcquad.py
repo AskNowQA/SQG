@@ -143,6 +143,8 @@ def split(df, l3wt, dst_dir, batch_size=100000):
             batch = []
             batch_id += 1
 
+    torch.save(batch, os.path.join(dst_dir, "{}".format(batch_id)))
+
 
 if __name__ == "__main__":
     # tmp = " <http://dbpedia.org/resource/West_Germany> :-<http://dbpedia.org/property/recorded> <<EQUALS>> <http://dbpedia.org/resource/Don\\'t_Bring_Me_Down> <<RETURN>>"
