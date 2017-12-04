@@ -43,13 +43,13 @@ class Trainer(object):
         predictions = torch.zeros(len(dataset))
         indices = torch.arange(1, dataset.num_classes + 1)
         for idx in tqdm(range(len(dataset)), desc='Testing epoch  ' + str(self.epoch) + ''):
-            left_y, lsent, right_y, rsent, label = dataset[idx]
-            linput, rinput = Var(lsent, volatile=True), Var(rsent, volatile=True)
-            target = Var(map_label_to_target(label, dataset.num_classes), volatile=True)
+            left, right, label = dataset[indices[idx]]
+            linput, rinput = Var(left, volatile=True), Var(right, volatile=True)
+            target = Var(torch.FloatTensor([label]), volatile=True)
             if self.args.cuda:
                 linput, rinput = linput.cuda(), rinput.cuda()
                 target = target.cuda()
-            output = self.model(left_y, linput, right_y, rinput)
+            output = self.model(linput, rinput)
             err = self.criterion(output, target)
             loss += err.data[0]
             output = output.data.squeeze().cpu()
