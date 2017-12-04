@@ -17,7 +17,7 @@ def parse_args():
     # model arguments
     parser.add_argument('--window_size', default=3, type=int,
                         help='Size of sliding window')
-    parser.add_argument('--mem_dim', default=300, type=int,
+    parser.add_argument('--conv_size', default=300, type=int,
                         help='Size of convolutional layer')
     parser.add_argument('--latent_size', default=128, type=int,
                         help='Size of semantic layer')
