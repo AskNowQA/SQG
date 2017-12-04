@@ -120,9 +120,8 @@ def count_n_gram_hash(input, l3wt):
     return torch.from_numpy(np.concatenate(three_grams, 1))
 
 
-def split(df, l3wt, dst_file):
+def split(df, l3wt, dst_dir):
     vocab_size = len(l3wt.indexed_lookup_table)
-    dataset = QGDataset(2, vocab_size)
     last_question = ""
     last_question_hashed = ""
     for index, row in tqdm(df.iterrows(), total=len(df)):
@@ -130,14 +129,13 @@ def split(df, l3wt, dst_file):
         if last_question == question:
             hashed_question = last_question_hashed
         else:
-            hashed_question = count_n_gram_hash(question, l3wt)
+            hashed_question = count_n_gram_hash(question, l3wt).int()
 
         hashed_query = count_n_gram_hash(row["chain"], l3wt)
-        dataset.add(hashed_question, hashed_query, row["score"])
         last_question_hashed = hashed_question
         last_question = question
 
-    torch.save(dataset, dst_file)
+        torch.save([hashed_question, hashed_query, row["score"]], os.path.join(dst_dir, "{}".format(index)))
 
 
 if __name__ == "__main__":
@@ -148,6 +146,11 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.join(base_dir, 'data')
     lc_quad_dir = os.path.join(data_dir, 'lc_quad')
+    train_dir = os.path.join(lc_quad_dir, 'train')
+    dev_dir = os.path.join(lc_quad_dir, 'dev')
+    test_dir = os.path.join(lc_quad_dir, 'test')
+    make_dirs([train_dir, dev_dir, test_dir])
+
     lc_quad_combined = os.path.join(lc_quad_dir, 'lcquad.multilin.chains.json')
     vocab_filepath = os.path.join(lc_quad_dir, 'vocab.pk')
 
@@ -189,8 +192,8 @@ if __name__ == "__main__":
     ujson.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
     ujson.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
     print('Split train set')
-    split(df.loc[:train_size], l3wt, train_file)
+    split(df.loc[:train_size], l3wt, train_dir)
     print('Split dev set')
-    split(df.loc[train_size:train_size + dev_size], l3wt, dev_file)
+    split(df.loc[train_size:train_size + dev_size], l3wt, dev_dir)
     print('Split test set')
-    split(df.loc[train_size + dev_size:], l3wt, test_file)
+    split(df.loc[train_size + dev_size:], l3wt, test_dir)
