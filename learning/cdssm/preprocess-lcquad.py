@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 import torch
-from
+from dataset import QGDataset
 
 
 def make_dirs(dirs):
@@ -97,37 +97,47 @@ def combine(lc_quad_dir, file_path):
         ujson.dump(dataset, outfile, indent=4)
 
 
-def count_n_gram_hash(input, l3wt, size):
+def count_n_gram_hash(input, l3wt):
     item = l3wt.texts_to_sequences(input.split())
     item = [i[:-1] for i in item]
-    output = []
-    for item_ in item:  # for each words
-        counter = np.array([[k, v] for k, v in Counter(item_).items()])
-        idx = torch.LongTensor([len(counter[:, 0]) * [0], counter[:, 0]])
-        values = torch.IntTensor(counter[:, 1])
-        output.append(torch.sparse.IntTensor(idx, values, torch.Size([1, size])))
-    return output
+    words_hashing = []
+    for item_ in item:  # Create hashing for each words
+        item_ = [i for i in item_ if i < vocab_size]
+        if len(item_) > 0:
+            counter = Counter(item_)
+            counter = np.array([[k, v] for k, v in counter.items()])
+            word_hashing = np.zeros((1, 1, vocab_size))
+            word_hashing[0, 0, counter[:, 0]] = counter[:, 1]
+            words_hashing.append(word_hashing)
+
+    if len(words_hashing) < 3:  # Less than three words
+        for i in range(0, 3 - len(words_hashing)):
+            words_hashing.append(np.zeros(words_hashing[0].shape))
+
+    three_grams = []
+    for triple in zip(words_hashing, words_hashing[1:], words_hashing[2:]):
+        three_grams.append(np.concatenate(triple, 2))
+    return torch.from_numpy(np.concatenate(three_grams, 1))
 
 
-def split(df, l3wt, dst_dir):
-    size = len(l3wt.indexed_lookup_table)
-    dataset = QGDataset()
-    with open(os.path.join(dst_dir, 'hashed_questions.txt'), 'w') as hashed_questions_file, \
-            open(os.path.join(dst_dir, 'hashed_queries.txt'), 'w') as hashed_query_file, \
-            open(os.path.join(dst_dir, 'sim.txt'), 'w') as sim_file:
-        last_question = ""
-        last_question_hashed = ""
-        for index, row in tqdm(df.iterrows(), total=len(df)):
-            question = row["question"]
-            if last_question == question:
-                hashed_question = last_question_hashed
-            else:
-                hashed_question = count_n_gram_hash(question, l3wt, size)
+def split(df, l3wt, dst_file):
+    vocab_size = len(l3wt.indexed_lookup_table)
+    dataset = QGDataset(2, vocab_size)
+    last_question = ""
+    last_question_hashed = ""
+    for index, row in tqdm(df.iterrows(), total=len(df)):
+        question = clean_text(row["question"])
+        if last_question == question:
+            hashed_question = last_question_hashed
+        else:
+            hashed_question = count_n_gram_hash(question, l3wt)
 
-            hashed_query = count_n_gram_hash(row["chain"], l3wt, size)
-            dataset.add(hashed_question, hashed_query, row["score"])
-            last_question_hashed = hashed_question
-            last_question = question
+        hashed_query = count_n_gram_hash(row["chain"], l3wt)
+        dataset.add(hashed_question, hashed_query, row["score"])
+        last_question_hashed = hashed_question
+        last_question = question
+
+    torch.save(dataset, dst_file)
 
 
 if __name__ == "__main__":
@@ -135,16 +145,15 @@ if __name__ == "__main__":
     # print extract_core_chain(tmp)
     # q = 1 / 0
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    base_dir = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.join(base_dir, 'data')
     lc_quad_dir = os.path.join(data_dir, 'lc_quad')
     lc_quad_combined = os.path.join(lc_quad_dir, 'lcquad.multilin.chains.json')
     vocab_filepath = os.path.join(lc_quad_dir, 'vocab.pk')
 
-    train_dir = os.path.join(lc_quad_dir, 'train')
-    dev_dir = os.path.join(lc_quad_dir, 'dev')
-    test_dir = os.path.join(lc_quad_dir, 'test')
-    make_dirs([train_dir, dev_dir, test_dir])
+    train_file = os.path.join(lc_quad_dir, 'dataset_train.pth')
+    dev_file = os.path.join(lc_quad_dir, 'dataset_dev.pth')
+    test_file = os.path.join(lc_quad_dir, 'dataset_test.pth')
 
     train_filepath = os.path.join(lc_quad_dir, 'LCQuad_train.json')
     trail_filepath = os.path.join(lc_quad_dir, 'LCQuad_trial.json')
@@ -155,7 +164,7 @@ if __name__ == "__main__":
         combine(lc_quad_dir, lc_quad_combined)
 
     ds = ujson.load(open(lc_quad_combined))
-    ds = [ds["q{}".format(item + 1)] for item in range(len(ds))]
+    ds = [ds["q{}".format(item + 1)] for item in range(100)]  # len(ds)
 
     print("Load dataframe from combined dataset")
     df = pd.io.json.json_normalize(ds, record_path=['parses', 'core_chains'], meta=["question"])
@@ -180,8 +189,8 @@ if __name__ == "__main__":
     ujson.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
     ujson.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
     print('Split train set')
-    split(df.loc[:train_size], l3wt, train_dir)
+    split(df.loc[:train_size], l3wt, train_file)
     print('Split dev set')
-    split(df.loc[train_size:train_size + dev_size], l3wt, dev_dir)
+    split(df.loc[train_size:train_size + dev_size], l3wt, dev_file)
     print('Split test set')
-    split(df.loc[train_size + dev_size:], l3wt, test_dir)
+    split(df.loc[train_size + dev_size:], l3wt, test_file)
