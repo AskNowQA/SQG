@@ -7,6 +7,7 @@ from tqdm import tqdm
 import pandas as pd
 import torch
 from dataset import QGDataset
+import utils
 
 
 def make_dirs(dirs):
@@ -97,7 +98,8 @@ def combine(lc_quad_dir, file_path):
         ujson.dump(dataset, outfile, indent=4)
 
 
-def count_n_gram_hash(input, l3wt):
+def count_n_gram_hash(input, l3wt, ):
+    vocab_size = len(l3wt.indexed_lookup_table)
     item = l3wt.texts_to_sequences(input.split())
     item = [i[:-1] for i in item]
     words_hashing = []
@@ -106,9 +108,7 @@ def count_n_gram_hash(input, l3wt):
         if len(item_) > 0:
             counter = Counter(item_)
             counter = np.array([[k, v] for k, v in counter.items()])
-            word_hashing = np.zeros((1, 1, vocab_size))
-            word_hashing[0, 0, counter[:, 0]] = counter[:, 1]
-            words_hashing.append(word_hashing)
+            words_hashing.append(counter)
 
     if len(words_hashing) < 3:  # Less than three words
         for i in range(0, 3 - len(words_hashing)):
@@ -116,34 +116,28 @@ def count_n_gram_hash(input, l3wt):
 
     three_grams = []
     for triple in zip(words_hashing, words_hashing[1:], words_hashing[2:]):
-        three_grams.append(np.concatenate(triple, 2))
-    return torch.from_numpy(np.concatenate(three_grams, 1))
+        three_grams.append(utils.sparse_cat(triple, vocab_size, 2))
+    return three_grams
 
 
-def split(df, l3wt, dst_dir, batch_size=100000):
+def split(df, l3wt, dst_dir):
     vocab_size = len(l3wt.indexed_lookup_table)
     last_question = ""
     last_question_hashed = ""
-    batch = []
-    batch_id = 0
+    dataset = QGDataset(2, vocab_size)
     for index, row in tqdm(df.iterrows(), total=len(df)):
         question = clean_text(row["question"])
         if last_question == question:
             hashed_question = last_question_hashed
         else:
-            hashed_question = count_n_gram_hash(question, l3wt).int()
+            hashed_question = count_n_gram_hash(question, l3wt)
 
         hashed_query = count_n_gram_hash(row["chain"], l3wt)
         last_question_hashed = hashed_question
         last_question = question
-        batch.append([hashed_question, hashed_query, row["score"]])
+        dataset.add(hashed_question, hashed_query, row["score"])
 
-        if index % batch_size == 0:
-            torch.save(batch, os.path.join(dst_dir, "{}".format(batch_id)))
-            batch = []
-            batch_id += 1
-
-    torch.save(batch, os.path.join(dst_dir, "{}".format(batch_id)))
+    torch.save(dataset, dst_dir)
 
 
 if __name__ == "__main__":
@@ -200,8 +194,8 @@ if __name__ == "__main__":
     ujson.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
     ujson.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
     print('Split train set')
-    split(df.loc[:train_size], l3wt, train_dir)
+    split(df.loc[:train_size], l3wt, train_file)
     print('Split dev set')
-    split(df.loc[train_size:train_size + dev_size], l3wt, dev_dir)
+    split(df.loc[train_size:train_size + dev_size], l3wt, dev_file)
     print('Split test set')
-    split(df.loc[train_size + dev_size:], l3wt, test_dir)
+    split(df.loc[train_size + dev_size:], l3wt, test_file)
