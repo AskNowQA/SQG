@@ -1,5 +1,8 @@
 from copy import deepcopy
 import torch.utils.data as data
+import numpy as np
+import torch
+import utils
 
 
 class QGDataset(data.Dataset):
@@ -12,6 +15,29 @@ class QGDataset(data.Dataset):
         self.labels = []
         self.size = 0
         self.vocab_size = vocab_size
+
+    def counter_to_sparse(self, counters):
+        try:
+            counter = counters[0]
+            zeros = np.zeros(len(counter[:, 0]), dtype=int)
+            idx = torch.LongTensor([zeros, zeros, counter[:, 0]])
+            values = torch.ByteTensor(counter[:, 1])
+            for i in range(1, len(counters)):
+                counter = counters[i]
+
+                new_idx = torch.LongTensor(
+                    [np.zeros(len(counter[:, 0]), dtype=int), [i] * len(counter[:, 0]), counter[:, 0]])
+                idx = torch.cat((idx, new_idx), 1)
+
+                values = torch.cat((values, torch.ByteTensor(counter[:, 1])), 0)
+            return torch.sparse.ByteTensor(idx, values, torch.Size([1, len(counters), 3 * self.vocab_size]))
+        except:
+            return None
+
+    def to_torch(self):
+        self.questions = [self.counter_to_sparse(item) for item in self.questions]
+        self.queries = [self.counter_to_sparse(item) for item in self.queries]
+        self.labels = torch.Tensor(self.labels)
 
     def add(self, question, query, label):
         self.questions.append(question)
