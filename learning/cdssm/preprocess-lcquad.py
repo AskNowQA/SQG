@@ -112,11 +112,11 @@ def count_n_gram_hash(input, l3wt, ):
 
     if len(words_hashing) < 3:  # Less than three words
         for i in range(0, 3 - len(words_hashing)):
-            words_hashing.append(np.zeros(words_hashing[0].shape))
+            words_hashing.append(np.zeros(words_hashing[0].shape, dtype=int))
 
     three_grams = []
     for triple in zip(words_hashing, words_hashing[1:], words_hashing[2:]):
-        three_grams.append(utils.sparse_cat(triple, vocab_size, 2))
+        three_grams.append(utils.sparse_cat(triple, vocab_size))
     return three_grams
 
 
@@ -141,17 +141,9 @@ def split(df, l3wt, dst_dir):
 
 
 if __name__ == "__main__":
-    # tmp = " <http://dbpedia.org/resource/West_Germany> :-<http://dbpedia.org/property/recorded> <<EQUALS>> <http://dbpedia.org/resource/Don\\'t_Bring_Me_Down> <<RETURN>>"
-    # print extract_core_chain(tmp)
-    # q = 1 / 0
-
     base_dir = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.join(base_dir, 'data')
     lc_quad_dir = os.path.join(data_dir, 'lc_quad')
-    train_dir = os.path.join(lc_quad_dir, 'train')
-    dev_dir = os.path.join(lc_quad_dir, 'dev')
-    test_dir = os.path.join(lc_quad_dir, 'test')
-    make_dirs([train_dir, dev_dir, test_dir])
 
     lc_quad_combined = os.path.join(lc_quad_dir, 'lcquad.multilin.chains.json')
     vocab_filepath = os.path.join(lc_quad_dir, 'vocab.pk')
