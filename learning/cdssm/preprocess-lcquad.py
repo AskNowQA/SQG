@@ -50,12 +50,12 @@ def clean_text(text):
 
 
 def minimize_uri_in_chain(core_chain):
-    text = " ".join(core_chain)
+    text = clean_text(" ".join(core_chain))
 
-    text = text.replace("<http://dbpedia.org/ontology/", "o/") \
-        .replace("<http://dbpedia.org/resource/", "r/") \
-        .replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "/type")
-    return clean_text(text)
+    text = text.replace("httpdbpediaorgontology", "o/") \
+        .replace("<httpdbpediaorgresource", "r/") \
+        .replace('httpwwww3org19990222rdfsyntaxnstype', "/type")
+    return text
 
 
 def combine(lc_quad_dir, file_path):
