@@ -65,6 +65,7 @@ def main():
     train_file = os.path.join(args.data, 'dataset_train.pth')
     if os.path.isfile(train_file):
         train_dataset = torch.load(train_file)
+        train_dataset.to_torch()
     else:
         train_dataset = QGDataset(train_dir, args.num_classes)
         torch.save(train_dataset, train_file)
@@ -72,6 +73,7 @@ def main():
     dev_file = os.path.join(args.data, 'dataset_dev.pth')
     if os.path.isfile(dev_file):
         dev_dataset = torch.load(dev_file)
+        dev_dataset.to_torch()
     else:
         dev_dataset = QGDataset(dev_dir, args.num_classes)
         torch.save(dev_dataset, dev_file)
@@ -79,6 +81,7 @@ def main():
     test_file = os.path.join(args.data, 'dataset_test.pth')
     if os.path.isfile(test_file):
         test_dataset = torch.load(test_file)
+        test_dataset.to_torch()
     else:
         test_dataset = QGDataset(test_dir, args.num_classes)
         torch.save(test_dataset, test_file)
