@@ -13,14 +13,14 @@ import logging
 import common.utility.utility
 
 
-def qg(linker, kb, parser, qapair):
+def qg(linker, kb, parser, qapair, force_gold=True):
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
     sort_query = "order by" in qapair.sparql.raw_query.lower()
-    entities, ontologies = linker.do(qapair, force_gold=True)
+    entities, ontologies = linker.do(qapair, force_gold=force_gold)
 
     graph = Graph(kb)
     queryBuilder = QueryBuilder()
@@ -74,7 +74,8 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
-    parser.add_argument("--linker", help="0: gold linker, 1: EARL", type=int, default=0, dest="linker")
+    parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL", type=int, default=0,
+                        dest="linker")
     args = parser.parse_args()
 
     stats = Stats()
@@ -129,7 +130,7 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(linker, ds.parser.kb, ds.parser, qapair)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, args.linker != 2)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
