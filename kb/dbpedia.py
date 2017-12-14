@@ -4,7 +4,10 @@ from kb import KB
 class DBpedia(KB):
 	# http://kb.org/sparql
 	# http://drogon:7890/sparql
-	def __init__(self, endpoint="http://131.220.153.66:7890/sparql"):
+	# http://131.220.153.66:7890/sparql
+	# 2016-04 http://sda-srv01.iai.uni-bonn.de:8164/sparql
+	# http://dbpedia.org/sparql
+	def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql"):
 		super(DBpedia, self).__init__(endpoint)
 		self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
 
