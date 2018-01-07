@@ -6,6 +6,7 @@ class DBpedia(KB):
 	# http://drogon:7890/sparql
 	# http://131.220.153.66:7890/sparql
 	# 2016-04 http://sda-srv01.iai.uni-bonn.de:8164/sparql
+	# 2014 http://sda-srv01.iai.uni-bonn.de:8014/sparql
 	# http://dbpedia.org/sparql
 	def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql"):
 		super(DBpedia, self).__init__(endpoint)
