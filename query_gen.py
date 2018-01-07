@@ -31,6 +31,8 @@ def qg(linker, kb, parser, qapair, force_gold=True):
     wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
     output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
+    for item in list(output_where):
+        logger.info(item["query"])
     if len(wheres) == 0:
         return "-without_path", output_where
     correct = False
@@ -41,8 +43,8 @@ def qg(linker, kb, parser, qapair, force_gold=True):
             answerset = where["answer"]
             target_var = where["target_var"]
         else:
-            target_var = "?u_" + str(item["suggested_id"])
-            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
+            target_var = "?u_" + str(where["suggested_id"])
+            raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
         output_where[idx]["target_var"] = target_var
@@ -55,7 +57,7 @@ def qg(linker, kb, parser, qapair, force_gold=True):
                 target_var = "?u_1"
             else:
                 target_var = "?u_0"
-            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
+            raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
                 correct = True
