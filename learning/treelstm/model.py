@@ -78,7 +78,7 @@ class CosSimilarity(nn.Module):
         out = self.cos(lvec, rvec)
         out = torch.autograd.Variable(torch.FloatTensor([[out.data[0], 1 - out.data[0]]]), requires_grad=True)
         if torch.cuda.is_available():
-            out.cuda()
+            out = out.cuda()
         return out
 
 
