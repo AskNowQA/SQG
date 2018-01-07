@@ -13,14 +13,14 @@ import logging
 import common.utility.utility
 
 
-def qg(linker, kb, parser, qapair):
+def qg(linker, kb, parser, qapair, force_gold=True):
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
     sort_query = "order by" in qapair.sparql.raw_query.lower()
-    entities, ontologies = linker.do(qapair, force_gold=True)
+    entities, ontologies = linker.do(qapair, force_gold=force_gold)
 
     graph = Graph(kb)
     queryBuilder = QueryBuilder()
@@ -31,6 +31,8 @@ def qg(linker, kb, parser, qapair):
     wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
     output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
+    for item in list(output_where):
+        logger.info(item["query"])
     if len(wheres) == 0:
         return "-without_path", output_where
     correct = False
@@ -41,8 +43,8 @@ def qg(linker, kb, parser, qapair):
             answerset = where["answer"]
             target_var = where["target_var"]
         else:
-            target_var = "?u_" + str(item["suggested_id"])
-            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
+            target_var = "?u_" + str(where["suggested_id"])
+            raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
         output_where[idx]["target_var"] = target_var
@@ -55,7 +57,7 @@ def qg(linker, kb, parser, qapair):
                 target_var = "?u_1"
             else:
                 target_var = "?u_0"
-            raw_answer = kb.query_where(item["where"], target_var, count_query, ask_query)
+            raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
                 correct = True
@@ -74,7 +76,8 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
-    parser.add_argument("--linker", help="0: gold linker, 1: EARL", type=int, default=0, dest="linker")
+    parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL", type=int, default=0,
+                        dest="linker")
     args = parser.parse_args()
 
     stats = Stats()
@@ -106,6 +109,7 @@ if __name__ == "__main__":
         ds = Qald(Qald.qald_7_largescale)
         ds.load()
         ds.parse()
+        ds.extend(Qald.qald_7_largescale_test)
     elif t == 8:
         ds = Qald(Qald.qald_7_multilingual)
         ds.load()
@@ -128,7 +132,7 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(linker, ds.parser.kb, ds.parser, qapair)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, args.linker != 2)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where

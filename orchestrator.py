@@ -5,16 +5,20 @@ from sklearn.model_selection import train_test_split
 
 
 class Orchestrator:
-    def __init__(self, question_classifier, parser):
+    def __init__(self, question_classifier, parser, auto_train=True):
         self.question_classifier = question_classifier
         self.parser = parser
         self.kb = parser.kb
+        self.X_train, self.X_test, self.y_train, self.y_test = [], [], [], []
 
-        if not question_classifier.is_trained:
-            self.__train_question_classifier()
+        if auto_train and not question_classifier.is_trained:
+            self.train_question_classifier()
 
-    def __train_question_classifier(self):
-        ds = LC_Qaud()
+    def prepare_dataset(self, file_path=None):
+        if file_path is None:
+            ds = LC_Qaud()
+        else:
+            ds = LC_Qaud(file_path)
         ds.load()
         ds.parse()
 
@@ -29,8 +33,13 @@ class Orchestrator:
             else:
                 y.append(0)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        self.question_classifier.train(X_train, y_train)
+        return X, y
+
+    def train_question_classifier(self, file_path=None, test_size=0.2):
+        X, y = self.prepare_dataset(file_path)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size=test_size,
+                                                                                random_state=42)
+        return self.question_classifier.train(self.X_train, self.y_train)
 
     def generate_query(self, question, entities, relations):
         ask_query = False
