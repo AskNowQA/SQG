@@ -40,8 +40,10 @@ def default(ds, n=-1):
         if stat["total"] == n:
             break
         if "generated_queries" in data:
-            stat.inc("has_queries")
-            stat.inc("generated_queries", len(data["generated_queries"]))
+            number_of_quries = len(data["generated_queries"])
+            if number_of_quries > 0:
+                stat.inc("has_queries")
+                stat.inc("generated_queries", number_of_quries)
 
     return stat
 
@@ -115,17 +117,6 @@ if __name__ == "__main__":
     ds_1 = load_ds(args.file_name)
     print default(ds_1)
 
-    # multiple_path_with_correct_answer = filter(ds_1,
-    #                                            lambda item: item["answer"] == "multiple_path_with_correct_answer")
-    #
-    # for item in multiple_path_with_correct_answer:
-    #     print item
-    #     print ds_1[item]["question"]
-    #     print ds_1[item]["query"]
-    #     print "\n".join(ds_1[item]["generated_queries"])
-    #     print
-    #
-    # print len(multiple_path_with_correct_answer)
     # ds_1 = load_ds("wq_14")
     # print default(ds_1)
     # bar_chart_per_feature(ds_1)
