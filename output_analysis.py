@@ -2,6 +2,7 @@ import json
 from common.utility.stats import Stats
 import matplotlib.pyplot as plt
 import argparse
+from parser.lc_quad import LC_Qaud
 
 
 def load_ds(name):
@@ -31,19 +32,24 @@ def diff(ds_1, ds_2, f1=None, f2=None):
     return result
 
 
-def default(ds, n=-1):
+def default(ds, id_to_include=[], n=-1):
     stat = Stats()
+    stat["max_generated_queries"] = 0
     for data in ds:
-        stat.inc("total")
-        if "answer" in data:
-            stat.inc(data["answer"])
-        if stat["total"] == n:
-            break
-        if "generated_queries" in data:
-            number_of_quries = len(data["generated_queries"])
-            if number_of_quries > 0:
-                stat.inc("has_queries")
-                stat.inc("generated_queries", number_of_quries)
+        if (len(id_to_include) == 0) or (data["id"] in id_to_include):
+
+            stat.inc("total")
+            if "answer" in data:
+                stat.inc(data["answer"])
+            if stat["total"] == n:
+                break
+            if "generated_queries" in data:
+                number_of_quries = len(data["generated_queries"])
+                if number_of_quries > 0:
+                    stat.inc("has_queries")
+                    stat.inc("generated_queries", number_of_quries)
+                    if number_of_quries > stat["max_generated_queries"]:
+                        stat["max_generated_queries"] = number_of_quries
 
     return stat
 
@@ -111,11 +117,22 @@ def bar_chart_per_feature(input_json):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Analyse the output of query generator')
-    parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
+    parser.add_argument("--file", help="file name to load the results", default="tmp", dest="file_name")
+    parser.add_argument("--filter", help="file name to filter the results", default="./data/LC-QUAD/linked_3200.json",
+                        dest="filter_name")
     args = parser.parse_args()
 
     ds_1 = load_ds(args.file_name)
-    print default(ds_1)
+
+    id_to_include = []
+    if args.filter_name != "":
+        ds = LC_Qaud(args.filter_name)
+        ds.load()
+        ds.parse()
+        for item in ds.qapairs:
+            id_to_include.append(item.id)
+
+    print default(ds_1, id_to_include)
 
     # ds_1 = load_ds("wq_14")
     # print default(ds_1)
