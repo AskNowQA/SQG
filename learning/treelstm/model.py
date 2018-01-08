@@ -76,10 +76,10 @@ class CosSimilarity(nn.Module):
 
     def forward(self, lvec, rvec):
         out = self.cos(lvec, rvec)
-        out = torch.autograd.Variable(torch.FloatTensor([[out.data[0], 1 - out.data[0]]]), requires_grad=True)
+        out = torch.autograd.Variable(torch.FloatTensor([[1 - out.data[0], out.data[0]]]), requires_grad=True)
         if torch.cuda.is_available():
             out = out.cuda()
-        return torch.log(out)
+        return F.log_softmax(out)
 
 
 # putting the whole model together
