@@ -50,6 +50,8 @@ def default(ds, id_to_include=[], n=-1):
                     stat.inc("generated_queries", number_of_quries)
                     if number_of_quries > stat["max_generated_queries"]:
                         stat["max_generated_queries"] = number_of_quries
+                    if number_of_quries > 3:
+                        stat.inc("more_than_three_queries")
 
     return stat
 
@@ -125,7 +127,7 @@ if __name__ == "__main__":
     ds_1 = load_ds(args.file_name)
 
     id_to_include = []
-    if args.filter_name != "":
+    if args.filter_name != "-":
         ds = LC_Qaud(args.filter_name)
         ds.load()
         ds.parse()
