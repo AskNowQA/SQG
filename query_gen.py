@@ -4,7 +4,7 @@ from parser.qald import Qald
 from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
-from linker.jerrl import Jerrl
+from linker.goldLinker import GoldLinker
 from linker.earl import Earl
 from common.query.querybuilder import QueryBuilder
 import json
@@ -73,23 +73,27 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=0, dest="dataset")
+    parser.add_argument("--path", help="dataset path", default="./data/LC-QUAD/linked_answer6.json",
+                        dest="dataset_path")
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
     parser.add_argument("--in", help="only works on this list", type=int, nargs='+', default=[], dest="list_id")
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
-    parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL", type=int, default=0,
-                        dest="linker")
+    parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL, 3: (RelN, TagMe)", type=int,
+                        default=0, dest="linker")
     args = parser.parse_args()
 
     stats = Stats()
     t = args.dataset
     output_file = args.file_name
     if args.linker == 0:
-        linker = Jerrl()
+        linker = GoldLinker()
+    elif args.linker == 3:
+        linker = 3
     else:
         linker = Earl()
 
     if t == 0:
-        ds = LC_Qaud_Linked(path="./data/LC-QUAD/linked_answer6.json")
+        ds = LC_Qaud_Linked(path=args.dataset_path)
         ds.load()
         ds.parse()
     elif t == 1:
@@ -119,6 +123,8 @@ if __name__ == "__main__":
     output = []
     for qapair in ds.qapairs:
         stats.inc("total")
+        # if "send it on" not in qapair.question.text.lower():
+        #     continue
         if len(args.list_id) > 0 and stats["total"] - 1 not in args.list_id:
             continue
         output_row = {"question": qapair.question.text,
@@ -132,7 +138,7 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, args.linker != 2)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, args.linker == 1)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where

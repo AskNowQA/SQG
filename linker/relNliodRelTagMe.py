@@ -2,7 +2,7 @@ from common.container.linkeditem import LinkedItem
 from common.utility.utility import find_mentions
 
 
-class Jerrl:
+class RelNliodRelTagMe:
     def __init__(self):
         pass
 
