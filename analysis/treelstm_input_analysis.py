@@ -3,7 +3,7 @@ from common.utility.stats import Stats
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Analyse the input of ranking model')
-    parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
+    parser.add_argument("--file", help="file name to load the results", default="tmp", dest="file_name")
     args = parser.parse_args()
 
 base_path = "../learning/treelstm/data/"
