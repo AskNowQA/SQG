@@ -1,5 +1,5 @@
 import json
-from jerrl import Jerrl
+from goldLinker import GoldLinker
 from common.container.linkeditem import LinkedItem
 from common.container.uri import Uri
 from kb.dbpedia import DBpedia
@@ -9,7 +9,7 @@ from common.utility.utility import closest_string
 class Earl:
     def __init__(self, path="data/LC-QUAD/EARL/output.json"):
         self.parser = DBpedia.parse_uri
-        self.gold_linker = Jerrl()
+        self.gold_linker = GoldLinker()
         with file(path) as data_file:
             self.raw_data = json.load(data_file)
             self.questions = {}
@@ -17,16 +17,17 @@ class Earl:
                 self.questions[item["question"]] = item
 
     def __force_gold(self, golden_list, surfaces, items):
-        not_found_relations = []
+        not_found = []
         for item in golden_list:
             idx = closest_string(item.surface_form, surfaces)
             if idx != -1:
-                items[idx].uris[0] = item.uris[0]
+                if item.uris[0] not in items[idx].uris:
+                    items[idx].uris[len(items[idx].uris) - 1] = item.uris[0]
                 surfaces.pop(idx)
             else:
-                not_found_relations.append(item)
+                not_found.append(item)
 
-        for item in not_found_relations:
+        for item in not_found:
             if len(surfaces) > 0:
                 idx = surfaces.keys()[0]
                 items[idx].uris[0] = item.uris[0]
