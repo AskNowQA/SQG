@@ -5,7 +5,6 @@ from sklearn.model_selection import GridSearchCV
 class Classifier(object):
     def __init__(self):
         self.model = None
-        pass
 
     @property
     def is_trained(self):

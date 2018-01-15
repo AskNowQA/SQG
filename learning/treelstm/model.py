@@ -49,9 +49,9 @@ class ChildSumTreeLSTM(nn.Module):
 
 
 # module for distance-angle similarity
-class Similarity(nn.Module):
+class DASimilarity(nn.Module):
     def __init__(self, mem_dim, hidden_dim, num_classes):
-        super(Similarity, self).__init__()
+        super(DASimilarity, self).__init__()
         self.mem_dim = mem_dim
         self.hidden_dim = hidden_dim
         self.num_classes = num_classes
@@ -68,13 +68,27 @@ class Similarity(nn.Module):
         return out
 
 
+# module for cosine similarity
+class CosSimilarity(nn.Module):
+    def __init__(self, mem_dim):
+        super(CosSimilarity, self).__init__()
+        self.cos = nn.CosineSimilarity(dim=mem_dim)
+
+    def forward(self, lvec, rvec):
+        out = self.cos(lvec, rvec)
+        out = torch.autograd.Variable(torch.FloatTensor([[1 - out.data[0], out.data[0]]]), requires_grad=True)
+        if torch.cuda.is_available():
+            out = out.cuda()
+        return F.log_softmax(out)
+
+
 # putting the whole model together
 class SimilarityTreeLSTM(nn.Module):
-    def __init__(self, vocab_size, in_dim, mem_dim, hidden_dim, num_classes, sparsity):
+    def __init__(self, vocab_size, in_dim, mem_dim, similarity, sparsity):
         super(SimilarityTreeLSTM, self).__init__()
         self.emb = nn.Embedding(vocab_size, in_dim, padding_idx=Constants.PAD, sparse=sparsity)
         self.childsumtreelstm = ChildSumTreeLSTM(in_dim, mem_dim)
-        self.similarity = Similarity(mem_dim, hidden_dim, num_classes)
+        self.similarity = similarity
 
     def forward(self, ltree, linputs, rtree, rinputs):
         linputs = self.emb(linputs)

@@ -38,6 +38,8 @@ def parse_args():
                               incompatible with weight decay')
     parser.add_argument('--optim', default='adagrad',
                         help='optimizer (default: adagrad)')
+    parser.add_argument('--sim', default='nn',
+                        help='similarity (default: nn) nn or cos')
     # miscellaneous options
     parser.add_argument('--seed', default=123, type=int,
                         help='random seed (default: 123)')

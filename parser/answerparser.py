@@ -18,6 +18,11 @@ class AnswerParser(object):
                 and len(raw_answerset["results"]["bindings"]) > 0:
             for raw_answerrow in raw_answerset["results"]["bindings"]:
                 answer_rows.append(AnswerRow(raw_answerrow, self.__parse_answerrow))
+        elif "string" in raw_answerset:
+            return [
+                AnswerRow(raw_answerset, lambda x: [Answer("uri", raw_answerset["string"], self.__parse_answer)])]
+
+
         return answer_rows
 
     def __parse_answerrow(self, raw_answerrow):

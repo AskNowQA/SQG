@@ -102,13 +102,17 @@ def main():
         torch.save(test_dataset, test_file)
     logger.debug('==> Size of test data    : %d ' % len(test_dataset))
 
+    if args.sim == "cos":
+        similarity = CosSimilarity(1)
+    else:
+        similarity = DASimilarity(args.mem_dim, args.hidden_dim, args.num_classes)
+
     # initialize model, criterion/loss_function, optimizer
     model = SimilarityTreeLSTM(
         vocab.size(),
         args.input_dim,
         args.mem_dim,
-        args.hidden_dim,
-        args.num_classes,
+        similarity,
         args.sparse)
     criterion = nn.KLDivLoss()  # nn.HingeEmbeddingLoss()
 
