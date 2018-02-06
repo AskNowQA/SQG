@@ -120,7 +120,7 @@ def bar_chart_per_feature(input_json):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Analyse the output of query generator')
     parser.add_argument("--file", help="file name to load the results", default="tmp", dest="file_name")
-    parser.add_argument("--filter", help="file name to filter the results", default="./data/LC-QUAD/linked_3200.json",
+    parser.add_argument("--filter", help="file name to filter the results", default="-",
                         dest="filter_name")
     args = parser.parse_args()
 
