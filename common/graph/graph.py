@@ -100,10 +100,16 @@ class Graph:
 
     def __extend_edges(self, edges, relation_items):
         new_edges = set()
+        total = 0
         for relation_item in relation_items:
             for relation_uri in relation_item.uris:
-                for edge in edges:
-                    new_edges.update(self.__extend_edge(edge, relation_uri))
+                total += len(edges)
+        with tqdm(total=total, disable=self.logger.level >= 10) as pbar:
+            for relation_item in relation_items:
+                for relation_uri in relation_item.uris:
+                    for edge in edges:
+                        pbar.update(1)
+                        new_edges.update(self.__extend_edge(edge, relation_uri))
         for e in new_edges:
             self.add_edge(e)
 
