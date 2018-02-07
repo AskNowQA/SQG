@@ -107,15 +107,22 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
         if cache_id in self.two_hop_cache:
             return self.two_hop_cache[cache_id]
 
+        queries = self.two_hop_graph_template(entity1_uri, relation1_uri, entity2_uri, relation2_uri)
+        output = None
+        if len(queries) > 0:
+            output = self.__parallel_query(queries)
+        self.two_hop_cache[cache_id] = output
+        return output
+
+    def two_hop_graph_template(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
         query_types = [u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}",
                        u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1",
                        u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1",
                        u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}",
                        u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]
-        output = self.__parallel_query([item.format(rel1=relation1_uri, ent1=entity1_uri,
-                                                    ent2=entity2_uri, rel2=relation2_uri,
-                                                    type=self.type_uri) for item in query_types])
-        self.two_hop_cache[cache_id] = output
+        output = [item.format(rel1=relation1_uri, ent1=entity1_uri,
+                              ent2=entity2_uri, rel2=relation2_uri,
+                              type=self.type_uri) for item in query_types]
         return output
 
     @staticmethod
