@@ -24,6 +24,9 @@ and the following features will be integrated:
 * Sort
 * Filter
 
+## Data
+* QALD dataset: https://github.com/ag-sc/QALD
+* Bloom for DBpedia: https://drive.google.com/drive/folders/14cRLzgxFVrt_b9f91VKND2wu20TemYIN
 
 ## Evaluation
 We aimed to be KB independent, thus two datasets based on two different KB has been opted to be used for the evaluation purposes:
