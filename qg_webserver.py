@@ -8,6 +8,10 @@ from parser.lc_quad import LC_QaudParser
 from parser.webqsp import WebQSPParser
 from learning.classifier.svmclassifier import SVMClassifier
 from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
+import logging
+import common.utility.utility as utility
+import sys
+import os
 
 app = flask.Flask(__name__)
 queryBuilder = None
@@ -45,6 +49,9 @@ def not_found(error):
 
 
 if __name__ == '__main__':
+    logger = logging.getLogger(__name__)
+    utility.setup_logging()
+
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--kb", help="'dbpedia' (default) or 'freebase'", default="dbpedia", dest="kb")
     parser.add_argument("--classifier", help="'svm' (default) or 'naivebayes'", default="svm", dest="classifier")
@@ -56,10 +63,20 @@ if __name__ == '__main__':
         parser = WebQSPParser()
 
     kb = parser.kb
+
+    if not kb.server_available:
+        logger.error("Server is not available. Please check the endpoint at: {}".format(kb.endpoint))
+        sys.exit(0)
+
+    base_dir = "./output"
+    classifier_dir = os.path.join(base_dir, "classifier")
+    utility.makedirs(classifier_dir)
     if args.classifier == "svm":
-        classifier = SVMClassifier()
+        model_dir = os.path.join(classifier_dir, "svm.model")
+        classifier = SVMClassifier(model_dir)
     elif args.classifier == "naivebayes":
-        classifier = NaiveBayesClassifier()
+        model_dir = os.path.join(classifier_dir, "naivebayes.model")
+        classifier = NaiveBayesClassifier(model_dir)
 
     queryBuilder = Orchestrator(classifier, parser)
     app.run(debug=True)

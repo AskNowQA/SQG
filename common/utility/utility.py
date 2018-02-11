@@ -3,6 +3,12 @@ import json
 import logging.config
 
 
+def makedirs(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    return None
+
+
 def setup_logging(
         default_path='logging.json',
         default_level=logging.INFO,

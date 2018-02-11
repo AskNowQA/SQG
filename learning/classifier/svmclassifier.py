@@ -6,8 +6,8 @@ from sklearn.linear_model import SGDClassifier
 
 
 class SVMClassifier(Classifier):
-    def __init__(self):
-        super(SVMClassifier, self).__init__()
+    def __init__(self, model_file_path=None):
+        super(SVMClassifier, self).__init__(model_file_path)
         self.pipeline = Pipeline([('vect', CountVectorizer()), ('tf-idf', TfidfTransformer()),
                                   ('svm',
                                    SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=42))])

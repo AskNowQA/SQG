@@ -20,6 +20,19 @@ class KB(object):
         self.type_uri = "type_uri"
         self.one_hop_cache = dict()
         self.two_hop_cache = dict()
+        self.server_available = self.check_server()
+
+    def check_server(self):
+        payload = (
+            ('query', 'select distinct ?Concept where {[] a ?Concept} LIMIT 1'),
+            ('format', 'application/json'))
+        try:
+            r = requests.get(self.endpoint, params=payload, timeout=10)
+            if r.status_code == 200:
+                return True
+        except:
+            return False
+        return False
 
     def query(self, q):
         payload = (
@@ -79,14 +92,15 @@ class KB(object):
                        u"?u1 {type} {rel}"]
         where = ""
         for i in range(len(query_types)):
-            where = where + u"UNION {{ values ?m {{ {} }} {{select <1> where {{ {} }} }} }}\n".format(i,
-                                                                                                      query_types[
-                                                                                                          i].format(
-                                                                                                          rel=relation_uri,
-                                                                                                          ent1=entity1_uri,
-                                                                                                          ent2=entity2_uri,
-                                                                                                          type=self.type_uri,
-                                                                                                          prefix=self.query_prefix()))
+            where = where + u"UNION {{ values ?m {{ {} }} {{select <1> where {{ {} }} }} }}\n". \
+                format(i,
+                       query_types[
+                           i].format(
+                           rel=relation_uri,
+                           ent1=entity1_uri,
+                           ent2=entity2_uri,
+                           type=self.type_uri,
+                           prefix=self.query_prefix()))
         where = where[6:]
         query = u"""{prefix}
 SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), where=where)
