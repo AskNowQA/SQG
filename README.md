@@ -26,7 +26,9 @@ and the following features will be integrated:
 
 ## Data
 * QALD dataset: https://github.com/ag-sc/QALD
-* Bloom for DBpedia: https://drive.google.com/drive/folders/14cRLzgxFVrt_b9f91VKND2wu20TemYIN
+* Others: https://drive.google.com/drive/folders/14cRLzgxFVrt_b9f91VKND2wu20TemYIN
+    * Pretrained question classifier: output/classifer/* 
+    * Bloom for DBpedia: data/blooms/*
 
 ## Evaluation
 We aimed to be KB independent, thus two datasets based on two different KB has been opted to be used for the evaluation purposes:
