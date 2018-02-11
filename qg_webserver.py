@@ -11,6 +11,7 @@ from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
 import logging
 import common.utility.utility as utility
 import sys
+import os
 
 app = flask.Flask(__name__)
 queryBuilder = None
@@ -67,10 +68,15 @@ if __name__ == '__main__':
         logger.error("Server is not available. Please check the endpoint at: {}".format(kb.endpoint))
         sys.exit(0)
 
+    base_dir = "./output"
+    classifier_dir = os.path.join(base_dir, "classifier")
+    utility.makedirs(classifier_dir)
     if args.classifier == "svm":
-        classifier = SVMClassifier()
+        model_dir = os.path.join(classifier_dir, "svm.model")
+        classifier = SVMClassifier(model_dir)
     elif args.classifier == "naivebayes":
-        classifier = NaiveBayesClassifier()
+        model_dir = os.path.join(classifier_dir, "naivebayes.model")
+        classifier = NaiveBayesClassifier(model_dir)
 
     queryBuilder = Orchestrator(classifier, parser)
     app.run(debug=True)

@@ -55,5 +55,7 @@ class Orchestrator:
         graph = Graph(self.kb)
         query_builder = QueryBuilder()
         graph.find_minimal_subgraph(entities, relations, ask_query, sort_query)
-        return query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query, count_query,
-                                                sort_query)
+        valid_walks = query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query, count_query,
+                                                       sort_query)
+
+        return valid_walks
