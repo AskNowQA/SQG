@@ -11,6 +11,7 @@ import json
 import argparse
 import logging
 import common.utility.utility
+import sys
 
 
 def qg(linker, kb, parser, qapair, force_gold=True):
@@ -118,6 +119,10 @@ if __name__ == "__main__":
         ds = Qald(Qald.qald_7_multilingual)
         ds.load()
         ds.parse()
+
+    if not ds.parser.kb.server_available:
+        logger.error("Server is not available. Please check the endpoint at: {}".format(ds.parser.kb.endpoint))
+        sys.exit(0)
 
     tmp = []
     output = []
