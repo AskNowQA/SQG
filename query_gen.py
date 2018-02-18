@@ -17,17 +17,17 @@ from pprint import pprint
 
 # f = open("output/diff.txt",'w')
 
-
+# analysis_out = []
 
 def qg(linker, kb, parser, qapair, force_gold=True):
-    print "Start here"
-    
+
     logger.info(qapair.sparql)
+    logger.info(qapair.question.text)
+
+    # Get Answer from KB online
     status, raw_answer_true = kb.query(str(qapair.sparql).replace("https","http"))
     answerset_true = AnswerSet(raw_answer_true, parser.parse_queryresult)
     qapair.answerset = answerset_true
-    
-    logger.info(qapair.question.text)
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
