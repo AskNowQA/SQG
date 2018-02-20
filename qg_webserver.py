@@ -1,5 +1,6 @@
 #!flask/bin/python
 import flask
+from gevent.wsgi import WSGIServer
 import argparse
 from orchestrator import Orchestrator
 from common.container.uri import Uri
@@ -27,6 +28,7 @@ def generate_query():
     question = flask.request.json['question']
     raw_entities = flask.request.json['entities']
     raw_relations = flask.request.json['relations']
+    h1_threshold = int(flask.request.json['h1_threshold']) if 'h1_threshold' in flask.request.json else 9999999
 
     entities = []
     for item in raw_entities:
@@ -38,9 +40,10 @@ def generate_query():
         uris = [Uri(uri["uri"], kb.parse_uri, uri["confidence"]) for uri in item["uris"]]
         relations.append(LinkedItem(item["surface"], uris))
 
-    where = queryBuilder.generate_query(question, entities, relations)
+    where, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
     return flask.jsonify(
-        {'queries': [kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"])) for item in where]}), 201
+        {'queries': [kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"])) for item in where],
+         'type': question_type}), 201
 
 
 @app.errorhandler(404)
@@ -53,6 +56,7 @@ if __name__ == '__main__':
     utility.setup_logging()
 
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
+    parser.add_argument("--port", help="port", default=5000, type=int, dest="port")
     parser.add_argument("--kb", help="'dbpedia' (default) or 'freebase'", default="dbpedia", dest="kb")
     parser.add_argument("--classifier", help="'svm' (default) or 'naivebayes'", default="svm", dest="classifier")
     args = parser.parse_args()
@@ -79,4 +83,6 @@ if __name__ == '__main__':
         classifier = NaiveBayesClassifier(model_dir)
 
     queryBuilder = Orchestrator(classifier, parser)
-    app.run(debug=True)
+    logger.info("Starting the HTTP server")
+    http_server = WSGIServer(('', args.port), app)
+    http_server.serve_forever()
