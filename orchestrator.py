@@ -41,21 +41,24 @@ class Orchestrator:
                                                                                 random_state=42)
         return self.question_classifier.train(self.X_train, self.y_train)
 
-    def generate_query(self, question, entities, relations):
+    def generate_query(self, question, entities, relations, h1_threshold=None):
         ask_query = False
         sort_query = False
         count_query = False
 
         question_type = self.question_classifier.predict([question])
+        question_type_str = "list"
         if question_type == 2:
             count_query = True
+            question_type_str = "count"
         elif question_type == 1:
             ask_query = True
+            question_type_str = "boolean"
 
         graph = Graph(self.kb)
         query_builder = QueryBuilder()
-        graph.find_minimal_subgraph(entities, relations, ask_query, sort_query)
+        graph.find_minimal_subgraph(entities, relations, ask_query, sort_query, h1_threshold=h1_threshold)
         valid_walks = query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query, count_query,
                                                        sort_query)
 
-        return valid_walks
+        return valid_walks, question_type_str

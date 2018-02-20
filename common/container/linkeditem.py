@@ -3,6 +3,9 @@ class LinkedItem:
         self.surface_form = surface_form
         self.uris = uris
 
+    def top_uris(self, top=1):
+        return self.uris[:int(top * len(self.uris))]
+
     def contains_uri(self, uri):
         """
         Whether the uri exists in the list of uris

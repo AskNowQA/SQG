@@ -4,12 +4,13 @@
 # Pycharm
 .idea
 
-# tmp dirs
+# data & tmp dirs
 output
 tmp
 train
 learning/treelstm/checkpoints/
 learning/treelstm/data/
+data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

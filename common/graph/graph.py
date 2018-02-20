@@ -47,18 +47,27 @@ class Graph:
         if edge.dest_node.is_disconnected():
             self.remove_node(edge.dest_node)
 
-    def __one_hop_graph(self, entity_items, relation_items, number_of_entities=1):
+    def count_combinations(self, entity_items, relation_items, number_of_entities, top_uri):
         total = 0
         for relation_item in relation_items:
-            for relation_uri in relation_item.uris:
-                for entity_uris in itertools.product(*[items.uris for items in entity_items]):
-                    for entity_uri in itertools.combinations(entity_uris, number_of_entities):
-                        total += 1
-        idx = 0
+            rel_uris_len = len(relation_item.top_uris(top_uri))
+            for entity_uris in itertools.product(*[items.top_uris(top_uri) for items in entity_items]):
+                total += rel_uris_len * len(list(itertools.combinations(entity_uris, number_of_entities)))
+        return total
+
+    def __one_hop_graph(self, entity_items, relation_items, threshold=None, number_of_entities=1):
+        top_uri = 1
+
+        total = self.count_combinations(entity_items, relation_items, number_of_entities, top_uri)
+        if threshold is not None:
+            while total > threshold:
+                top_uri -= 0.1
+                total = self.count_combinations(entity_items, relation_items, number_of_entities, top_uri)
+
         with tqdm(total=total, disable=self.logger.level >= 10) as pbar:
             for relation_item in relation_items:
-                for relation_uri in relation_item.uris:
-                    for entity_uris in itertools.product(*[items.uris for items in entity_items]):
+                for relation_uri in relation_item.top_uris(top_uri):
+                    for entity_uris in itertools.product(*[items.top_uris(top_uri) for items in entity_items]):
                         for entity_uri in itertools.combinations(entity_uris, number_of_entities):
                             pbar.update(1)
                             result = self.kb.one_hop_graph(entity_uri[0], relation_uri,
@@ -83,12 +92,13 @@ class Graph:
                                         e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                                         self.add_edge(e)
 
-    def find_minimal_subgraph(self, entity_items, relation_items, ask_query=False, sort_query=False):
+    def find_minimal_subgraph(self, entity_items, relation_items, ask_query=False, sort_query=False, h1_threshold=None):
         self.entity_items, self.relation_items = MyList(entity_items), MyList(relation_items)
 
         # Find subgraphs that are consist of at least one entity and exactly one relation
         self.logger.info("start finding one hop graph")
-        self.__one_hop_graph(entity_items, relation_items, int(ask_query) + 1)
+        self.__one_hop_graph(entity_items, relation_items, number_of_entities=int(ask_query) + 1,
+                             threshold=h1_threshold)
         self.logger.info("finding one hop graph finished")
 
         if len(self.edges) > 100:

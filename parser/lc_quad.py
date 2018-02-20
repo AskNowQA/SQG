@@ -31,7 +31,7 @@ class LC_Qaud:
 
 class LC_QaudParser(AnswerParser):
     def __init__(self):
-        super(LC_QaudParser, self).__init__(DBpedia())
+        super(LC_QaudParser, self).__init__(DBpedia(one_hop_bloom_file="./data/blooms/spo1.bloom"))
 
     def parse_question(self, raw_question):
         return raw_question

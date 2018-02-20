@@ -10,7 +10,7 @@ from common.query.querybuilder import QueryBuilder
 import json
 import argparse
 import logging
-import common.utility.utility
+import common.utility.utility as utility
 import sys
 
 
@@ -70,7 +70,7 @@ def qg(linker, kb, parser, qapair, force_gold=True):
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
-    common.utility.utility.setup_logging()
+    utility.setup_logging()
 
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=0, dest="dataset")
