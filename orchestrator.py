@@ -15,7 +15,7 @@ class Orchestrator:
         if auto_train and not question_classifier.is_trained:
             self.train_question_classifier()
 
-        if auto_train and not double_relation_classifer.is_trained:
+        if auto_train and double_relation_classifer is not None and not double_relation_classifer.is_trained:
             self.train_double_relation_classifier()
 
     def prepare_question_classifier_dataset(self, file_path=None):
@@ -85,11 +85,12 @@ class Orchestrator:
             ask_query = True
             question_type_str = "boolean"
 
-        double_relation = self.double_relation_classifer.predict([question])
-        if double_relation == 1:
-            double_relation = True
-        else:
-            double_relation = False
+        if self.double_relation_classifer is not None:
+            double_relation = self.double_relation_classifer.predict([question])
+            if double_relation == 1:
+                double_relation = True
+            else:
+                double_relation = False
 
         graph = Graph(self.kb)
         query_builder = QueryBuilder()
@@ -97,4 +98,4 @@ class Orchestrator:
         valid_walks = query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query, count_query,
                                                        sort_query)
 
-        return valid_walks, question_type_str
+        return valid_walks, question_type

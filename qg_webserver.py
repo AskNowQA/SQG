@@ -40,10 +40,19 @@ def generate_query():
         uris = [Uri(uri["uri"], kb.parse_uri, uri["confidence"]) for uri in item["uris"]]
         relations.append(LinkedItem(item["surface"], uris))
 
+    ask_query = False
+    count_query = False
     where, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
+    question_type_str = "list"
+    if question_type == 2:
+        count_query = True
+        question_type_str = "count"
+    elif question_type == 1:
+        ask_query = True
+        question_type_str = "boolean"
     return flask.jsonify(
-        {'queries': [kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"])) for item in where],
-         'type': question_type}), 201
+        {'queries': [kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query) for item in where],
+         'type': question_type_str}), 201
 
 
 @app.errorhandler(404)
@@ -82,7 +91,7 @@ if __name__ == '__main__':
         model_dir = os.path.join(classifier_dir, "naivebayes.model")
         classifier = NaiveBayesClassifier(model_dir)
 
-    queryBuilder = Orchestrator(classifier, parser)
+    queryBuilder = Orchestrator(classifier, None, parser)
     logger.info("Starting the HTTP server")
     http_server = WSGIServer(('', args.port), app)
     http_server.serve_forever()
