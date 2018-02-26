@@ -17,6 +17,7 @@ def make_dirs(dirs):
         if not os.path.exists(d):
             os.makedirs(d)
 
+
 def build_vocab(filepaths, dst_path, lowercase=True):
     vocab = set()
     for filepath in filepaths:
@@ -67,11 +68,12 @@ def split(filepath, dst_dir):
                 # Empty query should be ignored
                 if len(b) < 5:
                     continue
-                sim = str(2 if query["correct"] else 1)
+                sim = str(1 if query["correct"] else 0)
                 idfile.write(i + '\n')
                 afile.write(a.encode('ascii', 'ignore') + '\n')
                 bfile.write(b.encode('ascii', 'ignore') + '\n')
                 simfile.write(sim + '\n')
+
 
 if __name__ == '__main__':
     print('=' * 80)
@@ -80,7 +82,7 @@ if __name__ == '__main__':
 
     base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     data_dir = os.path.join(base_dir, 'data')
-    lc_quad_dir = os.path.join(data_dir, 'lc_quad_gold')
+    lc_quad_dir = os.path.join(data_dir, 'lc_quad_earl_no_force_gold')
     lib_dir = os.path.join(base_dir, 'lib')
     train_dir = os.path.join(lc_quad_dir, 'train')
     dev_dir = os.path.join(lc_quad_dir, 'dev')
@@ -92,7 +94,7 @@ if __name__ == '__main__':
     trail_filepath = os.path.join(lc_quad_dir, 'LCQuad_trial.json')
     test_filepath = os.path.join(lc_quad_dir, 'LCQuad_test.json')
 
-    ds = json.load(open("../../../output/lc_quad_gold.json"))
+    ds = json.load(open("../../../output/lc_quad_earl_no_force_gold.json"))
     total = len(ds)
     train_size = int(.7 * total)
     dev_size = int(.2 * total)
