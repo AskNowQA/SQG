@@ -48,9 +48,9 @@ def basic_stats(data):
 def deep_analysis(data):
     l = []
     for i in data:
-        if i["Result"] == False:
+        if i["answer"] == "-incorrect":
             l.append(i)
-    with open("output/incorrect_out.json", "w") as data_file:
+    with open("output/incorrect_bonn.json", "w") as data_file:
         json.dump(l, data_file, sort_keys=True, indent=4, separators=(',', ': '))
         # print i
             # for k,e in i.iteritems():
@@ -66,6 +66,7 @@ def deep_analysis(data):
             # print ""
 
 # Searched for a character in the data
+# dummy method
 def deep_analysis_search(data):
     c = 0
     for i in data:
@@ -81,6 +82,7 @@ def get_question_index(question):
     ds.parse()
     for i in range(0,len(ds.qapairs)):
         if question == ds.qapairs[i].question.text:
+            print "Question id:" ,i
             return i
 
 # Input question list, out put query gen
@@ -94,8 +96,8 @@ def get_question_query(questions):
 # Compares two queries
 def compare_query(q1, q2):
     # Find a list of the variables in the queries
-    vars1 = re.findall(r"\?[^\s]+",q1)
-    vars2 = re.findall(r"\?[^\s]+",q2)
+    vars1 = re.findall(r"\?\w+",q1)
+    vars2 = re.findall(r"\?\w+",q2)
 
     vars1s = []
     vars2s = []
@@ -108,6 +110,7 @@ def compare_query(q1, q2):
 
     # If no. of variables are not the same return false
     if len(vars1s) != len(vars2s):
+        print "Step 1"
         return False
 
     q1n = q1
@@ -123,6 +126,7 @@ def compare_query(q1, q2):
 
     # if initial queries are the same true. spaces and . at the end are removes
     if q1n_no_space == q2n_no_space:
+        print "Step 2"
         return True
 
     q1_predicates = re.search(r'{.*}', q1n_no_space).group(0)
@@ -133,8 +137,12 @@ def compare_query(q1, q2):
 
     # if queries are the same but predicates are in the wrong order, return true.
     # q2 has to be the gold query
+    print q1_predicates
+    print q2_predicates
+
     for i in q2_predicates:
         if i not in q1_predicates:
+            print "lalal"
             return False
     return True
 
@@ -149,14 +157,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
     file = args.file_name
 
-    ds = load_file("incorrect_out")
+    # ds = load_file("incorrect_bonn")
+    # print len(ds)
     # basic_stats(ds)
     # ds = load_file(file)
     # deep_analysis(ds)
-    # print get_question_index("Give a list of all the labels that have jazz fusion artists signed up with them?")
+    # print get_question_index("What is the major shrine of Jacques-Dsir Laval ?")
+    # get_question_query(["What is the major shrine of Jacques-Dsir Laval ?"])
     # deep_analysis_search(ds)
     # os.system("python query_gen.py --max 2")
-    # get_question_query(["Give a list of all the labels that have jazz fusion artists signed up with them?","Which comic characters are painted by Bill Finger?"])
+    # get_question_query(["List the  primeministers of Victor Hope, 2nd Marquess of Linlithgow ?"])
     # print compare_query("a","a
 
     # X
@@ -164,12 +174,23 @@ if __name__ == "__main__":
 
     # x = ds[2]["Query_Generated"]
     # y = ds[2]["Query_Gold"]
-    c = 0
-    for i in ds:
-        print compare_query(i["Query_Generated"], i["Query_Gold"])
-        c+=1
+    # c = 0
+    # for i in ds:
+        # print compare_query(i["Query_Generated"], i["Query_Gold"])
+        # c+=1
     # print compare_query(x,y)
-    print c
+    # print c
+
+    # s = json.load(open("output/analysis_out.json"))
+    # print s
+   
+    # print compare_query(s[0]["Query_Generated"],s[0]["Query_Gold"])
+    """
+    q1 = " SELECT DISTINCT ?u_0 WHERE { <http://dbpedia.org/resource/The_Sarah_Jane_Adventures> <http://dbpedia.org/ontology/related> ?u_0 .<http://dbpedia.org/resource/Doctor_Who_Confidential> <http://dbpedia.org/ontology/related> ?u_0 }"
+    q2 = "SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/related> <http://dbpedia.org/resource/The_Sarah_Jane_Adventures> . ?uri <http://dbpedia.org/ontology/related> <http://dbpedia.org/resource/Doctor_Who_Confidential> . }"
+    print compare_query(q1,q2)
+
+    """
 
 
 
