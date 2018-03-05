@@ -37,7 +37,7 @@ if __name__ == "__main__":
 		if not item.sparql.supported:
 			continue
 
-		where_clause = item.sparql.where_clause
+		where_clause = item.sparql.where_clause_template
 		templates[where_clause] = 1 + (templates[where_clause] if where_clause in templates else 0)
 
 		total += 1
