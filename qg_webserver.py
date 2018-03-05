@@ -82,16 +82,18 @@ if __name__ == '__main__':
         sys.exit(0)
 
     base_dir = "./output"
-    classifier_dir = os.path.join(base_dir, "classifier")
-    utility.makedirs(classifier_dir)
+    question_type_classifier_path = os.path.join(base_dir, "question_type_classifier")
+    double_relation_classifier_path = os.path.join(base_dir, "double_relation_classifier")
+    utility.makedirs(question_type_classifier_path)
+    utility.makedirs(double_relation_classifier_path)
     if args.classifier == "svm":
-        model_dir = os.path.join(classifier_dir, "svm.model")
-        classifier = SVMClassifier(model_dir)
+        question_type_classifier = SVMClassifier(os.path.join(question_type_classifier_path, "svm.model"))
+        double_relation_classifier = SVMClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
     elif args.classifier == "naivebayes":
-        model_dir = os.path.join(classifier_dir, "naivebayes.model")
-        classifier = NaiveBayesClassifier(model_dir)
+        question_type_classifier = NaiveBayesClassifier(os.path.join(question_type_classifier_path, "naivebayes.model"))
+        double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
 
-    queryBuilder = Orchestrator(classifier, None, parser)
+    queryBuilder = Orchestrator(question_type_classifier, double_relation_classifier, parser)
     logger.info("Starting the HTTP server")
     http_server = WSGIServer(('', args.port), app)
     http_server.serve_forever()

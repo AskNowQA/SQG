@@ -92,12 +92,16 @@ class Graph:
                                         e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                                         self.add_edge(e)
 
-    def find_minimal_subgraph(self, entity_items, relation_items, ask_query=False, sort_query=False, h1_threshold=None):
+    def find_minimal_subgraph(self, entity_items, relation_items, double_relation=False, ask_query=False,
+                              sort_query=False, h1_threshold=None):
         self.entity_items, self.relation_items = MyList(entity_items), MyList(relation_items)
+
+        if double_relation:
+            self.relation_items.append(self.relation_items[0])
 
         # Find subgraphs that are consist of at least one entity and exactly one relation
         self.logger.info("start finding one hop graph")
-        self.__one_hop_graph(entity_items, relation_items, number_of_entities=int(ask_query) + 1,
+        self.__one_hop_graph(self.entity_items, self.relation_items, number_of_entities=int(ask_query) + 1,
                              threshold=h1_threshold)
         self.logger.info("finding one hop graph finished")
 
