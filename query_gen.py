@@ -1,6 +1,7 @@
 from parser.lc_quad_linked import LC_Qaud_Linked
 from parser.webqsp import WebQSP
 from parser.qald import Qald
+from common.container.sparql import SPARQL
 from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
@@ -49,6 +50,10 @@ def qg(linker, kb, parser, qapair, force_gold=True):
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
         output_where[idx]["target_var"] = target_var
+        sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
+        if (answerset == qapair.answerset) != (sparql == qapair.sparql):
+            print "error"
+
         if answerset == qapair.answerset:
             correct = True
             output_where[idx]["correct"] = True
@@ -60,6 +65,11 @@ def qg(linker, kb, parser, qapair, force_gold=True):
                 target_var = "?u_0"
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+
+            sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
+            if (answerset == qapair.answerset) != (sparql == qapair.sparql):
+                print "error"
+
             if answerset == qapair.answerset:
                 correct = True
                 output_where[idx]["correct"] = True
