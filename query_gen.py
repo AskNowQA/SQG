@@ -5,17 +5,18 @@ from common.container.sparql import SPARQL
 from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
+from common.query.querybuilder import QueryBuilder
+import common.utility.utility as utility
 from linker.goldLinker import GoldLinker
 from linker.earl import Earl
-from common.query.querybuilder import QueryBuilder
+from learning.classifier.svmclassifier import SVMClassifier
+from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
 import json
 import argparse
 import logging
-import common.utility.utility as utility
 import sys
-from learning.classifier.svmclassifier import SVMClassifier
-from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
 import os
+
 
 def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_classifier, force_gold=True):
     logger.info(qapair.sparql)
@@ -167,7 +168,8 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, question_type_classifier, double_relation_classifier, args.linker == 1)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, question_type_classifier,
+                               double_relation_classifier, args.linker == 1)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
