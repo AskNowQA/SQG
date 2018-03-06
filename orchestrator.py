@@ -39,6 +39,12 @@ class Orchestrator:
 
         return X, y
 
+    def train_question_classifier(self, file_path=None, test_size=0.2):
+        X, y = self.prepare_dataset(file_path)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size=test_size,
+                                                                                random_state=42)
+        return self.question_classifier.train(self.X_train, self.y_train)
+
     def prepare_double_relation_classifier_dataset(self, file_path=None):
         if file_path is None:
             ds = LC_Qaud()

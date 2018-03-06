@@ -11,6 +11,9 @@ class Classifier(object):
         else:
             self.model = None
 
+    # def __pipeline(self):
+    #     pass
+
     @property
     def is_trained(self):
         return self.model is not None
