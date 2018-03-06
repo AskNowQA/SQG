@@ -13,9 +13,11 @@ import argparse
 import logging
 import common.utility.utility as utility
 import sys
+from learning.classifier.svmclassifier import SVMClassifier
+from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
+import os
 
-
-def qg(linker, kb, parser, qapair, force_gold=True):
+def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_classifier, force_gold=True):
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
 
@@ -28,9 +30,10 @@ def qg(linker, kb, parser, qapair, force_gold=True):
     queryBuilder = QueryBuilder()
 
     logger.info("start finding the minimal subgraph")
-    graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
+    graph.find_minimal_subgraph(entities, ontologies, ask_query=ask_query, sort_query=sort_query)
     logger.info(graph)
-    wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
+    wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query=ask_query,
+                                             count_query=count_query, sort_query=sort_query)
 
     output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
     for item in list(output_where):
@@ -91,7 +94,18 @@ if __name__ == "__main__":
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
     parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL, 3: (RelN, TagMe)", type=int,
                         default=0, dest="linker")
+    parser.add_argument("--classifier", help="'svm' (default) or 'naivebayes'", default="svm", dest="classifier")
     args = parser.parse_args()
+
+    base_dir = "./output"
+    question_type_classifier_path = os.path.join(base_dir, "question_type_classifier")
+    double_relation_classifier_path = os.path.join(base_dir, "double_relation_classifier")
+    if args.classifier == "svm":
+        question_type_classifier = SVMClassifier(os.path.join(question_type_classifier_path, "svm.model"))
+        double_relation_classifier = SVMClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
+    elif args.classifier == "naivebayes":
+        question_type_classifier = NaiveBayesClassifier(os.path.join(question_type_classifier_path, "naivebayes.model"))
+        double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
 
     stats = Stats()
     t = args.dataset
@@ -153,7 +167,7 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, args.linker == 1)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, question_type_classifier, double_relation_classifier, args.linker == 1)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
