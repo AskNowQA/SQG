@@ -13,10 +13,22 @@ import logging
 import common.utility.utility as utility
 import sys
 
+from inspect import getmembers
+from pprint import pprint
+
+# f = open("output/diff.txt",'w')
+
+# analysis_out = []
 
 def qg(linker, kb, parser, qapair, force_gold=True):
+
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
+
+    # Get Answer from KB online
+    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https","http"))
+    answerset_true = AnswerSet(raw_answer_true, parser.parse_queryresult)
+    qapair.answerset = answerset_true
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
@@ -28,6 +40,7 @@ def qg(linker, kb, parser, qapair, force_gold=True):
 
     logger.info("start finding the minimal subgraph")
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
+    print "Graph below"
     logger.info(graph)
     wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
@@ -35,20 +48,48 @@ def qg(linker, kb, parser, qapair, force_gold=True):
     for item in list(output_where):
         logger.info(item["query"])
     if len(wheres) == 0:
+        # logger.info("WITHOUT A PATH")
         return "-without_path", output_where
     correct = False
 
     for idx in range(len(wheres)):
         where = wheres[idx]
+
         if "answer" in where:
             answerset = where["answer"]
             target_var = where["target_var"]
+
+            # logger.info("Gold Answers RAW ")
+            # dx = qapair.answerset.answer_rows
+            # for i in dx:
+            #     for x in i.answers:
+            #         a = x.raw_answer.encode('ascii','ignore')
+            #         print a
+            #         f.write(a+"\n")
+
+            # f.write("\n\n")
+            # logger.info("Generated Answers RAW")    
+            # # print ((answerset.answer_rows[0].raw_answers))
+            # dx = answerset.raw_answerset.get('results').get('bindings')
+            # for i in dx:
+            #     for e,k in i.iteritems():
+            #         a = k.get('value')
+            #         print a
+            #         f.write(a+"\n")
+
+            # f.write("\n\n\n")        
+            # f.write("#########################################################")
+            # f.write("\n\n\n")
         else:
             target_var = "?u_" + str(where["suggested_id"])
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
         output_where[idx]["target_var"] = target_var
+
+
+
+
         if answerset == qapair.answerset:
             correct = True
             output_where[idx]["correct"] = True
@@ -59,6 +100,9 @@ def qg(linker, kb, parser, qapair, force_gold=True):
             else:
                 target_var = "?u_0"
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
+            print "Q_H ",
+            print raw_answer
+            print "Q_"
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
                 correct = True
@@ -126,6 +170,7 @@ if __name__ == "__main__":
 
     tmp = []
     output = []
+    
     for qapair in ds.qapairs:
         stats.inc("total")
         # if "send it on" not in qapair.question.text.lower():

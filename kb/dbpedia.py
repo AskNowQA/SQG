@@ -10,7 +10,7 @@ class DBpedia(KB):
     # 2016-04 http://sda-srv01.iai.uni-bonn.de:8164/sparql
     # 2014 http://sda-srv01.iai.uni-bonn.de:8014/sparql
     # http://dbpedia.org/sparql
-    def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql", one_hop_bloom_file=""):
+    def __init__(self, endpoint="http://dbpedia.org/sparql", one_hop_bloom_file="./data/blooms/spo1.bloom"):
         super(DBpedia, self).__init__(endpoint)
         self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
         if os.path.exists(one_hop_bloom_file):

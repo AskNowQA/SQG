@@ -5,14 +5,16 @@ from common.container.answerrow import AnswerRow
 from common.container.answer import Answer
 from kb.dbpedia import DBpedia
 from answerparser import AnswerParser
+from xml.dom import minidom
+import sys
 
 
 class Qald:
-    qald_5 = "./data/QALD/5/data/qald-5_train.json"
+    qald_5 = "./data/QALD/5/data/qald-5_train.xml"
     qald_6 = "./data/QALD/6/data/qald-6-train-multilingual.json"
-    qald_7_largescale = "./data/QALD/7/data/qald-7-train-largescale.json"
+    qald_7_largescale = "./data/QALD/7/data/qald-7-train-largescale.xml"
     qald_7_largescale_test = "./data/QALD/7/data/qald-7-test-largescale.json"
-    qald_7_multilingual = "./data/QALD/7/data/qald-7-train-multilingual.json"
+    qald_7_multilingual = "./data/QALD/7/data/qald-7-train-multilingual.xml"
     qald_8 = "./data/QALD/8/data/wikidata-train-7.json"
 
     def __init__(self, path):
@@ -24,14 +26,24 @@ class Qald:
     def load(self, path=None):
         if path is None:
             path = self.path
-        with open(path) as data_file:
-            self.raw_data = json.load(data_file)
+        if path.endswith("json"):
+            with open(path) as data_file:
+                self.raw_data = json.load(data_file)
+        elif path.endswith("xml"):
+            with open(path) as data_file:
+                self.raw_data = minidom.parse(data_file).documentElement
 
     def extend(self, path):
         self.load(path)
         self.parse()
 
     def parse(self):
+        if self.path.endswith("json"):
+            self.parse_json()
+        elif self.path.endswith("xml"):
+            self.parse_xml()
+
+    def parse_json(self):
         parser = QaldParser()
         for raw_row in self.raw_data["questions"]:
             question = ""
@@ -51,6 +63,49 @@ class Qald:
                     query = raw_row["query"]
             self.qapairs.append(QApair(question, raw_row["answers"], query, raw_row, raw_row["id"], parser))
 
+    def parse_xml(self):
+        parser = QaldParser()
+        data_set = self.raw_data
+
+        raw_rows = data_set.getElementsByTagName("question")
+        for raw_row in raw_rows:
+            question = []
+            answers = []
+            query = ""
+            question_id = raw_row.getAttribute("id")
+
+            if raw_row.getElementsByTagName("query"):
+                query = raw_row.getElementsByTagName("query")[0].childNodes[0].data
+            elif raw_row.getElementsByTagName("pseudoquery"):
+                query = raw_row.getElementsByTagName("pseudoquery")[0].childNodes[0].data
+            query = query.replace("\n"," ")
+            query = re.sub(r" {2,}","",query)
+
+            questions_text = raw_row.getElementsByTagName('string')
+            questions_keyword = raw_row.getElementsByTagName('keywords')
+            for i in range(0,len(questions_text)):
+                lang = questions_text[i].getAttribute("lang")
+                string = questions_text[i].childNodes
+                if string:
+                    string = string[0].data
+                else:
+                    string = ""
+                if questions_keyword:
+                    keyword = questions_keyword[i].childNodes
+                    if keyword:
+                        keyword = keyword[0].data
+                    else:
+                        keyword = ""
+                else:
+                    keyword = ""
+                question.append({u"language":lang, u"string":string, u"keywords": keyword})
+
+            answer_row = raw_row.getElementsByTagName("answers")[0]
+            answers_list = answer_row.getElementsByTagName("answer")
+            for a in range(0,len(answers_list)):
+                answers.append({u"string": u"{}".format(answers_list[a].childNodes[0].data) })
+            self.qapairs.append(QApair(question, answers, query, raw_row, question_id, parser))
+
     def print_pairs(self, n=-1):
         for item in self.qapairs[0:n]:
             print item
@@ -62,6 +117,7 @@ class QaldParser(AnswerParser):
         super(QaldParser, self).__init__(DBpedia())
 
     def parse_question(self, raw_question):
+        # print "AA", raw_question
         for q in raw_question:
             if q["language"] == "en":
                 return q["string"]
