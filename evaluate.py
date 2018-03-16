@@ -147,6 +147,10 @@ def compare_query(q1, q2):
     return True
 
             
+            
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
@@ -187,3 +191,4 @@ if __name__ == "__main__":
     print compare_query(q1,q2)
 
     """
+
