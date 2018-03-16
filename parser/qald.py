@@ -7,6 +7,7 @@ from kb.dbpedia import DBpedia
 from answerparser import AnswerParser
 from xml.dom import minidom
 import sys
+from inspect import getmembers
 
 
 class Qald:
@@ -61,6 +62,7 @@ class Qald:
                         query = ""
                 else:
                     query = raw_row["query"]
+            # print "AA", query
             self.qapairs.append(QApair(question, raw_row["answers"], query, raw_row, raw_row["id"], parser))
 
     def parse_xml(self):
@@ -74,37 +76,63 @@ class Qald:
             query = ""
             question_id = raw_row.getAttribute("id")
 
-            if raw_row.getElementsByTagName("query"):
+            print "AA id", question_id
+
+            if raw_row.getElementsByTagName("query") and raw_row.getElementsByTagName("query")[0].childNodes:
                 query = raw_row.getElementsByTagName("query")[0].childNodes[0].data
             elif raw_row.getElementsByTagName("pseudoquery"):
                 query = raw_row.getElementsByTagName("pseudoquery")[0].childNodes[0].data
-            query = query.replace("\n"," ")
-            query = re.sub(r" {2,}","",query)
 
-            questions_text = raw_row.getElementsByTagName('string')
+            # Assumes that the first keywords are in english
             questions_keyword = raw_row.getElementsByTagName('keywords')
-            for i in range(0,len(questions_text)):
-                lang = questions_text[i].getAttribute("lang")
-                string = questions_text[i].childNodes
-                if string:
-                    string = string[0].data
-                else:
-                    string = ""
-                if questions_keyword:
-                    keyword = questions_keyword[i].childNodes
-                    if keyword:
-                        keyword = keyword[0].data
-                    else:
-                        keyword = ""
-                else:
-                    keyword = ""
-                question.append({u"language":lang, u"string":string, u"keywords": keyword})
+            if questions_keyword:
+                questions_keyword = questions_keyword[0].childNodes
+                string = ""
+                for k in questions_keyword:
+                    string += k.data
+                string = string.replace("\n", "")
+                questions_keyword = string
+            else:
+                questions_keyword = ""
 
-            answer_row = raw_row.getElementsByTagName("answers")[0]
-            answers_list = answer_row.getElementsByTagName("answer")
-            for a in range(0,len(answers_list)):
-                answers.append({u"string": u"{}".format(answers_list[a].childNodes[0].data) })
+            # Assume that the first string is the question in english
+            questions_text = raw_row.getElementsByTagName('string')
+            questions_text = questions_text[0].childNodes
+            string = ""
+            for q in questions_text:
+                string += q.data
+            string = string.replace("\n", "")
+            string = re.sub(r" {2,}", "", string)
+            questions_text = string
+
+            question.append({u"language": u"en", u"string": questions_text, u"keywords": questions_keyword})
+
+            answer_row = raw_row.getElementsByTagName("answers")
+            if answer_row:
+                answer_row = answer_row[0]
+                answers_list = answer_row.getElementsByTagName("answer")
+                for a in range(0,len(answers_list)):
+                    if answers_list[a].getElementsByTagName("uri"):
+                        ans = answers_list[a].getElementsByTagName("uri")[0].childNodes[0].data
+                        ans = ans.replace(" ", "").replace("\n", "")
+                        answers.append({u"string": u"{}".format(ans)})
+                    elif answers_list[a].getElementsByTagName("boolean"):
+                        ans = answers_list[a].getElementsByTagName("boolean")[0].childNodes[0].data
+                        ans = ans.replace(" ", "").replace("\n", "")
+                        answers.append({u"string": u"{}".format(ans)})
+                    elif answers_list[a].getElementsByTagName("data"):
+                        ans = answers_list[a].getElementsByTagName("date")[0].childNodes[0].data
+                        ans = ans.replace(" ", "").replace("\n", "")
+                        answers.append({u"string": u"{}".format(ans)})
+                    elif answers_list[a].getElementsByTagName("number"):
+                        ans = answers_list[a].getElementsByTagName("number")[0].childNodes[0].data
+                        ans = ans.replace(" ", "").replace("\n", "")
+                        answers.append({u"string": u"{}".format(ans)})
+                    else:
+                        answers.append({u"string": u"{}".format(answers_list[a].childNodes[0].data)})
+
             self.qapairs.append(QApair(question, answers, query, raw_row, question_id, parser))
+        # sys.exit("EXITED")
 
     def print_pairs(self, n=-1):
         for item in self.qapairs[0:n]:
@@ -117,22 +145,27 @@ class QaldParser(AnswerParser):
         super(QaldParser, self).__init__(DBpedia())
 
     def parse_question(self, raw_question):
-        # print "AA", raw_question
         for q in raw_question:
             if q["language"] == "en":
+                print "AA ?", q["string"].encode("ascii", "ignore")
                 return q["string"]
 
     def parse_sparql(self, raw_query):
+
         if "sparql" in raw_query:
             raw_query = raw_query["sparql"]
         elif isinstance(raw_query, basestring) and "where" in raw_query.lower():
             pass
         else:
             raw_query = ""
+
         if "PREFIX " in raw_query:
             # QALD-5 bug!
             raw_query = raw_query.replace("htp:/w.", "http://www.")
             raw_query = raw_query.replace("htp:/dbpedia.", "http://dbpedia.")
+            raw_query = raw_query.replace("\n", " ")
+            raw_query = raw_query.replace("\t", " ")
+            raw_query = re.sub(r" {2,}", " ", raw_query)
 
             for item in re.findall("PREFIX [^:]*: <[^>]*>", raw_query):
                 prefix = item[7:item.find(" ", 9)]
@@ -146,6 +179,8 @@ class QaldParser(AnswerParser):
 
         uris = [Uri(raw_uri, self.kb.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
         supported = not any(substring in raw_query for substring in ["UNION", "FILTER", "OFFSET", "HAVING", "LIMIT"])
+        print "AA query", raw_query.encode("ascii", "ignore"), supported
+        # sys.exit("EXITED")
         return raw_query, supported, uris
 
     def parse_answerset(self, raw_answers):

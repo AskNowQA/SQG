@@ -3,14 +3,12 @@ import argparse
 import os
 # from query_gen import get_question_index
 from parser.lc_quad_linked import LC_Qaud_Linked
-
-# Import pairwise2 module
-from Bio import pairwise2
-
-# Import format_alignment method
-from Bio.pairwise2 import format_alignment
-
 import re
+from parser.qald import Qald
+from json import dumps
+import glob
+import fnmatch
+import sys
 
 def load_file(name):
     with open("output/{}.json".format(name)) as data_file:
@@ -29,41 +27,37 @@ def basic_stats(data):
         elif i['answer'] == "-no_answer":
             no_answer +=1
 
-    print "-- Basic Stats --"
-    print "-  Total Questions: %d" % (correct+incorrect+no_path+no_answer)
-    print "-  Correct: %d" % correct
-    print "-  Incorrect: %d" % incorrect
-    print "-  No-Path: %d" % no_path
-    print "-  No-Answer: %d" % no_answer
+    print "AA-- Basic Stats --"
+    print "AA-  Total Questions: %d" % (correct+incorrect+no_path+no_answer)
+    print "AA-  Correct: %d" % correct
+    print "AA-  Incorrect: %d" % incorrect
+    print "AA-  No-Path: %d" % no_path
+    print "AA-  No-Answer: %d" % no_answer
 
-    precision = (correct*100)/float(correct+incorrect)
+    if correct+incorrect != 0:
+        precision = (correct*100)/float(correct+incorrect)
+    else:
+        precision = 0
+
     recall = (correct*100)/float(correct+no_path+no_answer)
-    f1 = (2*precision*recall)/float(precision+recall)
+    if recall+precision != 0:
+        f1 = (2*precision*recall)/float(precision+recall)
+    else:
+        f1 = 0
 
-    print "-  Precision: %.2f" % precision
-    print "-  Recall: %.2f" % recall
-    print "-  F1: %.2f" % f1
+    print "AA-  Precision: %.2f" % precision
+    print "AA-  Recall: %.2f" % recall
+    print "AA-  F1: %.2f" % f1
+    return correct, incorrect, no_path, no_answer
 
 # Get incorrect data and saves them in a json file externally
-def deep_analysis(data):
+def deep_analysis(data, file):
     l = []
     for i in data:
         if i["answer"] == "-incorrect":
             l.append(i)
-    with open("output/incorrect_bonn.json", "w") as data_file:
+    with open("output/{}.json".format(file), "w") as data_file:
         json.dump(l, data_file, sort_keys=True, indent=4, separators=(',', ': '))
-        # print i
-            # for k,e in i.iteritems():
-                # print k, e
-                # if k == "Answer_Generated" or k == "Answer_Gold":
-                #     print k
-                #     for z in e:
-                #         # print e
-                #         print str(z).encode('ascii', 'ignore')
-                # else:
-                #     print k
-                #     print e
-            # print ""
 
 # Searched for a character in the data
 # dummy method
@@ -92,6 +86,7 @@ def get_question_query(questions):
         id = get_question_index(q)
         s+=(" %s" % id)
     os.system("python query_gen.py --in %s" % s)
+
 
 # Compares two queries
 def compare_query(q1, q2):
@@ -146,8 +141,20 @@ def compare_query(q1, q2):
             return False
     return True
 
-            
-            
+
+def analysis_qald(num):
+    matches = []
+    for root, dir_names, file_names in os.walk('data/QALD'):
+        for filename in fnmatch.filter(file_names, '*.xml'):
+            if "questions" not in filename and num in root:
+                matches.append(os.path.join(root, filename))
+    for m in matches:
+        print "AA ds", m
+        name = re.search(r"(\w+-)*\w+\.\w+", m).group(0)
+        try:
+            os.system("python query_gen.py --path {} --file qald/{}/{} > output/qald/{}/{}.log".format(m, num, name, num, name))
+        except:
+            sys.exit("EXITED")
 
 
 
@@ -157,38 +164,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
     file = args.file_name
 
-    # ds = load_file("incorrect_bonn")
-    # print len(ds)
-    # basic_stats(ds)
-    # ds = load_file(file)
-    # deep_analysis(ds)
-    # print get_question_index("What is the major shrine of Jacques-Dsir Laval ?")
-    # get_question_query(["What is the major shrine of Jacques-Dsir Laval ?"])
-    # deep_analysis_search(ds)
-    # os.system("python query_gen.py --max 2")
-    # get_question_query(["List the  primeministers of Victor Hope, 2nd Marquess of Linlithgow ?"])
-    # print compare_query("a","a
+    # data = load_file("tmp")
 
-    # X
-    # Y = ""
+    qald_list = [1, 2, 3, 4, 5, 7]
+    for i in qald_list:
+        analysis_qald(str(i))
 
-    # x = ds[2]["Query_Generated"]
-    # y = ds[2]["Query_Gold"]
-    # c = 0
-    # for i in ds:
-        # print compare_query(i["Query_Generated"], i["Query_Gold"])
-        # c+=1
-    # print compare_query(x,y)
-    # print c
 
-    # s = json.load(open("output/analysis_out.json"))
-    # print s
-   
-    # print compare_query(s[0]["Query_Generated"],s[0]["Query_Gold"])
-    """
-    q1 = " SELECT DISTINCT ?u_0 WHERE { <http://dbpedia.org/resource/The_Sarah_Jane_Adventures> <http://dbpedia.org/ontology/related> ?u_0 .<http://dbpedia.org/resource/Doctor_Who_Confidential> <http://dbpedia.org/ontology/related> ?u_0 }"
-    q2 = "SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/related> <http://dbpedia.org/resource/The_Sarah_Jane_Adventures> . ?uri <http://dbpedia.org/ontology/related> <http://dbpedia.org/resource/Doctor_Who_Confidential> . }"
-    print compare_query(q1,q2)
+    # os.system("python query_gen.py --path %s" % "/Users/just3obad/Desktop/Thesis/AskNow/SQG/data/QALD/5/data/qald-5_train_raw.xml")
+    # basic_stats(load_file("tmp"))
 
-    """
+
+    
+
+
+
 
