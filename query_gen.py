@@ -16,17 +16,17 @@ import sys
 from inspect import getmembers
 from pprint import pprint
 
+
 # f = open("output/diff.txt",'w')
 
 # analysis_out = []
 
 def qg(linker, kb, parser, qapair, force_gold=True):
-
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
 
     # Get Answer from KB online
-    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https","http"))
+    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https", "http"))
     answerset_true = AnswerSet(raw_answer_true, parser.parse_queryresult)
     qapair.answerset = answerset_true
 
@@ -40,7 +40,6 @@ def qg(linker, kb, parser, qapair, force_gold=True):
 
     logger.info("start finding the minimal subgraph")
     graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
-    print "Graph below"
     logger.info(graph)
     wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
 
@@ -87,9 +86,6 @@ def qg(linker, kb, parser, qapair, force_gold=True):
 
         output_where[idx]["target_var"] = target_var
 
-
-
-
         if answerset == qapair.answerset:
             correct = True
             output_where[idx]["correct"] = True
@@ -100,9 +96,9 @@ def qg(linker, kb, parser, qapair, force_gold=True):
             else:
                 target_var = "?u_0"
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
-            print "Q_H ",
-            print raw_answer
-            print "Q_"
+            # print "Q_H ",
+            # print raw_answer
+            # print "Q_"
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
             if answerset == qapair.answerset:
                 correct = True
@@ -125,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
     parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL, 3: (RelN, TagMe)", type=int,
                         default=0, dest="linker")
+
     args = parser.parse_args()
 
     stats = Stats()
@@ -138,7 +135,8 @@ if __name__ == "__main__":
         linker = Earl()
 
     if t == 0:
-        ds = LC_Qaud_Linked(path=args.dataset_path)
+        print "AA ds", args.dataset_path
+        ds = Qald(path=args.dataset_path)
         ds.load()
         ds.parse()
     elif t == 1:
@@ -158,9 +156,13 @@ if __name__ == "__main__":
         ds = Qald(Qald.qald_7_largescale)
         ds.load()
         ds.parse()
-        ds.extend(Qald.qald_7_largescale_test)
+        # ds.extend(Qald.qald_7_largescale_test)
     elif t == 8:
         ds = Qald(Qald.qald_7_multilingual)
+        ds.load()
+        ds.parse()
+    elif t == 9:
+        ds = Qald("data/QALD/1/data/musicbrainz-test.xml")
         ds.load()
         ds.parse()
 
@@ -170,7 +172,7 @@ if __name__ == "__main__":
 
     tmp = []
     output = []
-    
+
     for qapair in ds.qapairs:
         stats.inc("total")
         # if "send it on" not in qapair.question.text.lower():
