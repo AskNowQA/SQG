@@ -157,7 +157,6 @@ def analysis_qald(num):
             sys.exit("EXITED")
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
@@ -166,14 +165,14 @@ if __name__ == "__main__":
 
     # data = load_file("tmp")
 
-    qald_list = [1, 2, 3, 4, 5, 7]
-    for i in qald_list:
-        analysis_qald(str(i))
+    # qald_list = [1, 2, 3, 4, 5, 7]
+    # for i in qald_list:
+    #     analysis_qald(str(i))
 
 
-    # os.system("python query_gen.py --path %s" % "/Users/just3obad/Desktop/Thesis/AskNow/SQG/data/QALD/5/data/qald-5_train_raw.xml")
+    # os.system("python query_gen.py --path %s" % "/Users/just3obad/Desktop/Thesis/AskNow/SQG/data/QALD/7/data/qald-7-train-largescale.xml")
     # basic_stats(load_file("tmp"))
-
+    analysis_x()
 
     
 
