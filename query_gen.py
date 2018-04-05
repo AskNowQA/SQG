@@ -17,10 +17,14 @@ import logging
 import sys
 import os
 
-
 def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_classifier, force_gold=True):
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
+
+    # Get Answer from KB online
+    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https", "http"))
+    answerset_true = AnswerSet(raw_answer_true, parser.parse_queryresult)
+    qapair.answerset = answerset_true
 
     ask_query = "ASK " in qapair.sparql.query
     count_query = "COUNT(" in qapair.sparql.query
@@ -31,6 +35,7 @@ def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_cla
     queryBuilder = QueryBuilder()
 
     logger.info("start finding the minimal subgraph")
+
     graph.find_minimal_subgraph(entities, ontologies, ask_query=ask_query, sort_query=sort_query)
     logger.info(graph)
     wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query=ask_query,
@@ -45,6 +50,7 @@ def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_cla
 
     for idx in range(len(wheres)):
         where = wheres[idx]
+
         if "answer" in where:
             answerset = where["answer"]
             target_var = where["target_var"]
@@ -68,6 +74,9 @@ def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_cla
             else:
                 target_var = "?u_0"
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
+            print "Q_H ",
+            print raw_answer
+            print "Q_"
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
             sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
@@ -151,6 +160,7 @@ if __name__ == "__main__":
 
     tmp = []
     output = []
+
     for qapair in ds.qapairs:
         stats.inc("total")
         # if "send it on" not in qapair.question.text.lower():

@@ -58,7 +58,7 @@ class Earl:
 
             return entities, relations
         else:
-            return [], []
+            return None, None
 
     def __parse(self, dataset, name, top):
         output = []
