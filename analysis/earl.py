@@ -21,7 +21,6 @@ def do(list1, list2):
 
 
 if __name__ == "__main__":
-
     stats = Stats()
 
     ds = LC_Qaud_Linked("../data/LC-QUAD/linked.json")
@@ -29,11 +28,15 @@ if __name__ == "__main__":
     ds.parse()
 
     goldLinker = GoldLinker()
-    earl = Earl("../data/LC-QUAD/EARL/output.json")
+    # earl = Earl("../data/LC-QUAD/EARL/output.json")
+    earl = Earl("../data/LC-QUAD/TagMeRelnliod/output_2300.json")
 
     for qapair in tqdm(ds.qapairs):
         e1, r1 = goldLinker.do(qapair)
         e2, r2 = earl.do(qapair, force_gold=False, top=100)
+        if e2 is None and r2 is None:
+            continue
+
         if len(e2) == 0:
             stats.inc("earl_no_entity")
         if len(r2) == 0:
@@ -62,7 +65,6 @@ if __name__ == "__main__":
 
         if len(e1) == len(e2) and len(r1) == len(r2) and not e and not r:
             stats.inc("matched_both_and_len")
-
         stats.inc("total")
 
     print stats
