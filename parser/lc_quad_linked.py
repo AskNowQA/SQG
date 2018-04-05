@@ -2,6 +2,7 @@ import json
 import re
 from common.container.qapair import QApair
 from common.container.uri import Uri
+from common.container.uris import URIs
 from kb.dbpedia import DBpedia
 from answerparser import AnswerParser
 
@@ -40,5 +41,6 @@ class LC_Qaud_LinkedParser(AnswerParser):
         return self.parse_queryresult(raw_answers)
 
     def parse_sparql(self, raw_query):
-        uris = [Uri(raw_uri, self.kb.parse_uri) for raw_uri in re.findall('(<[^>]*>|\?[^ ]*)', raw_query)]
+        raw_query = raw_query.replace("https://", "http://")
+        uris = URIs([Uri(raw_uri, self.kb.parse_uri) for raw_uri in re.findall('(<[^>]*>|\?[^ ]*)', raw_query)])
         return raw_query, True, uris

@@ -1,32 +1,28 @@
 from parser.lc_quad_linked import LC_Qaud_Linked
 from parser.webqsp import WebQSP
 from parser.qald import Qald
+from common.container.sparql import SPARQL
 from common.container.answerset import AnswerSet
 from common.graph.graph import Graph
 from common.utility.stats import Stats
+from common.query.querybuilder import QueryBuilder
+import common.utility.utility as utility
 from linker.goldLinker import GoldLinker
 from linker.earl import Earl
-from common.query.querybuilder import QueryBuilder
+from learning.classifier.svmclassifier import SVMClassifier
+from learning.classifier.naivebayesclassifier import NaiveBayesClassifier
 import json
 import argparse
 import logging
-import common.utility.utility as utility
 import sys
+import os
 
-from inspect import getmembers
-from pprint import pprint
-
-# f = open("output/diff.txt",'w')
-
-# analysis_out = []
-
-def qg(linker, kb, parser, qapair, force_gold=True):
-
+def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_classifier, force_gold=True):
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
 
     # Get Answer from KB online
-    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https","http"))
+    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https", "http"))
     answerset_true = AnswerSet(raw_answer_true, parser.parse_queryresult)
     qapair.answerset = answerset_true
 
@@ -39,16 +35,16 @@ def qg(linker, kb, parser, qapair, force_gold=True):
     queryBuilder = QueryBuilder()
 
     logger.info("start finding the minimal subgraph")
-    graph.find_minimal_subgraph(entities, ontologies, ask_query, sort_query)
-    print "Graph below"
+
+    graph.find_minimal_subgraph(entities, ontologies, ask_query=ask_query, sort_query=sort_query)
     logger.info(graph)
-    wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query, count_query, sort_query)
+    wheres = queryBuilder.to_where_statement(graph, parser.parse_queryresult, ask_query=ask_query,
+                                             count_query=count_query, sort_query=sort_query)
 
     output_where = [{"query": " .".join(item["where"]), "correct": False, "target_var": "?u_0"} for item in wheres]
     for item in list(output_where):
         logger.info(item["query"])
     if len(wheres) == 0:
-        # logger.info("WITHOUT A PATH")
         return "-without_path", output_where
     correct = False
 
@@ -58,37 +54,15 @@ def qg(linker, kb, parser, qapair, force_gold=True):
         if "answer" in where:
             answerset = where["answer"]
             target_var = where["target_var"]
-
-            # logger.info("Gold Answers RAW ")
-            # dx = qapair.answerset.answer_rows
-            # for i in dx:
-            #     for x in i.answers:
-            #         a = x.raw_answer.encode('ascii','ignore')
-            #         print a
-            #         f.write(a+"\n")
-
-            # f.write("\n\n")
-            # logger.info("Generated Answers RAW")    
-            # # print ((answerset.answer_rows[0].raw_answers))
-            # dx = answerset.raw_answerset.get('results').get('bindings')
-            # for i in dx:
-            #     for e,k in i.iteritems():
-            #         a = k.get('value')
-            #         print a
-            #         f.write(a+"\n")
-
-            # f.write("\n\n\n")        
-            # f.write("#########################################################")
-            # f.write("\n\n\n")
         else:
             target_var = "?u_" + str(where["suggested_id"])
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
         output_where[idx]["target_var"] = target_var
-
-
-
+        sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
+        if (answerset == qapair.answerset) != (sparql == qapair.sparql):
+            print "error"
 
         if answerset == qapair.answerset:
             correct = True
@@ -104,6 +78,11 @@ def qg(linker, kb, parser, qapair, force_gold=True):
             print raw_answer
             print "Q_"
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
+
+            sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
+            if (answerset == qapair.answerset) != (sparql == qapair.sparql):
+                print "error"
+
             if answerset == qapair.answerset:
                 correct = True
                 output_where[idx]["correct"] = True
@@ -125,7 +104,18 @@ if __name__ == "__main__":
     parser.add_argument("--max", help="max threshold", type=int, default=-1, dest="max")
     parser.add_argument("--linker", help="0: gold linker, 1: EARL+force gold, 2: EARL, 3: (RelN, TagMe)", type=int,
                         default=0, dest="linker")
+    parser.add_argument("--classifier", help="'svm' (default) or 'naivebayes'", default="svm", dest="classifier")
     args = parser.parse_args()
+
+    base_dir = "./output"
+    question_type_classifier_path = os.path.join(base_dir, "question_type_classifier")
+    double_relation_classifier_path = os.path.join(base_dir, "double_relation_classifier")
+    if args.classifier == "svm":
+        question_type_classifier = SVMClassifier(os.path.join(question_type_classifier_path, "svm.model"))
+        double_relation_classifier = SVMClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
+    elif args.classifier == "naivebayes":
+        question_type_classifier = NaiveBayesClassifier(os.path.join(question_type_classifier_path, "naivebayes.model"))
+        double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
 
     stats = Stats()
     t = args.dataset
@@ -170,7 +160,7 @@ if __name__ == "__main__":
 
     tmp = []
     output = []
-    
+
     for qapair in ds.qapairs:
         stats.inc("total")
         # if "send it on" not in qapair.question.text.lower():
@@ -188,7 +178,8 @@ if __name__ == "__main__":
             stats.inc("query_no_answer")
             output_row["answer"] = "-no_answer"
         else:
-            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, args.linker == 1)
+            result, where = qg(linker, ds.parser.kb, ds.parser, qapair, question_type_classifier,
+                               double_relation_classifier, args.linker == 1)
             stats.inc(result)
             output_row["answer"] = result
             output_row["generated_queries"] = where
