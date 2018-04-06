@@ -31,15 +31,15 @@ def dependency_parse(filepath, cp='', tokenize=True):
     os.system(cmd)
 
 
-def constituency_parse(filepath, cp='', tokenize=True):
-    dirpath = os.path.dirname(filepath)
-    filepre = os.path.splitext(os.path.basename(filepath))[0]
-    tokpath = os.path.join(dirpath, filepre + '.toks')
-    parentpath = os.path.join(dirpath, filepre + '.cparents')
-    tokenize_flag = '-tokenize - ' if tokenize else ''
-    cmd = ('java -cp %s ConstituencyParse -tokpath %s -parentpath %s %s < %s'
-           % (cp, tokpath, parentpath, tokenize_flag, filepath))
-    os.system(cmd)
+# def constituency_parse(filepath, cp='', tokenize=True):
+#     dirpath = os.path.dirname(filepath)
+#     filepre = os.path.splitext(os.path.basename(filepath))[0]
+#     tokpath = os.path.join(dirpath, filepre + '.toks')
+#     parentpath = os.path.join(dirpath, filepre + '.cparents')
+#     tokenize_flag = '-tokenize - ' if tokenize else ''
+#     cmd = ('java -cp %s ConstituencyParse -tokpath %s -parentpath %s %s < %s'
+#            % (cp, tokpath, parentpath, tokenize_flag, filepath))
+#     os.system(cmd)
 
 
 def query_parse(filepath):
@@ -122,13 +122,17 @@ def generalize_question(a, b):
     return a, b
 
 
-def split(filepath, dst_dir):
-    with open(filepath) as datafile, \
-            open(os.path.join(dst_dir, 'a.txt'), 'w') as afile, \
+def split(data, dst_dir):
+    if isinstance(data, basestring):
+        with open(data) as datafile:
+            dataset = json.load(datafile)
+    else:
+        dataset = data
+    with open(os.path.join(dst_dir, 'a.txt'), 'w') as afile, \
             open(os.path.join(dst_dir, 'b.txt'), 'w') as bfile, \
             open(os.path.join(dst_dir, 'id.txt'), 'w') as idfile, \
             open(os.path.join(dst_dir, 'sim.txt'), 'w') as simfile:
-        dataset = json.load(datafile)
+
         for item in tqdm(dataset):
             i = item["id"]
             a = item["question"]
@@ -147,7 +151,7 @@ def split(filepath, dst_dir):
 
 def parse(dirpath, cp=''):
     dependency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
-    constituency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
+    # constituency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
     query_parse(os.path.join(dirpath, 'b.txt'))
 
 

@@ -40,7 +40,7 @@ We aimed to be KB independent, thus two datasets based on two different KB has b
 
 We provide a RESTfull api for the query generator. You need to run this:
 ``
-python qg_webserver.py
+python sqg_webserver.py
 ``
 
 Here is an example of how to use the api:

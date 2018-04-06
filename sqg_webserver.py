@@ -40,18 +40,23 @@ def generate_query():
         uris = [Uri(uri["uri"], kb.parse_uri, uri["confidence"]) for uri in item["uris"]]
         relations.append(LinkedItem(item["surface"], uris))
 
+    queries, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
+    question_type_str = "list"
     ask_query = False
     count_query = False
-    where, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
-    question_type_str = "list"
     if question_type == 2:
-        count_query = True
         question_type_str = "count"
+        count_query = True
     elif question_type == 1:
-        ask_query = True
         question_type_str = "boolean"
+        ask_query = True
+
+    queries = [{"query": kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query),
+                "confidence": item["confidence"]} for item in
+               queries]
+
     return flask.jsonify(
-        {'queries': [kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query) for item in where],
+        {'queries': queries,
          'type': question_type_str}), 201
 
 
