@@ -10,5 +10,5 @@ class NaiveBayesClassifier(Classifier):
         super(NaiveBayesClassifier, self).__init__()
         self.pipeline = Pipeline(
             [('vect', CountVectorizer()), ('tf-idf', TfidfTransformer()), ('naive-bayes', MultinomialNB())])
-        self.parameters = {'vect__ngram_range': [(1, 1), (1, 2)], 'tf-idf__use_idf': (True, False),
+        self.parameters = {'vect__ngram_range': [(1, 1)], 'tf-idf__use_idf': (True, False),
                            'naive-bayes__alpha': (1e-2, 1e-3)}
