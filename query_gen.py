@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     if t == 0:
         print "AA ds", args.dataset_path
-        ds = Qald(path=args.dataset_path)
+        ds = LC_Qaud_Linked(path=args.dataset_path)
         ds.load()
         ds.parse()
     elif t == 1:
