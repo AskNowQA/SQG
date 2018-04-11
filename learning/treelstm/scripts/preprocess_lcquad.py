@@ -101,9 +101,11 @@ def build_vocab(filepaths, dst_path, lowercase=True):
             f.write(w + '\n')
 
 
-def generalize_question(a, b):
+def generalize_question(a, b, parser=None):
     # replace entity mention in question with a generic symbol
-    parser = LC_Qaud_LinkedParser()
+
+    if parser is None:
+        parser = LC_Qaud_LinkedParser()
 
     _, _, uris = parser.parse_sparql(b)
     uris = [uri for uri in uris if uri.is_entity()]
@@ -122,7 +124,7 @@ def generalize_question(a, b):
     return a, b
 
 
-def split(data, dst_dir):
+def split(data, dst_dir, parser=None):
     if isinstance(data, basestring):
         with open(data) as datafile:
             dataset = json.load(datafile)
@@ -137,7 +139,7 @@ def split(data, dst_dir):
             i = item["id"]
             a = item["question"]
             for query in item["generated_queries"]:
-                a, b = generalize_question(a, query["query"])
+                a, b = generalize_question(a, query["query"], parser)
 
                 # Empty query should be ignored
                 if len(b) < 5:
@@ -190,12 +192,14 @@ if __name__ == '__main__':
     json.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
     json.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
 
+    parser = LC_Qaud_LinkedParser()
+
     print('Split train set')
-    split(train_filepath, train_dir)
+    split(train_filepath, train_dir, parser)
     print('Split dev set')
-    split(trail_filepath, dev_dir)
+    split(trail_filepath, dev_dir, parser)
     print('Split test set')
-    split(test_filepath, test_dir)
+    split(test_filepath, test_dir, parser)
 
     # parse sentences
     print("parse train set")

@@ -127,7 +127,7 @@ class Orchestrator:
                       "generated_queries": [{"query": " .".join(query["where"]), "correct": False} for query in
                                             generated_queries]}]
         output_dir = "./output/tmp"
-        preprocess_lcquad.split(json_data, output_dir)
+        preprocess_lcquad.split(json_data, output_dir, self.parser)
 
         lib_dir = './learning/treelstm/lib/'
         classpath = ':'.join([
