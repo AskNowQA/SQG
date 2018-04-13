@@ -6,8 +6,10 @@ class Edge:
         self.source_node.add_outbound(self)
         self.dest_node.add_inbound(self)
         self.__confidence = (
-                            self.source_node.confidence if self.source_node is not None else 1) * self.uri.confidence * (
+                                self.source_node.confidence if self.source_node is not None else 1) * self.uri.confidence * (
                                 self.dest_node.confidence if self.dest_node is not None else 1)
+        self.__hash = ("" if source_node is None else self.source_node.__str__()) + self.uri.__str__() + (
+            "" if dest_node is None else self.dest_node.__str__())
 
     @property
     def confidence(self):
@@ -59,7 +61,11 @@ class Edge:
 
     def __eq__(self, other):
         if isinstance(other, Edge):
-            return self.source_node == other.source_node and self.uri == other.uri and self.dest_node == other.dest_node
+            if hasattr(self, "__hash"):
+                return self.__hash == other.__hash
+            else:
+                return self.source_node == other.source_node and self.uri == other.uri and self.dest_node == other.dest_node
+
         return NotImplemented
 
     def __str__(self):

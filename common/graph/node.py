@@ -13,6 +13,7 @@ class Node:
                     self.__uris.add(uri)
                 elif isinstance(uris, list):
                     self.__uris.update(uri)
+        self.uris_hash = self.__str__()
         self.mergable = mergable
         self.inbound = []
         self.outbound = []
@@ -81,7 +82,8 @@ class Node:
 
     def __eq__(self, other):
         if isinstance(other, Node):
-            return self.__uris == other.__uris
+            # return self.__uris == other.__uris
+            return self.uris_hash == other.uris_hash
         return NotImplemented
 
     def __ne__(self, other):
@@ -91,4 +93,4 @@ class Node:
         return not result
 
     def __str__(self):
-        return "\n".join([uri.__str__() for uri in self.__uris])
+        return "\n".join(sorted([uri.__str__() for uri in self.__uris]))
