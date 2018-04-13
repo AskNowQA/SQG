@@ -31,15 +31,15 @@ def dependency_parse(filepath, cp='', tokenize=True):
     os.system(cmd)
 
 
-def constituency_parse(filepath, cp='', tokenize=True):
-    dirpath = os.path.dirname(filepath)
-    filepre = os.path.splitext(os.path.basename(filepath))[0]
-    tokpath = os.path.join(dirpath, filepre + '.toks')
-    parentpath = os.path.join(dirpath, filepre + '.cparents')
-    tokenize_flag = '-tokenize - ' if tokenize else ''
-    cmd = ('java -cp %s ConstituencyParse -tokpath %s -parentpath %s %s < %s'
-           % (cp, tokpath, parentpath, tokenize_flag, filepath))
-    os.system(cmd)
+# def constituency_parse(filepath, cp='', tokenize=True):
+#     dirpath = os.path.dirname(filepath)
+#     filepre = os.path.splitext(os.path.basename(filepath))[0]
+#     tokpath = os.path.join(dirpath, filepre + '.toks')
+#     parentpath = os.path.join(dirpath, filepre + '.cparents')
+#     tokenize_flag = '-tokenize - ' if tokenize else ''
+#     cmd = ('java -cp %s ConstituencyParse -tokpath %s -parentpath %s %s < %s'
+#            % (cp, tokpath, parentpath, tokenize_flag, filepath))
+#     os.system(cmd)
 
 
 def query_parse(filepath):
@@ -101,9 +101,11 @@ def build_vocab(filepaths, dst_path, lowercase=True):
             f.write(w + '\n')
 
 
-def generalize_question(a, b):
+def generalize_question(a, b, parser=None):
     # replace entity mention in question with a generic symbol
-    parser = LC_Qaud_LinkedParser()
+
+    if parser is None:
+        parser = LC_Qaud_LinkedParser()
 
     _, _, uris = parser.parse_sparql(b)
     uris = [uri for uri in uris if uri.is_entity()]
@@ -122,32 +124,50 @@ def generalize_question(a, b):
     return a, b
 
 
-def split(filepath, dst_dir):
-    with open(filepath) as datafile, \
-            open(os.path.join(dst_dir, 'a.txt'), 'w') as afile, \
+def split(data, parser=None):
+    if isinstance(data, basestring):
+        with open(data) as datafile:
+            dataset = json.load(datafile)
+    else:
+        dataset = data
+
+    a_list = []
+    b_list = []
+    id_list = []
+    sim_list = []
+    for item in tqdm(dataset):
+        i = item["id"]
+        a = item["question"]
+        for query in item["generated_queries"]:
+            a, b = generalize_question(a, query["query"], parser)
+
+            # Empty query should be ignored
+            if len(b) < 5:
+                continue
+            sim = str(2 if query["correct"] else 1)
+
+            id_list.append(i + '\n')
+            a_list.append(a.encode('ascii', 'ignore') + '\n')
+            b_list.append(b.encode('ascii', 'ignore') + '\n')
+            sim_list.append(sim + '\n')
+    return a_list, b_list, id_list, sim_list
+
+
+def save_split(dst_dir, a_list, b_list, id_list, sim_list):
+    with open(os.path.join(dst_dir, 'a.txt'), 'w') as afile, \
             open(os.path.join(dst_dir, 'b.txt'), 'w') as bfile, \
             open(os.path.join(dst_dir, 'id.txt'), 'w') as idfile, \
             open(os.path.join(dst_dir, 'sim.txt'), 'w') as simfile:
-        dataset = json.load(datafile)
-        for item in tqdm(dataset):
-            i = item["id"]
-            a = item["question"]
-            for query in item["generated_queries"]:
-                a, b = generalize_question(a, query["query"])
-
-                # Empty query should be ignored
-                if len(b) < 5:
-                    continue
-                sim = str(2 if query["correct"] else 1)
-                idfile.write(i + '\n')
-                afile.write(a.encode('ascii', 'ignore') + '\n')
-                bfile.write(b.encode('ascii', 'ignore') + '\n')
-                simfile.write(sim + '\n')
+        for i in range(len(a_list)):
+            idfile.write(id_list[i])
+            afile.write(a_list[i])
+            bfile.write(b_list[i])
+            simfile.write(sim_list[i])
 
 
 def parse(dirpath, cp=''):
     dependency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
-    constituency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
+    # constituency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
     query_parse(os.path.join(dirpath, 'b.txt'))
 
 
@@ -186,12 +206,14 @@ if __name__ == '__main__':
     json.dump(ds[train_size:train_size + dev_size], open(trail_filepath, "w"))
     json.dump(ds[train_size + dev_size:], open(test_filepath, "w"))
 
+    parser = LC_Qaud_LinkedParser()
+
     print('Split train set')
-    split(train_filepath, train_dir)
+    save_split(train_dir, *split(train_filepath, parser))
     print('Split dev set')
-    split(trail_filepath, dev_dir)
+    save_split(dev_dir, *split(trail_filepath, parser))
     print('Split test set')
-    split(test_filepath, test_dir)
+    save_split(test_dir, *split(test_filepath, parser))
 
     # parse sentences
     print("parse train set")

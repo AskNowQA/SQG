@@ -1,6 +1,21 @@
 import os
 import json
 import logging.config
+import pickle
+
+
+class PersistanceDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(PersistanceDict, self).__init__(*args, **kwargs)
+
+    def save(self, file_name):
+        with open(file_name, 'wb') as f:
+            pickle.dump(self, f)  # , pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def load(file_name):
+        with open(file_name, 'rb') as f:
+            return pickle.load(f)
 
 
 def makedirs(dir):

@@ -10,7 +10,8 @@ class DBpedia(KB):
     # 2016-04 http://sda-srv01.iai.uni-bonn.de:8164/sparql
     # 2014 http://sda-srv01.iai.uni-bonn.de:8014/sparql
     # http://dbpedia.org/sparql
-    def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql", one_hop_bloom_file="./data/blooms/spo1.bloom"):
+    def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql",
+                 one_hop_bloom_file="./data/blooms/spo1.bloom"):
         super(DBpedia, self).__init__(endpoint)
         self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
         if os.path.exists(one_hop_bloom_file):
@@ -56,12 +57,15 @@ class DBpedia(KB):
                        [u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1", u"{ent2}:{rel2}"],
                        [u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}", u"{rel2}:{ent2}"],
                        [u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}", u"{type}:{rel2}"]]
+        for item in query_types:
+            item.append(item[1].format(rel1=relation1_uri, ent1=entity1_uri,
+                                       ent2=entity2_uri, rel2=relation2_uri,
+                                       type=self.type_uri))
+
         output = [item[0].format(rel1=relation1_uri, ent1=entity1_uri,
                                  ent2=entity2_uri, rel2=relation2_uri,
-                                 type=self.type_uri) for item in query_types if (self.one_hop_bloom is None) or
-                  self.bloom_query([item[1].format(rel1=relation1_uri, ent1=entity1_uri,
-                                                   ent2=entity2_uri, rel2=relation2_uri,
-                                                   type=self.type_uri)])]
+                                 type=self.type_uri) for item in query_types if
+                  (self.one_hop_bloom is None) or ("?" in item[2]) or self.bloom_query([item[2]])]
         return output
 
     @staticmethod
