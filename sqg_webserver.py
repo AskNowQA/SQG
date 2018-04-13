@@ -14,6 +14,7 @@ import common.utility.utility as utility
 import sys
 import os
 import hashlib
+from interruptingcow import timeout
 
 app = flask.Flask(__name__)
 queryBuilder = None
@@ -41,12 +42,14 @@ def generate_query():
     raw_entities = flask.request.json['entities']
     raw_relations = flask.request.json['relations']
     h1_threshold = int(flask.request.json['h1_threshold']) if 'h1_threshold' in flask.request.json else 9999999
+    timeout_threshold = int(flask.request.json['timeout']) if 'timeout' in flask.request.json else 9999999
     use_cache = bool(flask.request.json['use_cache']) if 'use_cache' in flask.request.json else True
 
     hash_key = hash(str(question) + str(raw_entities) + str(raw_relations) + str(h1_threshold))
     if use_cache and hash_key in hash_list:
         return flask.jsonify(hash_list[hash_key]), 201
 
+    logger.info(question)
     entities = []
     for item in raw_entities:
         uris = [Uri(uri["uri"], kb.parse_uri, uri["confidence"]) for uri in item["uris"]]
@@ -57,26 +60,30 @@ def generate_query():
         uris = [Uri(uri["uri"], kb.parse_uri, uri["confidence"]) for uri in item["uris"]]
         relations.append(LinkedItem(item["surface"], uris))
 
-    queries, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
-    question_type_str = "list"
-    ask_query = False
-    count_query = False
-    if question_type == 2:
-        question_type_str = "count"
-        count_query = True
-    elif question_type == 1:
-        question_type_str = "boolean"
-        ask_query = True
+    try:
+        with timeout(timeout_threshold):
+            queries, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
+            question_type_str = "list"
+            ask_query = False
+            count_query = False
+            if question_type == 2:
+                question_type_str = "count"
+                count_query = True
+            elif question_type == 1:
+                question_type_str = "boolean"
+                ask_query = True
 
-    queries = [{"query": kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query),
-                "confidence": item["confidence"]} for item in
-               queries]
+            queries = [{"query": kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query),
+                        "confidence": item["confidence"]} for item in
+                       queries]
 
-    result = {'queries': queries, 'type': question_type_str}
-    if use_cache:
-        hash_list[hash_key] = result
-        hash_list.save(hash_file)
-    return flask.jsonify(result), 201
+            result = {'queries': queries, 'type': question_type_str}
+            if use_cache:
+                hash_list[hash_key] = result
+                hash_list.save(hash_file)
+            return flask.jsonify(result), 201
+    except:
+        return flask.jsonify({}), 408
 
 
 @app.errorhandler(404)
