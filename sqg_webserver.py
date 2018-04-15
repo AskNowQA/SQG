@@ -83,7 +83,8 @@ def generate_query():
                 hash_list[hash_key] = result
                 hash_list.save(hash_file)
             return flask.jsonify(result), 201
-    except:
+    except Exception as expt:
+        logger.error(expt)
         return flask.jsonify({}), 408
 
 
