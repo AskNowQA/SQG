@@ -19,7 +19,8 @@ class Struct(object): pass
 
 
 class Orchestrator:
-    def __init__(self, question_classifier, double_relation_classifer, parser, auto_train=True):
+    def __init__(self, logger, question_classifier, double_relation_classifer, parser, auto_train=True):
+        self.logger = logger
         self.question_classifier = question_classifier
         self.double_relation_classifer = double_relation_classifer
         self.parser = parser
@@ -94,47 +95,51 @@ class Orchestrator:
     def rank(self, args, question, generated_queries):
         if len(generated_queries) == 0:
             return []
-        # Load the model
-        checkpoint_filename = '%s.pt' % os.path.join(args.save, args.expname)
-        dataset_vocab_file = os.path.join(args.data, 'dataset.vocab')
-        # metrics = Metrics(args.num_classes)
-        vocab = Vocab(filename=dataset_vocab_file,
-                      data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
-        similarity = DASimilarity(args.mem_dim, args.hidden_dim, args.num_classes)
-        model = SimilarityTreeLSTM(
-            vocab.size(),
-            args.input_dim,
-            args.mem_dim,
-            similarity,
-            args.sparse)
-        criterion = nn.KLDivLoss()
-        optimizer = optim.Adagrad(model.parameters(), lr=args.lr, weight_decay=args.wd)
-        emb_file = os.path.join(args.data, 'dataset_embed.pth')
-        if os.path.isfile(emb_file):
-            emb = torch.load(emb_file)
-        model.emb.weight.data.copy_(emb)
-        checkpoint = torch.load(checkpoint_filename, map_location=lambda storage, loc: storage)
-        model.load_state_dict(checkpoint['model'])
-        trainer = Trainer(args, model, criterion, optimizer)
+        try:
+            # Load the model
+            checkpoint_filename = '%s.pt' % os.path.join(args.save, args.expname)
+            dataset_vocab_file = os.path.join(args.data, 'dataset.vocab')
+            # metrics = Metrics(args.num_classes)
+            vocab = Vocab(filename=dataset_vocab_file,
+                          data=[Constants.PAD_WORD, Constants.UNK_WORD, Constants.BOS_WORD, Constants.EOS_WORD])
+            similarity = DASimilarity(args.mem_dim, args.hidden_dim, args.num_classes)
+            model = SimilarityTreeLSTM(
+                vocab.size(),
+                args.input_dim,
+                args.mem_dim,
+                similarity,
+                args.sparse)
+            criterion = nn.KLDivLoss()
+            optimizer = optim.Adagrad(model.parameters(), lr=args.lr, weight_decay=args.wd)
+            emb_file = os.path.join(args.data, 'dataset_embed.pth')
+            if os.path.isfile(emb_file):
+                emb = torch.load(emb_file)
+            model.emb.weight.data.copy_(emb)
+            checkpoint = torch.load(checkpoint_filename, map_location=lambda storage, loc: storage)
+            model.load_state_dict(checkpoint['model'])
+            trainer = Trainer(args, model, criterion, optimizer)
 
-        # Prepare the dataset
-        json_data = [{"id": "test", "question": question,
-                      "generated_queries": [{"query": " .".join(query["where"]), "correct": False} for query in
-                                            generated_queries]}]
-        output_dir = "./output/tmp"
-        preprocess_lcquad.save_split(output_dir, *preprocess_lcquad.split(json_data, self.parser))
+            # Prepare the dataset
+            json_data = [{"id": "test", "question": question,
+                          "generated_queries": [{"query": " .".join(query["where"]), "correct": False} for query in
+                                                generated_queries]}]
+            output_dir = "./output/tmp"
+            preprocess_lcquad.save_split(output_dir, *preprocess_lcquad.split(json_data, self.parser))
 
-        lib_dir = './learning/treelstm/lib/'
-        classpath = ':'.join([
-            lib_dir,
-            os.path.join(lib_dir, 'stanford-parser/stanford-parser.jar'),
-            os.path.join(lib_dir, 'stanford-parser/stanford-parser-3.5.1-models.jar')])
+            lib_dir = './learning/treelstm/lib/'
+            classpath = ':'.join([
+                lib_dir,
+                os.path.join(lib_dir, 'stanford-parser/stanford-parser.jar'),
+                os.path.join(lib_dir, 'stanford-parser/stanford-parser-3.5.1-models.jar')])
 
-        preprocess_lcquad.parse(output_dir, cp=classpath)
-        test_dataset = QGDataset(output_dir, vocab, args.num_classes)
+            preprocess_lcquad.parse(output_dir, cp=classpath)
+            test_dataset = QGDataset(output_dir, vocab, args.num_classes)
 
-        test_loss, test_pred = trainer.test(test_dataset)
-        return test_pred
+            test_loss, test_pred = trainer.test(test_dataset)
+            return test_pred
+        except Exception as expt:
+            self.logger.error(expt)
+            return []
 
     def generate_query(self, question, entities, relations, h1_threshold=None):
         ask_query = False
@@ -177,7 +182,10 @@ class Orchestrator:
         args.cuda = False
         scores = self.rank(args, question, valid_walks)
         for idx, item in enumerate(valid_walks):
-            item["confidence"] = scores[idx] - 1
+            if idx > len(scores):
+                item["confidence"] = 0
+            else:
+                item["confidence"] = scores[idx] - 1
 
         return valid_walks, question_type
 
@@ -199,7 +207,7 @@ if __name__ == "__main__":
 
     parser = LC_QaudParser()
     kb = parser.kb
-    o = Orchestrator(None, None, parser, False)
+    o = Orchestrator(None, None, None, parser, False)
     raw_entities = [{"surface": "", "uris": [{"confidence": 1, "uri": "http://dbpedia.org/resource/Bill_Finger"}]}]
     entities = []
     for item in raw_entities:

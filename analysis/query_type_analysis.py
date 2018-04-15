@@ -7,7 +7,7 @@ from sklearn.metrics import classification_report
 
 def run(classifier1, classifier2):
     parser = LC_QaudParser()
-    query_builder = Orchestrator(classifier1, classifier2, parser, auto_train=False)
+    query_builder = Orchestrator(None, classifier1, classifier2, parser, auto_train=False)
 
     print "train_question_classifier"
     scores = query_builder.train_question_classifier(file_path="../data/LC-QUAD/data_v8.json", test_size=0.5)
