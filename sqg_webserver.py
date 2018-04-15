@@ -73,9 +73,10 @@ def generate_query():
                 question_type_str = "boolean"
                 ask_query = True
 
-            queries = [{"query": kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query),
-                        "confidence": item["confidence"]} for item in
-                       queries]
+            queries = [
+                {"query": kb.sparql_query(item["where"], "?u_" + str(item["suggested_id"]), count_query, ask_query),
+                 "confidence": item["confidence"]} for item in
+                queries]
 
             result = {'queries': queries, 'type': question_type_str}
             if use_cache:
@@ -124,7 +125,7 @@ if __name__ == '__main__':
         question_type_classifier = NaiveBayesClassifier(os.path.join(question_type_classifier_path, "naivebayes.model"))
         double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
 
-    queryBuilder = Orchestrator(question_type_classifier, double_relation_classifier, parser)
+    queryBuilder = Orchestrator(logger, question_type_classifier, double_relation_classifier, parser)
     logger.info("Starting the HTTP server")
     http_server = WSGIServer(('', args.port), app)
     http_server.serve_forever()
