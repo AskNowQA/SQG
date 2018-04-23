@@ -180,15 +180,25 @@ if __name__ == "__main__":
     # merge_sort_questions()
     # x_train, x_test, y_train, y_test = construct_training_data_binary()
 
-    with open("data/ComplexQuestionsOrder/train_test.pickle") as data_file:
-        x_train, x_test, y_train, y_test = pickle.load(data_file)
+    # with open("data/ComplexQuestionsOrder/train_test.pickle") as data_file:
+    #     x_train, x_test, y_train, y_test = pickle.load(data_file)
 
     # classifier = train_classifier(x_train, y_train)
 
-    with open("data/ComplexQuestionsOrder/naive_bayes.pickle") as data_file:
-        classifier = pickle.load(data_file)
+    # with open("data/ComplexQuestionsOrder/naive_bayes.pickle") as data_file:
+    #     classifier = pickle.load(data_file)
 
-    test_classifier(classifier, x_test, y_test)
+    # test_classifier(classifier, x_test, y_test)
+
+
+    data, x = get_sort_questions_brmson()
+
+    print len(data)
+
+    # 229 QALD annotated
+    # 381 brmson manually annotated
+
+
 
 
 
