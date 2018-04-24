@@ -31,8 +31,7 @@ class Uri:
 
     def __eq__(self, other):
         if isinstance(other, Uri):
-            return self.__str == other.__str
-            # return self.uri_type == other.uri_type and self.uri == other.uri
+            return self.uri == other.uri
         return NotImplemented
 
     def __hash__(self):
