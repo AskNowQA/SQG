@@ -182,7 +182,7 @@ class Orchestrator:
         args.cuda = False
         scores = self.rank(args, question, valid_walks)
         for idx, item in enumerate(valid_walks):
-            if idx > len(scores):
+            if idx >= len(scores):
                 item["confidence"] = 0
             else:
                 item["confidence"] = scores[idx] - 1
