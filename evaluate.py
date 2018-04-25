@@ -191,23 +191,3 @@ if __name__ == "__main__":
     print compare_query(q1,q2)
 
     """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
