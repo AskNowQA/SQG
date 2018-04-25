@@ -58,11 +58,12 @@ class Qald:
                 if isinstance(raw_row["query"], dict):
                     if "sparql" in raw_row["query"]:
                         query = raw_row["query"]["sparql"]
+                    elif "pseudo" in raw_row["query"]:
+                        query = raw_row["query"]["pseudo"]
                     else:
                         query = ""
                 else:
                     query = raw_row["query"]
-            # print "AA", query
             self.qapairs.append(QApair(question, raw_row["answers"], query, raw_row, raw_row["id"], parser))
 
     def parse_xml(self):
@@ -76,7 +77,7 @@ class Qald:
             query = ""
             question_id = raw_row.getAttribute("id")
 
-            print "AA id", question_id
+            # print "AA id", question_id
 
             if raw_row.getElementsByTagName("query") and raw_row.getElementsByTagName("query")[0].childNodes:
                 query = raw_row.getElementsByTagName("query")[0].childNodes[0].data
@@ -147,17 +148,17 @@ class QaldParser(AnswerParser):
     def parse_question(self, raw_question):
         for q in raw_question:
             if q["language"] == "en":
-                print "AA ?", q["string"].encode("ascii", "ignore")
+                # print "AA ?", q["string"].encode("ascii", "ignore")
                 return q["string"]
 
     def parse_sparql(self, raw_query):
-
         if "sparql" in raw_query:
             raw_query = raw_query["sparql"]
         elif isinstance(raw_query, basestring) and "where" in raw_query.lower():
             pass
-        else:
-            raw_query = ""
+        # else:
+            # print "LALALAL"
+            # raw_query = ""
 
         if "PREFIX " in raw_query:
             # QALD-5 bug!
