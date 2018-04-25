@@ -113,7 +113,7 @@ if __name__ == "__main__":
     utility.setup_logging()
 
     parser = argparse.ArgumentParser(description='Generate SPARQL query')
-    parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=0, dest="dataset")
+    parser.add_argument("--ds", help="0: LC-Quad, 1: WebQuestions", type=int, default=10, dest="dataset")
     parser.add_argument("--path", help="dataset path", default="./data/LC-QUAD/linked_answer6.json",
                         dest="dataset_path")
     parser.add_argument("--file", help="file name to save the results", default="tmp", dest="file_name")
@@ -135,7 +135,6 @@ if __name__ == "__main__":
         linker = Earl()
 
     if t == 0:
-        print "AA ds", args.dataset_path
         ds = LC_Qaud_Linked(path=args.dataset_path)
         ds.load()
         ds.parse()
@@ -163,6 +162,10 @@ if __name__ == "__main__":
         ds.parse()
     elif t == 9:
         ds = Qald("data/QALD/1/data/musicbrainz-test.xml")
+        ds.load()
+        ds.parse()
+    elif t == 10:
+        ds = Qald(path=args.dataset_path)
         ds.load()
         ds.parse()
 
