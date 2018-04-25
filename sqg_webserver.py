@@ -20,9 +20,9 @@ app = flask.Flask(__name__)
 queryBuilder = None
 kb = None
 classifier = None
-hash_path = "./hashs/"
-utility.makedirs(hash_path)
-hash_file = os.path.join(hash_path, "sqg_webserver.cache")
+cache_path = "./caches/"
+utility.makedirs(cache_path)
+hash_file = os.path.join(cache_path, "sqg_webserver.cache")
 if os.path.exists(hash_file):
     hash_list = utility.PersistanceDict.load(hash_file)
 else:
@@ -39,13 +39,19 @@ def generate_query():
         flask.abort(400)
 
     question = flask.request.json['question']
+    force_count_query = flask.request.json['force_count'] if 'force_count' in flask.request.json else False
+    force_bool_query = flask.request.json['force_bool'] if 'force_bool' in flask.request.json else False
+    force_list_query = flask.request.json['force_list'] if 'force_list' in flask.request.json else False
     raw_entities = flask.request.json['entities']
     raw_relations = flask.request.json['relations']
     h1_threshold = int(flask.request.json['h1_threshold']) if 'h1_threshold' in flask.request.json else 9999999
     timeout_threshold = int(flask.request.json['timeout']) if 'timeout' in flask.request.json else 9999999
     use_cache = bool(flask.request.json['use_cache']) if 'use_cache' in flask.request.json else True
 
-    hash_key = hash(str(question) + str(raw_entities) + str(raw_relations) + str(h1_threshold))
+    hash_key = hash(
+        str(question) + str(raw_entities) + str(raw_relations) + str(h1_threshold) +
+        str(force_count_query) + str(force_bool_query) + str(force_list_query))
+
     if use_cache and hash_key in hash_list:
         return flask.jsonify(hash_list[hash_key]), 201
 
@@ -62,7 +68,16 @@ def generate_query():
 
     try:
         with timeout(timeout_threshold):
-            queries, question_type = queryBuilder.generate_query(question, entities, relations, h1_threshold)
+            question_type = None
+            if force_list_query:
+                question_type = 0
+            elif force_bool_query:
+                question_type = 1
+            elif force_count_query:
+                question_type = 2
+
+            queries, question_type, type_confidence = queryBuilder.generate_query(question, entities, relations, h1_threshold,
+                                                                 question_type)
             question_type_str = "list"
             ask_query = False
             count_query = False
@@ -78,7 +93,7 @@ def generate_query():
                  "confidence": item["confidence"]} for item in
                 queries]
 
-            result = {'queries': queries, 'type': question_type_str}
+            result = {'queries': queries, 'type': question_type_str, 'type_confidence': type_confidence}
             if use_cache:
                 hash_list[hash_key] = result
                 hash_list.save(hash_file)

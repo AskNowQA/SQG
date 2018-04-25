@@ -2,7 +2,6 @@ from common.graph.graph import Graph
 from common.query.querybuilder import QueryBuilder
 from parser.lc_quad import LC_Qaud
 from sklearn.model_selection import train_test_split
-
 import os
 import torch.optim as optim
 from learning.treelstm.model import *
@@ -13,6 +12,8 @@ import learning.treelstm.scripts.preprocess_lcquad as preprocess_lcquad
 from common.container.uri import Uri
 from common.container.linkeditem import LinkedItem
 from parser.lc_quad import LC_QaudParser
+import common.utility.utility as utility
+from learning.classifier.svmclassifier import SVMClassifier
 
 
 class Struct(object): pass
@@ -53,12 +54,6 @@ class Orchestrator:
                 y.append(0)
 
         return X, y
-
-    def train_question_classifier(self, file_path=None, test_size=0.2):
-        X, y = self.prepare_dataset(file_path)
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size=test_size,
-                                                                                random_state=42)
-        return self.question_classifier.train(self.X_train, self.y_train)
 
     def prepare_double_relation_classifier_dataset(self, file_path=None):
         if file_path is None:
@@ -141,18 +136,21 @@ class Orchestrator:
             self.logger.error(expt)
             return []
 
-    def generate_query(self, question, entities, relations, h1_threshold=None):
+    def generate_query(self, question, entities, relations, h1_threshold=None, question_type=None):
         ask_query = False
         sort_query = False
         count_query = False
 
-        question_type = 0
-        if self.question_classifier is not None:
-            self.question_classifier.predict([question])
-        if question_type == 2:
-            count_query = True
-        elif question_type == 1:
-            ask_query = True
+        if question_type is None:
+            question_type = 0
+            if self.question_classifier is not None:
+                question_type = self.question_classifier.predict([question])
+            if question_type == 2:
+                count_query = True
+            elif question_type == 1:
+                ask_query = True
+
+        type_confidence = self.question_classifier.predict_proba([question])[0][question_type]
 
         double_relation = False
         if self.double_relation_classifer is not None:
@@ -187,7 +185,7 @@ class Orchestrator:
             else:
                 item["confidence"] = scores[idx] - 1
 
-        return valid_walks, question_type
+        return valid_walks, question_type, type_confidence
 
 
 if __name__ == "__main__":
@@ -207,7 +205,13 @@ if __name__ == "__main__":
 
     parser = LC_QaudParser()
     kb = parser.kb
-    o = Orchestrator(None, None, None, parser, False)
+
+    base_dir = "./output"
+    question_type_classifier_path = os.path.join(base_dir, "question_type_classifier")
+    utility.makedirs(question_type_classifier_path)
+    question_type_classifier = SVMClassifier(os.path.join(question_type_classifier_path, "svm.model"))
+
+    o = Orchestrator(None, question_type_classifier, None, parser, True)
     raw_entities = [{"surface": "", "uris": [{"confidence": 1, "uri": "http://dbpedia.org/resource/Bill_Finger"}]}]
     entities = []
     for item in raw_entities:
@@ -223,7 +227,7 @@ if __name__ == "__main__":
         relations.append(LinkedItem(item["surface"], uris))
 
     question = "Which comic characters are painted by Bill Finger?"
-    # generated_queries = o.generate_query(question, entities, relations)[0]
+    generated_queries = o.generate_query(question, entities, relations)[0]
     # print generated_queries
     generated_queries = [
         {'where': [u'?u_0 <http://dbpedia.org/ontology/creator> <http://dbpedia.org/resource/Bill_Finger>',
