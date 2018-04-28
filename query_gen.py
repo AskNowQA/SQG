@@ -17,6 +17,14 @@ from inspect import getmembers
 from pprint import pprint
 
 
+from inspect import getmembers
+from pprint import pprint
+
+
+# f = open("output/diff.txt",'w')
+
+# analysis_out = []
+
 # f = open("output/diff.txt",'w')
 
 # analysis_out = []
@@ -168,10 +176,13 @@ if __name__ == "__main__":
         ds = Qald(path=args.dataset_path)
         ds.load()
         ds.parse()
+<<<<<<< HEAD
 
     if not ds.parser.kb.server_available:
         logger.error("Server is not available. Please check the endpoint at: {}".format(ds.parser.kb.endpoint))
         sys.exit(0)
+=======
+>>>>>>> 84947e28626b77088137c6d84ad5aebbda9af7d6
 
     tmp = []
     output = []
