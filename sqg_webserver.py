@@ -67,6 +67,8 @@ def generate_query():
         relations.append(LinkedItem(item["surface"], uris))
 
     try:
+        if len(entities) == 0 or len(relations) == 0:
+            raise Exception('Wrong number of input entity/relation!')
         with timeout(timeout_threshold):
             question_type = None
             if force_list_query:
@@ -76,8 +78,9 @@ def generate_query():
             elif force_count_query:
                 question_type = 2
 
-            queries, question_type, type_confidence = queryBuilder.generate_query(question, entities, relations, h1_threshold,
-                                                                 question_type)
+            queries, question_type, type_confidence = queryBuilder.generate_query(question, entities, relations,
+                                                                                  h1_threshold,
+                                                                                  question_type)
             question_type_str = "list"
             ask_query = False
             count_query = False
