@@ -145,10 +145,10 @@ class Orchestrator:
             question_type = 0
             if self.question_classifier is not None:
                 question_type = self.question_classifier.predict([question])
-            if question_type == 2:
-                count_query = True
-            elif question_type == 1:
-                ask_query = True
+        if question_type == 2:
+            count_query = True
+        elif question_type == 1:
+            ask_query = True
 
         type_confidence = self.question_classifier.predict_proba([question])[0][question_type]
 

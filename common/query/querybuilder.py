@@ -53,7 +53,7 @@ class QueryBuilder:
                     paths.append(new_path)
 
         paths.sort(key=lambda x: x.confidence, reverse=True)
-        output = paths.to_where(graph.kb)
+        output = paths.to_where(graph.kb, ask_query)
 
         # Remove queries with no answer
         filtered_output = []

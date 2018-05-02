@@ -14,24 +14,26 @@ class Paths(list):
         """
         return np.prod([path.confidence for path in self])
 
-    def to_where(self, kb=None):
+    def to_where(self, kb=None, ask_query=False):
         """
         Transform paths into where clauses
         :param kb:
+        :param ask_query:
         :return:
         """
         output = []
         for batch_edges in self:
             sparql_where = [edge.sparql_format(kb) for edge in batch_edges]
             max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
-            if kb is not None:
+            if kb is None or ask_query:
+                output.append({"suggested_id": max_generic_id, "where": sparql_where})
+            else:
                 result = kb.query_where(sparql_where, count=True)
                 if result is not None:
                     result = int(result["results"]["bindings"][0]["callret-0"]["value"])
                     if result > 0:
                         output.append({"suggested_id": max_generic_id, "where": sparql_where})
-            else:
-                output.append({"suggested_id": max_generic_id, "where": sparql_where})
+
         return output
 
     def add(self, new_paths, validity_fn):
@@ -62,7 +64,7 @@ class Paths(list):
                             edge.source_node.are_all_uris_generic() and \
                             edge.dest_node.are_all_uris_generic() and \
                             not (
-                                        new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
+                                    new_edge.source_node.are_all_uris_generic() and new_edge.dest_node.are_all_uris_generic()):
                         pass
                     else:
                         path.append(edge)
