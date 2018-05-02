@@ -24,7 +24,7 @@ class LinkedItem:
         :return:
         """
         output = []
-        for uri in uris:
+        for uri in sorted(uris, key=lambda x: len(str(x)), reverse=True):
             for item in linkeditem_list:
                 if item not in output and item.contains_uri(uri):
                     output.append(item)
