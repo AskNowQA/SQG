@@ -101,9 +101,12 @@ def generate_query():
                 hash_list[hash_key] = result
                 hash_list.save(hash_file)
             return flask.jsonify(result), 201
+    except RuntimeError as expt:
+        logger.error(expt)
+        return flask.jsonify({'error': str(expt)}), 408
     except Exception as expt:
         logger.error(expt)
-        return flask.jsonify({}), 408
+        return flask.jsonify({'error': str(expt)}), 422
 
 
 @app.errorhandler(404)
