@@ -164,7 +164,8 @@ class Orchestrator:
                                     sort_query=sort_query, h1_threshold=h1_threshold)
         valid_walks = query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query=ask_query,
                                                        count_query=count_query, sort_query=sort_query)
-
+        if len(valid_walks) == 0:
+            return valid_walks, question_type, 0
         args = Struct()
         base_path = "./learning/treelstm/"
         args.save = os.path.join(base_path, "checkpoints/")
