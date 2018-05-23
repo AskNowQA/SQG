@@ -35,11 +35,11 @@ if __name__ == "__main__":
     total = 0
     templates = {}
     # Qald(Qald.qald_6) LC_Qaud WebQSP
-    for item in prepare_dataset(LC_Qaud()).qapairs:
+    for item in prepare_dataset(LC_Qaud("../data/LC-QUAD/linked_3200.json")).qapairs:
         if not item.sparql.supported:
             continue
 
-        where_clause = item.sparql.where_clause
+        where_clause = item.sparql.where_clause_template
         templates[where_clause] = 1 + (templates[where_clause] if where_clause in templates else 0)
 
         total += 1
@@ -58,8 +58,6 @@ if __name__ == "__main__":
 
     for triple in triples:
         print triple
-
-
 
         # ?x ?p ?s
         # ?x ?p ?uri
