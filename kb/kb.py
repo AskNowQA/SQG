@@ -4,13 +4,13 @@ from contextlib import closing
 
 
 def query(args):
-    endpoint, q = args
+    endpoint, q, idx = args
     payload = (('query', q), ('format', 'application/json'))
     try:
         r = requests.get(endpoint, params=payload, timeout=60)
     except:
-        return 0, None
-    return r.status_code, r.json() if r.status_code == 200 else None
+        return 0, None, idx
+    return r.status_code, r.json() if r.status_code == 200 else None, idx
 
 
 class KB(object):
@@ -18,8 +18,6 @@ class KB(object):
         self.endpoint = endpoint
         self.default_graph_uri = default_graph_uri
         self.type_uri = "type_uri"
-        self.one_hop_cache = dict()
-        self.two_hop_cache = dict()
         self.server_available = self.check_server()
 
     def check_server(self):
@@ -62,18 +60,19 @@ class KB(object):
         if status == 200:
             return response
 
-    def parallel_query(self, query_types):
+    def parallel_query(self, query_templates):
         args = []
-        for i in range(len(query_types)):
+        for i in range(len(query_templates)):
             args.append(
-                (self.endpoint, u"{} ASK WHERE {{ {} }}".format(self.query_prefix(), query_types[i])))
-        with closing(Pool(len(query_types))) as pool:
+                (self.endpoint, u"{} ASK WHERE {{ {} }}".format(self.query_prefix(), query_templates[i][1]),
+                 query_templates[i][0]))
+        with closing(Pool(len(query_templates))) as pool:
             query_results = pool.map(query, args)
             pool.terminate()
             results = []
             for i in range(len(query_results)):
                 if query_results[i][0] == 200:
-                    results.append((i, query_results[i][1]["boolean"]))
+                    results.append((query_results[i][2], query_results[i][1]["boolean"]))
             return results
 
     def one_hop_graph(self, entity1_uri, relation_uri, entity2_uri=None):
@@ -84,9 +83,6 @@ class KB(object):
         else:
             entity2_uri = self.uri_to_sparql(entity2_uri)
 
-        cache_id = " ".join([relation_uri, entity1_uri, entity2_uri])
-        if cache_id in self.one_hop_cache:
-            return self.one_hop_cache[cache_id]
         query_types = [u"{ent2} {rel} {ent1}",
                        u"{ent1} {rel} {ent2}",
                        u"?u1 {type} {rel}"]
@@ -108,7 +104,6 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
         status, response = self.query(query)
         if status == 200 and len(response["results"]["bindings"]) > 0:
             output = response["results"]["bindings"]
-            self.one_hop_cache[cache_id] = output
             return output
 
     def two_hop_graph(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
@@ -117,26 +112,21 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
         entity1_uri = self.uri_to_sparql(entity1_uri)
         entity2_uri = self.uri_to_sparql(entity2_uri)
 
-        cache_id = " ".join([relation1_uri, relation2_uri, entity1_uri, entity2_uri])
-        if cache_id in self.two_hop_cache:
-            return self.two_hop_cache[cache_id]
-
         queries = self.two_hop_graph_template(entity1_uri, relation1_uri, entity2_uri, relation2_uri)
         output = None
         if len(queries) > 0:
             output = self.parallel_query(queries)
-        self.two_hop_cache[cache_id] = output
         return output
 
     def two_hop_graph_template(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
-        query_types = [u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}",
-                       u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1",
-                       u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1",
-                       u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}",
-                       u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]
-        output = [item.format(rel1=relation1_uri, ent1=entity1_uri,
-                              ent2=entity2_uri, rel2=relation2_uri,
-                              type=self.type_uri) for item in query_types]
+        query_types = [[0, u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}"],
+                       [1, u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1"],
+                       [2, u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1"],
+                       [3, u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}"],
+                       [4, u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}"]]
+        output = [[item[0], item[1].format(rel1=relation1_uri, ent1=entity1_uri,
+                                           ent2=entity2_uri, rel2=relation2_uri,
+                                           type=self.type_uri)] for item in query_types]
         return output
 
     @staticmethod

@@ -72,17 +72,17 @@ class DBpedia(KB):
         queries = self.two_hop_graph_template(entity1_uri, relation1_uri, entity2_uri, relation2_uri)
         output = []
 
-        for idx in range(len(queries) - 1, -1, -1):
+        for query in queries:
             for item in [True, False]:
-                if queries[idx] in self.two_hop_bloom[item]:
-                    output.append([idx, item])
+                if query[1] in self.two_hop_bloom[item]:
+                    output.append([query[0], item])
                     break
 
         if len(queries) != len(output):
             output = super(DBpedia, self).parallel_query(queries)
 
             for idx in range(len(output)):
-                self.two_hop_bloom[output[idx][1]].add(queries[idx])
+                self.two_hop_bloom[output[idx][1]].add(queries[idx][1])
                 self.two_hop_bloom_counter += 1
 
             if self.two_hop_bloom_counter > 100:
@@ -95,24 +95,24 @@ class DBpedia(KB):
         return output
 
     def two_hop_graph_template(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
-        query_types = [[u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}", u"{rel2}:{ent1}"],
-                       [u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1", u"{ent1}:{rel2}"],
-                       [u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1", u"{ent2}:{rel2}"],
-                       [u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}", u"{rel2}:{ent2}"],
-                       [u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}", u"{type}:{rel2}"]]
+        query_types = [[0, u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}", u"{rel2}:{ent1}"],
+                       [1, u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1", u"{ent1}:{rel2}"],
+                       [2, u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1", u"{ent2}:{rel2}"],
+                       [3, u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}", u"{rel2}:{ent2}"],
+                       [4, u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}", u"{type}:{rel2}"]]
         for item in query_types:
-            item.append(item[1].format(rel1=relation1_uri, ent1=entity1_uri,
+            item.append(item[2].format(rel1=relation1_uri, ent1=entity1_uri,
                                        ent2=entity2_uri, rel2=relation2_uri,
                                        type=self.type_uri))
         filtered_query_types = []
         if self.one_hop_bloom is not None:
             for item in query_types:
-                if ("?" in item[2]) or self.bloom_query([item[2]]):
+                if ("?" in item[3]) or self.bloom_query([item[3]]):
                     filtered_query_types.append(item)
 
-        output = [item[0].format(rel1=relation1_uri, ent1=entity1_uri,
-                                 ent2=entity2_uri, rel2=relation2_uri,
-                                 type=self.type_uri) for item in filtered_query_types]
+        output = [[item[0], item[1].format(rel1=relation1_uri, ent1=entity1_uri,
+                                           ent2=entity2_uri, rel2=relation2_uri,
+                                           type=self.type_uri)] for item in filtered_query_types]
         return output
 
     @staticmethod
