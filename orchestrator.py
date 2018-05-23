@@ -14,6 +14,7 @@ from common.container.linkeditem import LinkedItem
 from parser.lc_quad import LC_QaudParser
 import common.utility.utility as utility
 from learning.classifier.svmclassifier import SVMClassifier
+import ujson
 
 
 class Struct(object): pass
@@ -33,6 +34,13 @@ class Orchestrator:
 
         if auto_train and double_relation_classifer is not None and not double_relation_classifer.is_trained:
             self.train_double_relation_classifier()
+
+        self.dep_tree_cache_file_path = './caches/dep_tree_cache.json'
+        if os.path.exists(self.dep_tree_cache_file_path):
+            with open(self.dep_tree_cache_file_path) as f:
+                self.dep_tree_cache = ujson.load(f)
+        else:
+            self.dep_tree_cache = dict()
 
     def prepare_question_classifier_dataset(self, file_path=None):
         if file_path is None:
@@ -90,7 +98,8 @@ class Orchestrator:
     def rank(self, args, question, generated_queries):
         if len(generated_queries) == 0:
             return []
-        try:
+        if 2 > 1:
+            # try:
             # Load the model
             checkpoint_filename = '%s.pt' % os.path.join(args.save, args.expname)
             dataset_vocab_file = os.path.join(args.data, 'dataset.vocab')
@@ -127,14 +136,32 @@ class Orchestrator:
                 os.path.join(lib_dir, 'stanford-parser/stanford-parser.jar'),
                 os.path.join(lib_dir, 'stanford-parser/stanford-parser-3.5.1-models.jar')])
 
-            preprocess_lcquad.parse(output_dir, cp=classpath)
+            if question in self.dep_tree_cache:
+                preprocess_lcquad.parse(output_dir, cp=classpath, dep_parse=False)
+
+                cache_item = self.dep_tree_cache[question]
+                with open(os.path.join(output_dir, 'a.parents'), 'w') as f_parent, open(
+                        os.path.join(output_dir, 'a.toks'), 'w') as f_token:
+                    for i in range(len(generated_queries)):
+                        f_token.write(cache_item[0])
+                        f_parent.write(cache_item[1])
+            else:
+                preprocess_lcquad.parse(output_dir, cp=classpath)
+                with open(os.path.join(output_dir, 'a.parents')) as f:
+                    parents = f.readline()
+                with open(os.path.join(output_dir, 'a.toks')) as f:
+                    tokens = f.readline()
+                self.dep_tree_cache[question] = [tokens, parents]
+
+                with open(self.dep_tree_cache_file_path, 'w') as f:
+                    ujson.dump(self.dep_tree_cache, f)
             test_dataset = QGDataset(output_dir, vocab, args.num_classes)
 
             test_loss, test_pred = trainer.test(test_dataset)
             return test_pred
-        except Exception as expt:
-            self.logger.error(expt)
-            return []
+        # except Exception as expt:
+        #     self.logger.error(expt)
+        #     return []
 
     def generate_query(self, question, entities, relations, h1_threshold=None, question_type=None):
         ask_query = False
@@ -230,11 +257,14 @@ if __name__ == "__main__":
     question = "Which comic characters are painted by Bill Finger?"
     generated_queries = o.generate_query(question, entities, relations)[0]
     # print generated_queries
-    generated_queries = [
-        {'where': [u'?u_0 <http://dbpedia.org/ontology/creator> <http://dbpedia.org/resource/Bill_Finger>',
-                   u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/ComicsCharacter>']},
-        {'where': [u'?u_0 <http://dbpedia.org/ontology/ComicsCharacter> <http://dbpedia.org/resource/Bill_Finger>',
-                   u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/creator>']}
-    ]
+    # generated_queries = [
+    #     {'where': [u'?u_0 <http://dbpedia.org/ontology/creator> <http://dbpedia.org/resource/Bill_Finger>',
+    #                u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/ComicsCharacter>']},
+    #     {'where': [u'?u_0 <http://dbpedia.org/ontology/ComicsCharacter> <http://dbpedia.org/resource/Bill_Finger>',
+    #                u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/creator>']}
+    # ]
+    scores = o.rank(args, question, generated_queries)
+    print scores
+    generated_queries.extend(generated_queries)
     scores = o.rank(args, question, generated_queries)
     print scores

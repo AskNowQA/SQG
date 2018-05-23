@@ -165,8 +165,9 @@ def save_split(dst_dir, a_list, b_list, id_list, sim_list):
             simfile.write(sim_list[i])
 
 
-def parse(dirpath, cp=''):
-    dependency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
+def parse(dirpath, cp='', dep_parse=True):
+    if dep_parse:
+        dependency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
     # constituency_parse(os.path.join(dirpath, 'a.txt'), cp=cp, tokenize=True)
     query_parse(os.path.join(dirpath, 'b.txt'))
 
