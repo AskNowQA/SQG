@@ -100,16 +100,16 @@ class Graph:
             self.relation_items.append(self.relation_items[0])
 
         # Find subgraphs that are consist of at least one entity and exactly one relation
-        self.logger.info("start finding one hop graph")
+        # self.logger.info("start finding one hop graph")
         self.__one_hop_graph(self.entity_items, self.relation_items, number_of_entities=int(ask_query) + 1,
                              threshold=h1_threshold)
-        self.logger.info("finding one hop graph finished")
+        # self.logger.info("finding one hop graph finished")
 
         if len(self.edges) > 100:
             return
 
         # Extend the existing edges with another hop
-        self.logger.info("Extend edges with another hop")
+        # self.logger.info("Extend edges with another hop")
         self.__extend_edges(self.edges, relation_items)
 
     def __extend_edges(self, edges, relation_items):
