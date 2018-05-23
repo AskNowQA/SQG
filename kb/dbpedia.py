@@ -1,5 +1,5 @@
 from kb import KB
-from pybloom import BloomFilter
+from pybloom import BloomFilter, ScalableBloomFilter
 import os
 
 
@@ -11,7 +11,7 @@ class DBpedia(KB):
     # 2014 http://sda-srv01.iai.uni-bonn.de:8014/sparql
     # http://dbpedia.org/sparql
     def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql",
-                 one_hop_bloom_file="./data/blooms/spo1.bloom"):
+                 one_hop_bloom_file="./data/blooms/spo1.bloom", two_hop_bloom_file="./data/blooms/spo2.bloom"):
         super(DBpedia, self).__init__(endpoint)
         self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
         if os.path.exists(one_hop_bloom_file):
@@ -19,6 +19,18 @@ class DBpedia(KB):
                 self.one_hop_bloom = BloomFilter.fromfile(bloom_file)
         else:
             self.one_hop_bloom = None
+        self.two_hop_bloom_file = two_hop_bloom_file
+
+        self.two_hop_bloom = dict()
+        for item in [True, False]:
+            file_path = two_hop_bloom_file.replace('spo2', 'spo2' + str(item))
+            if os.path.exists(file_path):
+                with open(file_path) as bloom_file:
+                    self.two_hop_bloom[item] = ScalableBloomFilter.fromfile(bloom_file)
+            else:
+                self.two_hop_bloom[item] = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
+        self.two_hop_bloom_counter = 0
 
     def bloom_query(self, filters):
         found = True
@@ -51,6 +63,37 @@ class DBpedia(KB):
         else:
             return super(DBpedia, self).one_hop_graph(entity1_uri, relation_uri, entity2_uri)
 
+    def two_hop_graph(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
+        relation1_uri = self.uri_to_sparql(relation1_uri)
+        relation2_uri = self.uri_to_sparql(relation2_uri)
+        entity1_uri = self.uri_to_sparql(entity1_uri)
+        entity2_uri = self.uri_to_sparql(entity2_uri)
+
+        queries = self.two_hop_graph_template(entity1_uri, relation1_uri, entity2_uri, relation2_uri)
+        output = []
+
+        for idx in range(len(queries) - 1, -1, -1):
+            for item in [True, False]:
+                if queries[idx] in self.two_hop_bloom[item]:
+                    output.append([idx, item])
+                    break
+
+        if len(queries) != len(output):
+            output = super(DBpedia, self).parallel_query(queries)
+
+            for idx in range(len(output)):
+                self.two_hop_bloom[output[idx][1]].add(queries[idx])
+                self.two_hop_bloom_counter += 1
+
+            if self.two_hop_bloom_counter > 100:
+                self.two_hop_bloom_counter = 0
+                for item in [True, False]:
+                    file_path = self.two_hop_bloom_file.replace('spo2', 'spo2' + str(item))
+                    with open(file_path, 'w') as bloom_file:
+                        self.two_hop_bloom[item].tofile(bloom_file)
+
+        return output
+
     def two_hop_graph_template(self, entity1_uri, relation1_uri, entity2_uri, relation2_uri):
         query_types = [[u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent1}", u"{rel2}:{ent1}"],
                        [u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1", u"{ent1}:{rel2}"],
@@ -61,11 +104,15 @@ class DBpedia(KB):
             item.append(item[1].format(rel1=relation1_uri, ent1=entity1_uri,
                                        ent2=entity2_uri, rel2=relation2_uri,
                                        type=self.type_uri))
+        filtered_query_types = []
+        if self.one_hop_bloom is not None:
+            for item in query_types:
+                if ("?" in item[2]) or self.bloom_query([item[2]]):
+                    filtered_query_types.append(item)
 
         output = [item[0].format(rel1=relation1_uri, ent1=entity1_uri,
                                  ent2=entity2_uri, rel2=relation2_uri,
-                                 type=self.type_uri) for item in query_types if
-                  (self.one_hop_bloom is None) or ("?" in item[2]) or self.bloom_query([item[2]])]
+                                 type=self.type_uri) for item in filtered_query_types]
         return output
 
     @staticmethod

@@ -62,7 +62,7 @@ class KB(object):
         if status == 200:
             return response
 
-    def __parallel_query(self, query_types):
+    def parallel_query(self, query_types):
         args = []
         for i in range(len(query_types)):
             args.append(
@@ -124,7 +124,7 @@ SELECT DISTINCT ?m WHERE {{ {where} }}""".format(prefix=self.query_prefix(), whe
         queries = self.two_hop_graph_template(entity1_uri, relation1_uri, entity2_uri, relation2_uri)
         output = None
         if len(queries) > 0:
-            output = self.__parallel_query(queries)
+            output = self.parallel_query(queries)
         self.two_hop_cache[cache_id] = output
         return output
 
