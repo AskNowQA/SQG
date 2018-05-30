@@ -9,8 +9,10 @@ class QueryBuilder:
     def to_where_statement(self, graph, parse_queryresult, ask_query, count_query, sort_query):
         graph.generalize_nodes()
         graph.merge_edges()
-        output = []
+
         paths = self.__find_paths(graph, graph.entity_items, graph.relation_items, graph.edges)
+
+        paths = paths.remove_duplicates()
 
         # Expand coverage by changing generic ids
         new_paths = []
@@ -39,18 +41,23 @@ class QueryBuilder:
                                                          edge_info["edge"].copy(source_node=new_node))
                         if edge_info["type"] == "dest":
                             new_path = path.replace_edge(edge_info["edge"], edge_info["edge"].copy(dest_node=new_node))
-                        if new_path is not None and new_path not in new_paths:
+                        if new_path is not None:
                             new_paths.append(new_path)
 
+        new_paths = Paths(new_paths).remove_duplicates()
+        # for new_path in new_paths:
+        #     generic_equal = False
+        #     if new_path not in paths:
+        #         for path in paths:
+        #             if path.generic_equal_with_substitutable_id(new_path):
+        #                 generic_equal = True
+        #                 break
+        #         if not generic_equal:
+        #             paths.append(new_path)
+
         for new_path in new_paths:
-            generic_equal = False
-            if new_path not in paths:
-                for path in paths:
-                    if path.generic_equal_with_substitutable_id(new_path):
-                        generic_equal = True
-                        break
-                if not generic_equal:
-                    paths.append(new_path)
+            paths.append(new_path)
+        paths = paths.remove_duplicates()
 
         paths.sort(key=lambda x: x.confidence, reverse=True)
         output = paths.to_where(graph.kb, ask_query)
@@ -83,7 +90,7 @@ class QueryBuilder:
 
         return filtered_output
 
-    def __find_paths(self, graph, entity_items, relation_items, edges, output_paths=Paths()):
+    def __find_paths(self, graph, entity_items, relation_items, edges, output_paths=Paths(), used_edges=set()):
         new_output_paths = Paths([])
 
         if len(relation_items) == 0:
@@ -95,22 +102,38 @@ class QueryBuilder:
         for relation_item in relation_items:
             for relation in relation_item.uris:
                 used_relations = used_relations + [relation]
-                for edge in self.__find_edges(edges, relation):
+                for edge in self.__find_edges(edges, relation, used_edges):
                     entities = MyList()
                     if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
                         entities.extend(edge.source_node.uris)
                     if not (edge.dest_node.are_all_uris_generic() or edge.uri.is_type()):
                         entities.extend(edge.dest_node.uris)
-
                     new_paths = self.__find_paths(graph,
                                                   entity_items - LinkedItem.list_contains_uris(entity_items, entities),
                                                   relation_items - LinkedItem.list_contains_uris(relation_items,
                                                                                                  used_relations),
                                                   edges - {edge},
-                                                  output_paths=output_paths.extend(edge))
+                                                  output_paths=output_paths.extend(edge),
+                                                  used_edges=used_edges | set([edge]))
                     new_output_paths.add(new_paths, lambda path: len(path) >= len(graph.relation_items))
 
         return new_output_paths
 
-    def __find_edges(self, edges, uri):
-        return [edge for edge in edges if edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))]
+    def __find_edges(self, edges, uri, used_edges):
+        if len(used_edges) == 0:
+            return [edge for edge in edges if
+                    (edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))) and
+                    (not (edge.source_node.are_all_uris_generic() and edge.dest_node.are_all_uris_generic()))]
+        outputs = [edge for edge in edges if edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))]
+        connected_edges = []
+        for edge in outputs:
+            found = False
+            for used_edge in used_edges:
+                if edge.source_node == used_edge.source_node or edge.source_node == used_edge.dest_node or \
+                        edge.dest_node == used_edge.source_node or edge.dest_node == used_edge.dest_node:
+                    found = True
+                    break
+            if found:
+                connected_edges.append(edge)
+
+        return connected_edges

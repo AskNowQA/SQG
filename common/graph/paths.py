@@ -72,3 +72,12 @@ class Paths(list):
             else:
                 new_output.append(item)
         return Paths(new_output)
+
+    def remove_duplicates(self):
+        removed_duplicate_paths = []
+        paths_str = [str(path) for path in self]
+        for idx in range(len(self)):
+            if paths_str[idx] not in paths_str[idx + 1:]:
+                removed_duplicate_paths.append(self[idx])
+
+        return Paths(removed_duplicate_paths)

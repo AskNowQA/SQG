@@ -4,6 +4,7 @@ import numpy as np
 class Path(list):
     def __init__(self, *args):
         super(Path, self).__init__(*args)
+        self.__sorted_str = None
 
     @property
     def confidence(self):
@@ -23,10 +24,10 @@ class Path(list):
             return True
         for edge in self:
             if edge.uri == candidate_edge.uri or \
-                            edge.source_node == candidate_edge.source_node or \
-                            edge.dest_node == candidate_edge.dest_node or \
-                            edge.source_node == candidate_edge.dest_node or \
-                            edge.dest_node == candidate_edge.source_node:
+                    edge.source_node == candidate_edge.source_node or \
+                    edge.dest_node == candidate_edge.dest_node or \
+                    edge.source_node == candidate_edge.dest_node or \
+                    edge.dest_node == candidate_edge.source_node:
                 return True
         return False
 
@@ -81,7 +82,8 @@ class Path(list):
                                 edge2.source_node) and edge1.source_node.are_all_uris_generic() \
                                 and edge2.source_node.are_all_uris_generic():
                             output.append(
-                                frozenset([edge1.source_node.first_uri_if_only(), edge2.source_node.first_uri_if_only()]))
+                                frozenset(
+                                    [edge1.source_node.first_uri_if_only(), edge2.source_node.first_uri_if_only()]))
                         if edge1.dest_node.generic_equal(
                                 edge2.dest_node) and edge1.dest_node.are_all_uris_generic() \
                                 and edge2.dest_node.are_all_uris_generic():
@@ -97,3 +99,8 @@ class Path(list):
             return True, output
         else:
             return False, []
+
+    def __str__(self):
+        if self.__sorted_str is None:
+            self.__sorted_str = '-'.join(sorted([item.full_path() for item in self]))
+        return self.__sorted_str
