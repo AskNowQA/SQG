@@ -102,7 +102,7 @@ class QueryBuilder:
         for relation_item in relation_items:
             for relation in relation_item.uris:
                 used_relations = used_relations + [relation]
-                for edge in self.__find_edges(edges, relation, used_edges):
+                for edge in self.find_edges(edges, relation, used_edges):
                     entities = MyList()
                     if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
                         entities.extend(edge.source_node.uris)
@@ -119,12 +119,14 @@ class QueryBuilder:
 
         return new_output_paths
 
-    def __find_edges(self, edges, uri, used_edges):
-        if len(used_edges) == 0:
-            return [edge for edge in edges if
-                    (edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))) and
-                    (not (edge.source_node.are_all_uris_generic() and edge.dest_node.are_all_uris_generic()))]
+    def find_edges(self, edges, uri, used_edges):
+        # if len(used_edges) == 0:
+        #     return [edge for edge in edges if
+        #             (edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))) and
+        #             (not (edge.source_node.are_all_uris_generic() and edge.dest_node.are_all_uris_generic()))]
         outputs = [edge for edge in edges if edge.uri == uri or (edge.uri.is_type() and edge.dest_node.has_uri(uri))]
+        if len(used_edges) == 0:
+            return outputs
         connected_edges = []
         for edge in outputs:
             found = False
