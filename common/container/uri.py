@@ -13,7 +13,7 @@ class Uri:
         return self.uri_type == "?s"
 
     def is_ontology(self):
-        return self.uri_type == "?p"
+        return self.uri_type == "?p" or self.uri_type == "?o"
 
     def is_type(self):
         return self.uri_type == "?t"

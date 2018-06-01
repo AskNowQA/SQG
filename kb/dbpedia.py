@@ -122,7 +122,9 @@ class DBpedia(KB):
         raw_uri = input_uri.strip("<>")
         if raw_uri.find("/resource/") >= 0:
             return "?s", raw_uri
-        elif raw_uri.find("/ontology/") >= 0 or raw_uri.find("/property/") >= 0:
+        elif raw_uri.find("/ontology/") >= 0:
+            return "?o", raw_uri
+        elif raw_uri.find("/property/") >= 0:
             return "?p", raw_uri
         elif raw_uri.find("rdf-syntax-ns#type") >= 0:
             return "?t", raw_uri
