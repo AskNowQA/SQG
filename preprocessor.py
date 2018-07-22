@@ -197,7 +197,3 @@ if __name__ == "__main__":
 
     # 229 QALD annotated
     # 381 brmson manually annotated
-
-
-
-
