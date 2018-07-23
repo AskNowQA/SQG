@@ -218,6 +218,4 @@ if __name__ == "__main__":
     # basic_stats(load_file("tmp"))
     # analysis_x()
     # analysis_qald("6")
-    deep_analysis("output/qald/7")
-
-    
+    # deep_analysis("output/qald/7")

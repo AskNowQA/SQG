@@ -191,9 +191,11 @@ if __name__ == "__main__":
     # test_classifier(classifier, x_test, y_test)
 
 
-    data, x = get_sort_questions_brmson()
+    # data, x = get_sort_questions_brmson()
 
-    print len(data)
+    # print len(data)
 
     # 229 QALD annotated
     # 381 brmson manually annotated
+
+    

@@ -1,5 +1,5 @@
 #Data
-data/blooms
+data/*
 
 # Mac
 **/.DS_Store
