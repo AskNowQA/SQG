@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import fnmatch
 import os
 import sys
@@ -20,12 +21,18 @@ def load_txt(path):
         return data_file.read().split("\n")
 
 
-# Get Sort Questions from qald xml
-def get_sort_questions_qald():
-    # with open("output/qald/")
+def save_json(path, results):
+    with open(path, "w") as data_file:
+        json.dump(results, data_file, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
+
+# Get Sort Questions from qald xml from Output/qald
+def get_order_questions_qald():
+    path = "output/qald"
+    # path = "./data/clean_datasets/qald/"
     matches = []
-    questions = []
-    for root, dir_names, file_names in os.walk('output/qald'):
+    questions = set()
+    for root, dir_names, file_names in os.walk(path):
         for filename in fnmatch.filter(file_names, '*.json'):
             matches.append(os.path.join(root, filename))
     # print matches
@@ -33,41 +40,64 @@ def get_sort_questions_qald():
         data = load_json(m)
         for row in data:
             if "ORDER" in row["query"]:
-                questions.append(row["question"])
-    return questions
+                questions.add(row["question"].encode("utf-8"))
+    return list(questions)
+
+
+# Gets Order questions from qald clean dataset data/clean_datasets/qlad
+def get_order_questions_qlad_clean():
+    path = "./data/clean_datasets/qald/"
+    result = []
+    for f in os.listdir(path):
+        data = load_json(path+f)
+        for row in data:
+            if "order" in row[1].lower():
+                result.append(row[0].encode("utf-8"))
+    return result
 
 
 def get_sort_questions_brmson():
-    questions = []
-    data = load_txt("data/brmson/train_5500.label.txt")
+    questions = set()
+    data = load_txt("data/questions_only/brmson/train_5500.label.txt")
     for row in data:
         if "est" in row or "most" in row or "least" in row:
             row = re.sub(r"[a-zA-z]+:[a-zA-z]+", "", row)
-            questions.append(row)
+            questions.add(row)
 
     superlatives = load_json("data/ComplexQuestionsOrder/superlatives.json")
     ordinals = load_json("data/ComplexQuestionsOrder/ordinals.json")
-    questions_true = []
-    questions_false = []
+    questions_true = set()
+    questions_false = set()
     for q in questions:
         flag = False
         for s in superlatives:
-            if s in q.decode('ascii', 'ignore'):
+            if s.encode("utf-8") in q:
                 flag = True
                 break
         for o in ordinals:
-            if o in q.decode('ascii', 'ignore'):
+            if o.encode("utf-8") in q:
                 flag = True
                 break
         if flag:
-            questions_true.append(q)
+            questions_true.add(q)
         else:
-            questions_false.append(q)
-    return questions_true, questions_false
+            questions_false.add(q)
+    return list(questions_true), list(questions_false)
+
+
+def get_order_questions_dbnqa():
+    path = "./data/clean_datasets/dbnqa/dbnqa_clean.json"
+    data = load_json(path)
+    result = []
+    for row in data:
+        if "filter" in row[1].lower():
+            # result.append(row[0].encode("utf-8"))
+            result.append([row[0].encode("utf-8"), row[1].encode("utf-8")])
+    return result
 
 
 def merge_sort_questions():
-    qald = get_sort_questions_qald()
+    qald = get_order_questions_qald()
     brmson_1, brmson_2 = get_sort_questions_brmson()
     result = []
     for q in brmson_1:
@@ -168,7 +198,7 @@ def clean_question(q):
 
 
 if __name__ == "__main__":
-    print "HELLO THERE, BITCHESSS !!!"
+    print "Here We Go !!!"
     # prep_superlatives()
     # ques_1 = get_sort_questions_qald()
     # ques_1, ques_2 = get_sort_questions_brmson()
@@ -181,7 +211,7 @@ if __name__ == "__main__":
     # x_train, x_test, y_train, y_test = construct_training_data_binary()
 
     # with open("data/ComplexQuestionsOrder/train_test.pickle") as data_file:
-    #     x_train, x_test, y_train, y_test = pickle.load(data_file)
+        # x_train, x_test, y_train, y_test = pickle.load(data_file)
 
     # classifier = train_classifier(x_train, y_train)
 
@@ -195,7 +225,18 @@ if __name__ == "__main__":
 
     # print len(data)
 
-    # 229 QALD annotated
+    # 64 QALD annotated
     # 381 brmson manually annotated
+    # 3900 dbnqa
+
+
+    #2700 filter dbnqa
+
+
+    # data = get_order_questions_dbnqa()
+    # print len(data)
+    # save_json("output/dbnqa_order_filter_questions.json", data)
+
+    get_order_questions_qald()
 
     

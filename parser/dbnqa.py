@@ -37,20 +37,17 @@ def save_json(path, results):
 def parse():
     questions = load_questions()
     raw_queries = load_sparqls()
-    sparqls = []
-    clean_questions = []
-
+    result = []
     for row, q in tqdm(zip(raw_queries, questions), desc="Parsing DBNQA Dataset"):
-        sparqls.append(decode(row.strip()))
-        clean_questions.append(q.strip())
 
-    result = zip(clean_questions, sparqls)
-    save_json("../data/clean_datasets/dbnqa/dbnqa_clean.json", result)
+        tmp = {"query": decode(row.strip()), "question": q.strip()}
+        result.append(tmp)
+    save_json("../data/clean_datasets/dbnqa_dataset.json", result)
     return result
 
 
 def basic_stats():
-    path = "../data/clean_datasets/dbnqa/dbnqa_clean.json"
+    path = "../data/clean_datasets/dbnqa_clean.json"
     data = load_json(path)
     print "Total No. of Questions: %s" % len(data)
 

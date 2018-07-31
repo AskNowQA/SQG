@@ -30,10 +30,10 @@ class LC_Qaud:
             print item
             print ""
 
-    def extract_clean_data(self, path = "../data/clean_datasets/lcquad/lcquad_clean.json"):
+    def extract_clean_data(self, path = "../data/clean_datasets/lcquad_dataset.json"):
         result = []
         for row in self.qapairs:
-            result.append([row.question.text.encode("utf-8"), row.sparql.query.encode("utf-8")])
+            result.append({"question": row.question.text.encode("utf-8"), "query": row.sparql.query.encode("utf-8")})
 
         with open(path, "w") as data_file:
             json.dump(result, data_file, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)

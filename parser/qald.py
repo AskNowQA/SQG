@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json, re
 from common.container.qapair import QApair
 from common.container.uri import Uri
@@ -140,6 +142,17 @@ class Qald:
             print item
             print ""
 
+    def extract_clean_data(self):
+        path = re.findall(r"q.*\.", self.path)[0]
+        path = "../data/clean_datasets/qald/{}json".format(path)
+
+        result = []
+        for row in self.qapairs:
+            result.append([row.question.text.encode("utf-8"), row.sparql.query.encode("utf-8")])
+
+        with open(path, "w") as data_file:
+            json.dump(result, data_file, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
 
 class QaldParser(AnswerParser):
     def __init__(self):
@@ -180,7 +193,7 @@ class QaldParser(AnswerParser):
 
         uris = [Uri(raw_uri, self.kb.parse_uri) for raw_uri in re.findall('<[^>]*>', raw_query)]
         supported = not any(substring in raw_query for substring in ["UNION", "FILTER", "OFFSET", "HAVING", "LIMIT"])
-        print "AA query", raw_query.encode("ascii", "ignore"), supported
+        # print "AA query", raw_query.encode("ascii", "ignore"), supported
         # sys.exit("EXITED")
         return raw_query, supported, uris
 
@@ -209,3 +222,11 @@ class QaldParser(AnswerParser):
             if not answer_type in raw_answer:
                 answer_type = "\"{}\"".format(answer_type)
             return raw_answer[answer_type]["type"], Uri(raw_answer[answer_type]["value"], self.kb.parse_uri)
+
+
+if __name__ == "__main__":
+    print "Here We Go !!!"
+    ds = Qald("."+Qald.qald_7_multilingual)
+    ds.load()
+    ds.parse()
+    ds.extract_clean_data()
