@@ -4,7 +4,7 @@
 
 Question answering (QA) systems over Knowledge Graph often consist of several components such as Named Entity Disambiguation (NED), Relation Extraction (RE), and Query Generation (QG). The main objective of this project is to generate SPARQL query for a given question which is annotated by its linked entities and relations.
 
-SQG is a SPARQL Query Generator with modular architecture, enabling easy integration with other components for the construction of a fully functional QA pipeline. 
+SQG is a SPARQL Query Generator with modular architecture, enabling easy integration with other components for the construction of a fully functional QA pipeline. To increase the chance constructthe correct query, SQG is able to handle a set of annotations including several incorrect ones. It also benefits from Tree-LSTM model to deal with syntactic ambiguity of the input questions. Special adjustment is considered in order to cope with large-scale knowledge base. 
 
 ## Supported Questions
 Currently the following questions are supported:
@@ -18,6 +18,8 @@ Currently the following questions are supported:
 * Others: https://drive.google.com/drive/folders/14cRLzgxFVrt_b9f91VKND2wu20TemYIN
     * Pretrained question classifier: output/classifer/* 
     * Bloom for DBpedia: data/blooms/*
+    
+## How-to 
 
 ## Web API
 
