@@ -13,11 +13,7 @@ Currently the following questions are supported:
 * Count questions
 * Boolean questions
 
-## Data
-* LC-QuAD dataset: https://github.com/AskNowQA/LC-QuAD
-* Others: https://drive.google.com/drive/folders/14cRLzgxFVrt_b9f91VKND2wu20TemYIN
-    * Pretrained question classifier: output/classifer/* 
-    * Bloom for DBpedia: data/*.blooms
+
 ## Cite
 If you would use the codebase, please cite our paper as well:
 ```
@@ -32,6 +28,12 @@ If you would use the codebase, please cite our paper as well:
 ```
 ## How-to 
 
+### Data
+* LC-QuAD dataset: https://github.com/AskNowQA/LC-QuAD
+* Others: https://drive.google.com/drive/folders/14cRLzgxFVrt_b9f91VKND2wu20TemYIN
+    * Pretrained question classifier: output/classifer/* 
+    * Bloom for DBpedia: data/*.blooms
+    
 ### Getting Started
 
 To run it (python 2.7 is required):
