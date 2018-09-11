@@ -36,7 +36,7 @@ If you would use the codebase, please cite our paper as well:
     
 ### Getting Started
 
-You can find the list of required packages in the [here](dependencies.txt).
+You can find the list of required packages in [here](dependencies.txt).
 
 To run it (python 2.7 is required):
 ```
