@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-# Parser for Datasets included in /data/.
+# Parser for Datasets included in /data/raw/.. into a unified format
 import json, os, sys, fnmatch, re
+from tqdm import tqdm
+from generator_utils import decode
 
 
 def load_json(path):
@@ -29,7 +31,7 @@ def parse_QAD():
     files = [f for f in os.listdir(path) if f.endswith("txt")]
     questions = set()
     for f in files:
-        data = load_txt(path+f)
+        data = load_txt(path + f)
         del data[0]
         for line in data:
             if len(line) != 0:
@@ -49,7 +51,7 @@ def parse_wiki_qa():
     questions = set()
 
     for f in files:
-        data = load_txt(path+f)
+        data = load_txt(path + f)
         for line in data:
             line_split = line.split("\t")
             question = line_split[0]
@@ -142,7 +144,8 @@ def parse_wiki_data_simple_questions():
     for f in files:
         data = load_json(path + f)
         for row in data["questions"]:
-            tmp = {"query": row["query"]["sparql"].encode("utf-8"), "question": row["question"][0]["string"].encode("utf-8")}
+            tmp = {"query": row["query"]["sparql"].encode("utf-8"),
+                   "question": row["question"][0]["string"].encode("utf-8")}
             result.append(tmp)
 
     print len(result)
@@ -179,10 +182,26 @@ def parse_brmson():
     save_json("../data/clean_datasets/brmson.json", list(questions))
 
 
+def parse_dbnqa():
+    path = "../data/DBpedia/dbnqa/"
+
+    with open(path + "data.sparql") as data_file:
+        raw_queries = data_file.readlines()
+
+    with open(path + "data.en") as data_file:
+        questions = data_file.readlines()
+
+    result = []
+    for row, q in tqdm(zip(raw_queries, questions), desc="Parsing DBNQA Dataset"):
+        tmp = {"query": decode(row.strip()), "question": q.strip()}
+        result.append(tmp)
+    save_json("../data/clean_datasets/dbnqa_dataset.json", result)
+    return result
 
 
 def main():
-    parse_QAD()
+    print "Here We Go !!!"
+    # parse_QAD()
     # parse_wiki_qa()
     # parse_complex_web_questions()
     # parse_freebase()
@@ -192,6 +211,8 @@ def main():
     # parse_wiki_data_simple_questions()
     # parse_qald()
     # parse_brmson()
+    # parse_dbnqa()
+
 
 if __name__ == "__main__":
     print "Here We Go !!!"

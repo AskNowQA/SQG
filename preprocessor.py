@@ -238,5 +238,4 @@ if __name__ == "__main__":
     # save_json("output/dbnqa_order_filter_questions.json", data)
 
     get_order_questions_qald()
-
     
