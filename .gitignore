@@ -1,5 +1,10 @@
 #Data
 data/*
+feature_extraction_order/embeddings_matrix/*
+feature_extraction_order/embeddings_exp/*
+classification/models/*
+feature_extraction_order/out
+feature_extraction_order/models/*
 
 # Mac
 **/.DS_Store

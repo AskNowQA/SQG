@@ -109,7 +109,7 @@ def clean_question(q):
 
 def clean_query(q):
     q = q.strip()
-    q = q.lower()
+    # q = q.lower()
     q = q.replace("\n", " ")
     return q
 

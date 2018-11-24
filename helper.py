@@ -1,27 +1,47 @@
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-
-text = ["The quick brown fox jumped over the lazy dog.", "dog cat lazy lion jumped"]
-
-vectorizer = CountVectorizer(ngram_range=(2,2))
-text_count = vectorizer.fit_transform(text)
-print text_count.toarray()
-print vectorizer.get_feature_names()
-#
-# print (vectorizer.vocabulary_)
-#
-# vector = vectorizer.transform(text)
-#
-# print(vector.shape)
-# print(type(vector))
-# print(vector.toarray())
+import json
+import pickle
+import requests
 
 
-# vectorizer_2 = TfidfTransformer(use_idf=False).fit(text_count)
-# vector = vectorizer_2.transform(text_count)
-
-# print vectorizer_2.get_feature_names()
+# Load Files
 
 
+def load_json(path):
+    with open(path) as data_file:
+        return json.load(data_file)
 
 
+def load_txt(name):
+    with open(name) as data_file:
+        data = data_file.readlines()
+    data = [d.replace("\n", "") for d in data]
+    return data
+
+
+def load_pickle(path):
+    with open(path) as data_file:
+        return pickle.load(data_file)
+
+
+# Save Files
+
+
+def save_json(data, name):
+    with open(name, "w") as data_file:
+        json.dump(data, data_file, sort_keys=True, indent=4, separators=(',', ': '))
+
+
+# runs a sparql query on a target endpoint
+def query(q, bonn=False):
+    payload = (
+        ('query', q),
+        ('format', 'application/json'))
+    try:
+        if not bonn:
+            r = requests.get("http://dbpedia.org/sparql", params=payload, timeout=60)
+        else:
+            r = requests.get("http://131.220.9.219/sparql", params=payload, timeout=60, auth=('sda01dbpedia', 'softrock'))
+    except:
+        return 0, None
+
+    return r.status_code, r.json() if r.status_code == 200 else None

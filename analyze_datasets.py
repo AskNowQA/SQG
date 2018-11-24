@@ -7,10 +7,6 @@ from tqdm import tqdm
 from classification.prepare_datasets import get_questions
 
 
-
-
-
-
 def load_json(path):
     with open(path) as data_file:
         return json.load(data_file)

@@ -4,11 +4,7 @@ from learning.classifier.svmclassifier import SVMClassifier as SVM
 from learning.classifier.logisticregression import LogisticRegressionClassifier as MAXE
 from sklearn.metrics import accuracy_score
 
-
-
-
 PATH = "../data/clean_datasets/train_test_clean/"
-
 
 # Loads a JSON file
 def load_json(path):
@@ -60,10 +56,13 @@ def run_experiment(model, mode_name, dataset_name):
     # print x_train
     # sys.exit(0)
 
-
+    # print "Take first last 3 words"
+    # x_train = first_last_n_words(x_train, 3)
+    # x_test = first_last_n_words(x_test, 3)
 
     print "Training Model Score: "
     print model.train(x_train, y_train)
+
 
     # x_test = normalize_numbers(x_test)
     y_hyp = model.predict(x_test)
@@ -75,6 +74,7 @@ def run_experiment(model, mode_name, dataset_name):
 
     # x_test = first_n_words(x_test, 5)
     # x_test = normalize_numbers(x_test)
+    # x_test = first_last_n_words(x_test, 3)
 
     y_hyp = model.predict(x_test)
     print "General Testing set Accuracy: %s \n" % accuracy_score(y_test, y_hyp)
@@ -141,12 +141,24 @@ def normalize_numbers(x_train):
     return result
 
 
+def first_last_n_words(x_train, n):
+    result = []
+    for x in x_train:
+        tmp = x.split(" ")
+        tmp = tmp[:n] + tmp[-1*n:]
+        res = " ".join(tmp)
+        result.append(res)
+    return result
+
+
+
+
 def main():
     print "### MAIN ###"
     # svm = SVM()
     # nb = NB()
     maxe = MAXE()
-    run_experiment(maxe, "MAXE_1_filter_check", "filter")
+    run_experiment(maxe, "MAXE_filter", "filter")
 
 
 if __name__ == '__main__':
@@ -177,6 +189,8 @@ if __name__ == '__main__':
 
     # print svm.predict_proba(x_norm)
     # print nb_norm.predict_proba(x_norm)
+
+
 
 
 
