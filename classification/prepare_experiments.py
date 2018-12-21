@@ -151,14 +151,12 @@ def first_last_n_words(x_train, n):
     return result
 
 
-
-
 def main():
     print "### MAIN ###"
     # svm = SVM()
     # nb = NB()
-    maxe = MAXE()
-    run_experiment(maxe, "MAXE_filter", "filter")
+    # maxe = MAXE()
+    # run_experiment(maxe, "MAXE_filter", "filter")
 
 
 if __name__ == '__main__':
@@ -167,7 +165,14 @@ if __name__ == '__main__':
     # stats(data)
 
     # nb = NB()
-    # nb.load("models/NB_Order")
+    # nb.load("models/NB_Filter")
+
+    # me = MAXE()
+    # me.load("models/MAXE_filter")
+
+    # s = ["who developed oil filter"]
+
+    # print me.predict(s)
 
 
     # print nb.model.best_score_

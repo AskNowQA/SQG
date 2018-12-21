@@ -13,7 +13,7 @@ __QUESTIONS_POS_TAGS = load_json("data/questions_pos_tags.json")
 def parse(question, sparql):
     question_clean = clean_question(question)
     pos_tags = {tag[0]: tag[1] for tag in __QUESTIONS_POS_TAGS[question_clean]}
-    dbr_list = __parse_sparql(sparql)
+    dbr_list = parse_sparql(sparql)
 
     question_clean_parsed = question_clean
     for dbr in dbr_list:
@@ -37,7 +37,7 @@ def parse(question, sparql):
 
 
 # Takes a SPARQL and returns a list of the resources (dbr) in that sparql
-def __parse_sparql(sparql):
+def parse_sparql(sparql):
     triples = re.findall(r"{.*}", sparql)[0].replace("{", "").replace("}", "")
     triples = re.findall(r"\S+", triples)
     resources = [triple.replace("dbr:", "") for triple in triples if "dbr:" in triple]

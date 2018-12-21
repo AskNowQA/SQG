@@ -5,6 +5,7 @@ import os
 import re
 import inspect
 import copy
+import re
 
 from nltk.tokenize import RegexpTokenizer
 from tqdm import tqdm
@@ -49,11 +50,15 @@ def get_questions(name, data_set):
         if not query or not question:
             continue
 
+        line = {"query": query, "question": question, "dataset": name, "type": ""}
+
+        # Some query preprocessing to prevent miss labeling queries
+        query = query.lower()
+        query = re.sub(r"filter.*lang", "", query)
+
         query_head = re.findall(r"^.*where", query)
         if query_head:
-            query_head = query_head[0]
-
-        line = {"query": query, "question": question, "dataset": name, "type": ""}
+            query_head = query_head[0].lower()
 
         if "select" in query_head and "count" not in query_head:
             tmp = copy.deepcopy(line)
@@ -72,7 +77,6 @@ def get_questions(name, data_set):
             tmp["type"] = "order"
             order.append(tmp)
         if "filter " in query:
-            query = query.replace("filter (lang", "")
             tmp = copy.deepcopy(line)
             tmp["type"] = "filter"
             filter_.append(tmp)
@@ -116,8 +120,10 @@ def clean_query(q):
 
 # Parse dbpedia dataset into multiple files based on the question type
 def prepare_datasets():
-    data_sets = ['../data/clean_datasets/raw/qald_dataset.json', '../data/clean_datasets/raw/lcquad_dataset.json',
+    data_sets = ['../data/clean_datasets/raw_cleaned/qald_dataset.json', '../data/clean_datasets/raw/lcquad_dataset.json',
                  '../data/clean_datasets/raw/dbnqa_dataset.json']
+
+    # data_sets = ['../data/clean_datasets/raw/qald_dataset.json']
 
     for d in data_sets:
         print "Dataset: ", d

@@ -66,6 +66,7 @@ class Qald:
                         query = ""
                 else:
                     query = raw_row["query"]
+
             self.qapairs.append(QApair(question, raw_row["answers"], query, raw_row, raw_row["id"], parser))
 
     def parse_xml(self):

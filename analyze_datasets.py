@@ -170,7 +170,10 @@ def basic_stats(path="data/clean_datasets/combined_datasets/"):
     for f in os.listdir(path):
         data = load_json(path+f)
         print "File: {} Total No. Questions: {:,}".format(f, len(data))
-        list_, ask, count, order, filter_, agg = get_questions("", data)
+        try:
+            list_, ask, count, order, filter_, agg = get_questions("", data)
+        except TypeError:
+            continue
         print "-- No. List Questions: {:,}".format(len(list_))
         print "-- No. Ask Questions: {:,}".format(len(ask))
         print "-- No. Count Questions: {:,}".format(len(count))
@@ -304,80 +307,6 @@ def clean_question(q):
     return q
 
 
-# Gets ask,list,count questions from lcquad into separate files
-# def get_lcquad_questions():
-#     path = "./data/clean_datasets/lcquad_dataset.json"
-#     data = load_json(path)
-#     print path
-#     print len(data)
-#
-#     list_questions = []
-#     ask_questions = []
-#     count_questions = []
-#
-#     for row in tqdm(data):
-#         if "ASK WHERE" in row["query"]:
-#             ask_questions.append(row)
-#         if "SELECT COUNT" in row["query"]:
-#             count_questions.append(row)
-#         if "SELECT DISTINCT" in row["query"]:
-#             list_questions.append(row)
-#     print len(ask_questions), len(list_questions), len(count_questions)
-#
-#     save_json("./data/clean_datasets/dbpedia/list_questions_lcquad.json", list_questions)
-#     save_json("./data/clean_datasets/dbpedia/ask_questions_lcquad.json", ask_questions)
-#     save_json("./data/clean_datasets/dbpedia/count_questions_lcquad.json", count_questions)
-
-
-# Gets ask,list,count questions from qald into separate files
-# def get_qald_questions():
-#     path = "./data/clean_datasets/qald_dataset.json"
-#     data = load_json(path)
-#     print path
-#     print len(data)
-#
-#     list_questions = []
-#     ask_questions = []
-#     count_questions = []
-#
-#     for row in tqdm(data):
-#         if "ask where" in row["query"].lower():
-#             ask_questions.append(row)
-#         if "select count" in row["query"].lower():
-#             count_questions.append(row)
-#         if "select distinct" in row["query"].lower():
-#             list_questions.append(row)
-#     print len(ask_questions), len(list_questions), len(count_questions)
-#
-#     save_json("./data/clean_datasets/dbpedia/list_questions_qald.json", list_questions)
-#     save_json("./data/clean_datasets/dbpedia/ask_questions_qald.json", ask_questions)
-#     save_json("./data/clean_datasets/dbpedia/count_questions_qald.json", count_questions)
-
-
-# combines the list,ask, count questions into single file per category
-
-
-# def combine_basic_questions_types():
-#     path = "./data/clean_datasets/dbpedia/"
-#     ask_questions = []
-#     list_questions = []
-#     count_questions = []
-#
-#     for f in os.listdir(path):
-#         if "ask" in f:
-#             ask_questions += load_json(path+f)
-#         if "list" in f:
-#             list_questions += load_json(path+f)
-#         if "count" in f:
-#             count_questions += load_json(path+f)
-#
-#     print len(ask_questions)
-#     print len(count_questions)
-#     print len(list_questions)
-#
-#     save_json("./data/clean_datasets/combined_datasets/ask_questions_dbpedia.json", ask_questions)
-#     save_json("./data/clean_datasets/combined_datasets/count_questions_dbpedia.json", count_questions)
-#     save_json("./data/clean_datasets/combined_datasets/list_questions_dbpedia.json", list_questions)
 
 
 
@@ -388,19 +317,9 @@ def clean_question(q):
 
 if __name__ == '__main__':
     print "Here We Go !!!"
-    # path = "data/clean_datasets/dbpedia/"
+    path = "data/clean_datasets/raw/"
 
-    basic_stats()
-
-
-    # deep_stat("data/clean_datasets/combined_datasets/")
+    basic_stats(path)
 
 
 
-    # a, b, c = get_labelled_complex_questions("data/clean_datasets/ComplexWeQquestions_dataset.json")
-    # save_complex_questions(a, b, c, True)
-    # print a
-
-    # get_manually_labelled_complex_questions("data/clean_datasets/QAD_questions.json")
-
-    # basic_stats("data/clean_datasets/combined_datasets/")

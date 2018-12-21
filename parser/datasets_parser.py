@@ -2,7 +2,8 @@
 # Parser for Datasets included in /data/raw/.. into a unified format
 import json, os, sys, fnmatch, re
 from tqdm import tqdm
-from generator_utils import decode
+from generator_utils import *
+from parser.qald import Qald
 
 
 def load_json(path):
@@ -17,7 +18,7 @@ def load_txt(path):
 
 def save_json(path, results):
     with open(path, "w") as data_file:
-        json.dump(results, data_file, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+        json.dump(results, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 def parse_squad():
@@ -168,8 +169,39 @@ def parse_qald():
             result.append(tmp)
 
     print len(result)
-    save_json("../data/clean_datasets/qald_dataset.json", result)
+    save_json("../data/clean_datasets/raw/qald_dataset.json", result)
     # return list(questions)
+
+
+def parse_qald_8_9():
+    path_8 = "../data/DBpedia/QALD-master/8/data/"
+    path_9 = "../data/DBpedia/QALD-master/9/"
+    datasets_8 = [path_8+file_ for file_ in os.listdir(path_8) if "8" in file_]
+    datasets_9 = [path_9+file_ for file_ in os.listdir(path_9)]
+    datasets = datasets_8 + datasets_9
+
+    result = []
+    for dataset in datasets:
+        print dataset
+        qald = Qald(dataset)
+        qald.load()
+        qald.parse()
+
+        for row in qald.qapairs:
+            tmp = {"question": row.question.text, "query": row.sparql.query}
+            result.append(tmp)
+
+        # break
+
+    qald = load_json("../data/clean_datasets/raw/qald_dataset.json")
+    print len(qald)
+    qald += result
+    print len(qald)
+    save_json("../data/clean_datasets/raw/qald_dataset.json", qald)
+
+
+    # print len(load_json("../data/clean_datasets/raw/qald_new_dataset.json"))
+
 
 
 def parse_brmson():
@@ -193,9 +225,10 @@ def parse_dbnqa():
 
     result = []
     for row, q in tqdm(zip(raw_queries, questions), desc="Parsing DBNQA Dataset"):
-        tmp = {"query": decode(row.strip()), "question": q.strip()}
+        query = decode(row.strip())
+        tmp = {"query": query, "question": q.strip()}
         result.append(tmp)
-    save_json("../data/clean_datasets/dbnqa_dataset.json", result)
+    save_json("../data/clean_datasets/raw/dbnqa_dataset.json", result)
     return result
 
 
@@ -212,6 +245,7 @@ def main():
     # parse_qald()
     # parse_brmson()
     # parse_dbnqa()
+    # parse_qald_8_9()
 
 
 if __name__ == "__main__":

@@ -349,7 +349,6 @@ def __experiment_three():
         out.append(best_feature)
         question_feature.append([question, " ".join(best_feature)])
 
-
         tmp["features"] = best_feature
         embeddings_result = get_embeddings(best_feature, space, mode="wmd")
         tmp["we_result"] = embeddings_result

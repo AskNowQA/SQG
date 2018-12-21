@@ -8,8 +8,9 @@ from learning.classifier.svmclassifier import SVMClassifier as SVM
 from learning.classifier.logisticregression import LogisticRegressionClassifier as MAXE
 from sklearn.metrics import accuracy_score
 from prepare_train_test import clean_question
-from word_embedding import get_embeddings
+from word_embedding import get_embeddings, W2V_MODEL
 from pos import get_feature_precompiled
+from pos import get_features_nlp
 from tqdm import tqdm
 
 
@@ -70,17 +71,25 @@ def test_embeddings(path):
         tmp = {}
         question = row["question"]
         prop = row["property"]
-        one_hop = [o.replace("http://dbpedia.org/ontology/", "") for o in row["one_hop_ontologies"]]
-        features = get_feature_precompiled(question)["keywords"]
-        embeddings_result = get_embeddings(features, one_hop)
+        space = [o.replace("http://dbpedia.org/ontology/", "") for o in row["one_hop_ontologies"]]
+
+        features = get_features_nlp(question, row["earl_query"])
+
+        best_score = 100
+        best_feature = []
+        for f in features:
+            dist = W2V_MODEL.distance(f[0], f[1])
+            if dist < best_score:
+                best_feature = f
+
+        embeddings_result = get_embeddings(best_feature, space, mode="wmd")
 
         tmp["property"] = prop
         tmp["we_result"] = embeddings_result
         tmp["question"] = question
+        tmp["feature"] = best_feature
         result.append(tmp)
 
-        # embeddings_result = get_feature_property(features, one_hop)
-        # print question, features, prop, embeddings_result
         if prop == embeddings_result[0]:
             correct += 1
 
@@ -99,8 +108,6 @@ def test_embeddings(path):
     print "Top Three:", top_three*100/float(total)
 
     save_json(result, "out/we_exp_results.json")
-
-
 
 
 # Compares NB Accuracy on Testset vs WE
@@ -159,7 +166,7 @@ def experiment_5():
 
 def main():
     print "MAIN"
-    # experiment_1()
+    experiment_1()
     # experiment_2()
     # experiment_3()
     # experiment_4()
