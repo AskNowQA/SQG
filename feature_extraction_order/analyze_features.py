@@ -44,9 +44,6 @@ def get_order_properties_stats():
     save_json(errors, "errors.json")
 
 
-
-
-
 def features_properties_list():
     data = load_json("../data/clean_datasets/combined_datasets/order_all.json")
     superlatives = load_json("../data/ComplexQuestionsOrder/superlatives.json")

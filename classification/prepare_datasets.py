@@ -55,6 +55,8 @@ def get_questions(name, data_set):
         # Some query preprocessing to prevent miss labeling queries
         query = query.lower()
         query = re.sub(r"filter.*lang", "", query)
+        query = re.sub(r"filter.*regex", "", query)
+        query = re.sub(r"filter.*contains", "", query)
 
         query_head = re.findall(r"^.*where", query)
         if query_head:
@@ -120,8 +122,8 @@ def clean_query(q):
 
 # Parse dbpedia dataset into multiple files based on the question type
 def prepare_datasets():
-    data_sets = ['../data/clean_datasets/raw_cleaned/qald_dataset.json', '../data/clean_datasets/raw/lcquad_dataset.json',
-                 '../data/clean_datasets/raw/dbnqa_dataset.json']
+    data_sets = ['../data/clean_datasets/raw_cleaned/qald_dataset.json', '../data/clean_datasets/raw_cleaned/lcquad_dataset.json',
+                 '../data/clean_datasets/raw_cleaned/dbnqa_dataset.json']
 
     # data_sets = ['../data/clean_datasets/raw/qald_dataset.json']
 

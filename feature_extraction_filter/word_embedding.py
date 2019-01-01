@@ -1,17 +1,18 @@
 from helper import *
+from filter_helper import *
 from tqdm import tqdm
 from scipy import spatial
 import operator
 from pos import get_feature_precompiled
 from pos import get_features_nlp
-from order_property import get_order_property
+from filter_property import get_filter_properties
 import numpy as np
 import gensim
 from helper_functions.glove_word2vec_convert import convert
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from prepare_train_test import clean_question
+
 
 # Sets nltk directory path
 nltk.data.path.append("/Users/just3obad/Desktop/Thesis/Libraries/nltk_data")
@@ -32,8 +33,8 @@ def __load_embeddings():
     print "Matrix Loaded"
     print "Setting up Vocab list"
     vocab = load_json("data/vocabs.json")
-    ordinals = load_json("../data/ComplexQuestionsOrder/ordinals.json")
-    additions = ["most", "least", "new", "last", "latest", "top"]
+    # ordinals = load_json("../data/ComplexQuestionsOrder/ordinals.json")
+    # additions = ["most", "least", "new", "last", "latest", "top"]
 
     with open("embeddings_matrix/glove_100d_word2vec_vocab.txt", "wb") as data_file:
         for v in tqdm(vocab, desc="Preparing Vocab Embedding Matrix"):
@@ -53,9 +54,9 @@ def __load_embeddings():
             # except:
                 # continue
 
-    convert("/Users/just3obad/Desktop/Thesis/AskNow/SQG/feature_extraction_order/"
+    convert("/Users/just3obad/Desktop/Thesis/AskNow/SQG/feature_extraction_filter/"
             "embeddings_matrix/glove_100d_word2vec_vocab.txt", "/Users/just3obad/Desktop/Thesis/AskNow/"
-                                                               "SQG/feature_extraction_order/embeddings_matrix/"
+                                                               "SQG/feature_extraction_filter/embeddings_matrix/"
                                                                "glove_100d_word2vec_vocab.txt")
 
 
@@ -212,43 +213,57 @@ def get_embeddings(features, space, mode="wmd"):
 def __experiment_one():
     data = load_json("data/one_hop_ontologies_clean.json")
     results = []
-    total = len(data)
+
+    total = 0
     correct = 0
     top_two = 0
     top_three = 0
 
-    for row in tqdm(data):
+    for i, row in enumerate(tqdm(data)):
         tmp = {}
+        query_ = row["query"]
         question = row["question"]
         tmp["question"] = question
-        prop = get_order_property(row["query"])
-        tmp["correct_property"] = prop
+        tmp["query"] = query_
+
+        properties = get_filter_properties(query_)["properties"]
+        if properties:
+            properties = [prop.values()[0].replace("<http://dbpedia.org/ontology/", "").replace(">", "").replace(
+                "<http://dbpedia.org/property/", "") for prop in properties]
+            properties = list(set(properties))
+            total += len(properties)
+
+        tmp["correct_property"] = properties
         space = [o.replace("http://dbpedia.org/ontology/", "") for o in row["one_hop_ontologies"]]
-        # features = get_feature_precompiled(question)["features"]
-        features = get_feature_precompiled(question)["keywords"]
-        tmp["features"] = features
+
+        # Take clean question as a feature, return[0]
+        features = get_features_nlp(question, query_)[0]
+
+        # Need to be tokenized for the we
+        features = word_tokenize(features)
 
         embeddings_result = get_embeddings(features, space, mode="wmd")
+
+        tmp["features"] = features
+
         tmp["we_result"] = embeddings_result
 
         results.append(tmp)
 
-        print features
-        print embeddings_result
-        break
-
-        if prop == embeddings_result[0]:
-            correct += 1
-
         top_three_embeddings = embeddings_result[2]
         top_three_embeddings = [i[0] for i in top_three_embeddings]
         top_three_embeddings = top_three_embeddings[:3]
-        if prop in top_three_embeddings:
-            top_three += 1
-
         top_two_embeddings = top_three_embeddings[:2]
-        if prop in top_two_embeddings:
-            top_two += 1
+
+        for prop in properties:
+            if prop in embeddings_result[0]:
+                correct += 1
+
+            if prop in top_two_embeddings:
+                top_two += 1
+
+            if prop in top_three_embeddings:
+                top_three += 1
 
     print "Top One:", correct * 100 / float(total)
     print "Top Two:", top_two * 100 / float(total)
@@ -361,8 +376,6 @@ def __experiment_three():
 
         # if i == 40:
         #     break
-        print best_feature
-        break
 
         results.append(tmp)
 
@@ -399,8 +412,6 @@ def main():
     # __experiment_three()
 
     # print W2V_MODEL["cyanic"]
-
-
 
 
 if __name__ == '__main__':

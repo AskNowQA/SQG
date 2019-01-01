@@ -1,16 +1,9 @@
 from helper import *
+from filter_helper import *
 from tqdm import tqdm
 import re
 from random import shuffle
 from sklearn.model_selection import train_test_split
-import nltk
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-
-nltk.data.path.append("/Users/just3obad/Desktop/Thesis/Libraries/nltk_data")
-stop_words = set(stopwords.words('english'))
-filter_path = "../data/clean_datasets/combined_datasets/filter_all.json"
-filter_clean_path = "data/filter_questions_clean.json"
 
 
 # Checks the type of a filter query
@@ -20,16 +13,19 @@ filter_clean_path = "data/filter_questions_clean.json"
 def filter_query_type(sparql):
     sparql = sparql.lower()
 
-    if "!bound" in sparql:
-        return 1, "bound filter"
+    if "bound" in sparql:
+        return 0
     else:
-        regex = re.findall(r"filter.*", sparql)[0]
+        try:
+            regex = re.findall(r"filter.*\(.*\).*}", sparql)[0]
 
-        count = regex.count("?")
-        if count == 1:
-            return 0, "constant value"
-        else:
-            return 2, "two resources"
+            count = regex.count("?")
+            if count == 1:
+                return 1
+            else:
+                return 2
+        except:
+            return -1
 
 
 # Prepares the filter hash for train test sets.
@@ -72,28 +68,6 @@ def prep_train_test(data, split=0.35):
 
     save_json(train, "data/train.json")
     save_json(test, "data/test.json")
-
-
-def clean_filter_questions(sparql):
-    return False if "regex" in sparql.lower() else True
-
-
-def clean_question(question):
-    tokens = word_tokenize(question)
-
-    new_tokens = []
-    for t in tokens:
-        try:
-            t.encode("ascii")
-            new_tokens.append(t)
-        except:
-            continue
-
-    # Need to check filter addition keywords
-    additions = ["more"]
-    question = " ".join([t for t in new_tokens if t in additions or t not in stop_words])
-    # question = " ".join(new_tokens)
-    return question
 
 
 def main():

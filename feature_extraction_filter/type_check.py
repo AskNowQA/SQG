@@ -3,7 +3,7 @@ from learning.classifier.naivebayesclassifier import NaiveBayesClassifier as NB
 from learning.classifier.svmclassifier import SVMClassifier as SVM
 from learning.classifier.logisticregression import LogisticRegressionClassifier as MAXE
 from sklearn.metrics import accuracy_score
-from feature_extraction_order.resource_tree import parse_sparql
+from feature_extraction_filter.resource_tree import parse_sparql
 
 
 train_path = "data/train.json"
@@ -83,13 +83,13 @@ def main():
     # experiment_1()
     # experiment_2()
     # experiment_3()
-    # model = NB("models/NB")
+    model = NB("models/NB")
     # print model.predict(["which arts administrator won an oscar",
     #                      "was the nine years war earlier than the one thousand nine hundred and five russian revolution",
     #                      "give me all books by maria edgeworth with more than three hundred pages"])
-    # print type_check_model("is emad still alive")
-    query_ = """ask where{dbr:Siege_of_Lille_(1940)  dbo:date ?x .dbr:1905_Russian_Revolution dbo:date ?y . filter (?x < ?y)  }"""
-    print type_check_query(query_)
+    print type_check_model("which chess players died in the same place they were born in")
+    # query_ = """ask where{<http://dbpedia.org/resource/List_of_Power_Rangers_Turbo_episodes> <http://dbpedia.org/ontology/numberOfEpisodes> ?a . <http://dbpedia.org/resource/Absolutely_Fabulous> <http://dbpedia.org/ontology/numberOfEpisodes> ?b . filter (?a > ?b)  }"""
+    # print type_check_query(query_)
 
 
 
