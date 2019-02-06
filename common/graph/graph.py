@@ -17,7 +17,7 @@ class Graph:
         self.suggest_retrieve_id = 0
 
     def create_or_get_node(self, uris, mergable=False):
-        if isinstance(uris, (int, long)):
+        if isinstance(uris, (int)):
             uris = self.__get_generic_uri(uris, 0)
             mergable = True
         new_node = Node(uris, mergable)

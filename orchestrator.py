@@ -15,6 +15,7 @@ from parser.lc_quad import LC_QaudParser
 import common.utility.utility as utility
 from learning.classifier.svmclassifier import SVMClassifier
 import ujson
+import learning.treelstm.Constants as Constants
 
 
 class Struct(object): pass
@@ -211,7 +212,7 @@ class Orchestrator:
         args.hidden_dim = 50
         args.num_classes = 2
         args.input_dim = 300
-        args.sparse = ""
+        args.sparse = False
         args.lr = 0.01
         args.wd = 1e-4
         args.data = os.path.join(base_path, "data/lc_quad/")
@@ -221,7 +222,7 @@ class Orchestrator:
             if idx >= len(scores):
                 item["confidence"] = 0
             else:
-                item["confidence"] = scores[idx] - 1
+                item["confidence"] = float(scores[idx] - 1)
 
         return valid_walks, question_type, type_confidence
 

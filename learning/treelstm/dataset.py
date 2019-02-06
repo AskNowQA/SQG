@@ -6,7 +6,7 @@ from copy import deepcopy
 import torch
 import torch.utils.data as data
 
-import learning.treelstm.Constants
+import learning.treelstm.Constants as Constants
 from learning.treelstm.tree import Tree
 from learning.treelstm.vocab import Vocab
 

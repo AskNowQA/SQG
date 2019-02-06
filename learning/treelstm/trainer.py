@@ -44,7 +44,7 @@ class Trainer(object):
         self.model.eval()
         loss = 0
         predictions = torch.zeros(len(dataset))
-        indices = torch.arange(1, dataset.num_classes + 1)
+        indices = torch.arange(1, dataset.num_classes + 1, dtype=torch.float)
         for idx in tqdm(range(len(dataset)), desc='Testing epoch  ' + str(self.epoch) + ''):
             ltree, lsent, rtree, rsent, label = dataset[idx]
             linput, rinput = Var(lsent, volatile=True), Var(rsent, volatile=True)
@@ -54,7 +54,7 @@ class Trainer(object):
                 target = target.cuda()
             output = self.model(ltree, linput, rtree, rinput)
             err = self.criterion(output, target)
-            loss += err.data[0]
+            loss += err.data
             output = output.data.squeeze().cpu()
             predictions[idx] = torch.dot(indices, torch.exp(output))
         return loss / len(dataset), predictions

@@ -125,7 +125,7 @@ def generalize_question(a, b, parser=None):
 
 
 def split(data, parser=None):
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         with open(data) as datafile:
             dataset = json.load(datafile)
     else:
@@ -147,8 +147,8 @@ def split(data, parser=None):
             sim = str(2 if query["correct"] else 1)
 
             id_list.append(i + '\n')
-            a_list.append(a.encode('ascii', 'ignore') + '\n')
-            b_list.append(b.encode('ascii', 'ignore') + '\n')
+            a_list.append(a.encode('ascii', 'ignore').decode('ascii') + '\n')
+            b_list.append(b.encode('ascii', 'ignore').decode('ascii') + '\n')
             sim_list.append(sim + '\n')
     return a_list, b_list, id_list, sim_list
 

@@ -36,15 +36,16 @@ class KB(object):
         return False
 
     def query(self, q):
-        payload = (
-            ('query', q),
-            ('format', 'application/json'))
+        payload = {'query': q, 'format': 'application/json'}
         try:
-            r = requests.get(self.endpoint, params=payload, timeout=60)
+            query_string = urllib.parse.urlencode(payload)
+            url = self.endpoint + '?' + query_string
+            r = urllib.request.urlopen(url, timeout=60)
+            result = r.read()
         except:
             return 0, None
 
-        return r.status_code, r.json() if r.status_code == 200 else None
+        return r.status, json.loads(result) if r.status == 200 else None
 
     def sparql_query(self, clauses, return_vars="*", count=False, ask=False):
         where = u"WHERE {{ {} }}".format(" .".join(clauses))
