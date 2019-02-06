@@ -217,7 +217,10 @@ class Orchestrator:
         args.wd = 1e-4
         args.data = os.path.join(base_path, "data/lc_quad/")
         args.cuda = False
-        scores = self.rank(args, question, valid_walks)
+        try:
+            scores = self.rank(args, question, valid_walks)
+        except:
+            scores = []
         for idx, item in enumerate(valid_walks):
             if idx >= len(scores):
                 item["confidence"] = 0
@@ -275,7 +278,7 @@ if __name__ == "__main__":
     #                u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/creator>']}
     # ]
     scores = o.rank(args, question, generated_queries)
-    print (scores)
+    print(scores)
     generated_queries.extend(generated_queries)
     scores = o.rank(args, question, generated_queries)
-    print (scores)
+    print(scores)
