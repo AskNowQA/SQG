@@ -48,9 +48,8 @@ def generate_query():
     timeout_threshold = int(flask.request.json['timeout']) if 'timeout' in flask.request.json else 9999999
     use_cache = bool(flask.request.json['use_cache']) if 'use_cache' in flask.request.json else True
 
-    hash_key = hash(
-        str(question) + str(raw_entities) + str(raw_relations) + str(h1_threshold) +
-        str(force_count_query) + str(force_bool_query) + str(force_list_query))
+    hash_key = hash((str(question) + str(raw_entities) + str(raw_relations) + str(h1_threshold)
+                     + str(force_count_query) + str(force_bool_query) + str(force_list_query)).encode('utf-8'))
 
     if use_cache and hash_key in hash_list:
         return flask.jsonify(hash_list[hash_key]), 201
@@ -145,7 +144,8 @@ if __name__ == '__main__':
         double_relation_classifier = SVMClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
     elif args.classifier == "naivebayes":
         question_type_classifier = NaiveBayesClassifier(os.path.join(question_type_classifier_path, "naivebayes.model"))
-        double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "naivebayes.model"))
+        double_relation_classifier = NaiveBayesClassifier(
+            os.path.join(double_relation_classifier_path, "naivebayes.model"))
 
     queryBuilder = Orchestrator(logger, question_type_classifier, double_relation_classifier, parser)
     logger.info("Starting the HTTP server")
