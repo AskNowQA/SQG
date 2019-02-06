@@ -1,6 +1,6 @@
-from question import Question
-from answerset import AnswerSet
-from sparql import SPARQL
+from common.container.question import Question
+from common.container.answerset import AnswerSet
+from common.container.sparql import SPARQL
 
 class QApair:
 	def __init__(self, raw_question, raw_answerset, raw_query, raw_row, id, parser):

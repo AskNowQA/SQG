@@ -1,5 +1,5 @@
-from node import Node
-from edge import Edge
+from common.graph.node import Node
+from common.graph.edge import Edge
 from common.container.uri import Uri
 from common.container.linkeditem import LinkedItem
 from common.utility.mylist import MyList

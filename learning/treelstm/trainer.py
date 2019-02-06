@@ -3,7 +3,7 @@ from tqdm import tqdm
 import torch
 from torch.autograd import Variable as Var
 
-from utils import map_label_to_target
+from learning.treelstm.utils import map_label_to_target
 
 
 class Trainer(object):
