@@ -15,7 +15,7 @@ class PersistanceDict(dict):
     @staticmethod
     def load(file_name):
         with open(file_name, 'rb') as f:
-            return pickle.load(f)
+            return pickle.load(f,encoding='latin1')
 
 
 def makedirs(dir):

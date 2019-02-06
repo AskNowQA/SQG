@@ -1,4 +1,4 @@
-from path import Path
+from common.graph.path import Path
 import numpy as np
 
 

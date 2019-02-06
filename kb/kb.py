@@ -1,13 +1,16 @@
-import requests
+import urllib
 from multiprocessing import Pool
 from contextlib import closing
 
 
 def query(args):
     endpoint, q, idx = args
-    payload = (('query', q), ('format', 'application/json'))
+    payload = {'query': q, 'format': 'application/json'}
     try:
-        r = requests.get(endpoint, params=payload, timeout=60)
+        query_string = urllib.parse.urlencode(payload)
+        url = endpoint + '?' + query_string
+        r = urllib.request.urlopen(url, timeout=60)
+        result = r.read()
     except:
         return 0, None, idx
     return r.status_code, r.json() if r.status_code == 200 else None, idx

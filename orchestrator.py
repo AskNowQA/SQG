@@ -274,7 +274,7 @@ if __name__ == "__main__":
     #                u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/creator>']}
     # ]
     scores = o.rank(args, question, generated_queries)
-    print scores
+    print (scores)
     generated_queries.extend(generated_queries)
     scores = o.rank(args, question, generated_queries)
-    print scores
+    print (scores)
