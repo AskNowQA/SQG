@@ -1,6 +1,6 @@
-from kb import KB
+from kb.kb import KB
 import config
-from pybloom import BloomFilter, ScalableBloomFilter
+#from pybloom import BloomFilter, ScalableBloomFilter
 import os
 
 
@@ -10,7 +10,7 @@ class DBpedia(KB):
                  two_hop_bloom_file=config.config['general']['dbpedia']['two_hop_bloom_file']):
         super(DBpedia, self).__init__(endpoint)
         self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
-        if os.path.exists(one_hop_bloom_file):
+        if False and os.path.exists(one_hop_bloom_file):
             with open(one_hop_bloom_file) as bloom_file:
                 self.one_hop_bloom = BloomFilter.fromfile(bloom_file)
         else:
@@ -20,11 +20,11 @@ class DBpedia(KB):
         self.two_hop_bloom = dict()
         for item in [True, False]:
             file_path = two_hop_bloom_file.replace('spo2', 'spo2' + str(item))
-            if os.path.exists(file_path):
+            if False and os.path.exists(file_path):
                 with open(file_path) as bloom_file:
                     self.two_hop_bloom[item] = ScalableBloomFilter.fromfile(bloom_file)
             else:
-                self.two_hop_bloom[item] = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+                self.two_hop_bloom[item] = dict()#ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
         self.two_hop_bloom_counter = 0
 
