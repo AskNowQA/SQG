@@ -145,7 +145,7 @@ if __name__ == '__main__':
         double_relation_classifier = SVMClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
     elif args.classifier == "naivebayes":
         question_type_classifier = NaiveBayesClassifier(os.path.join(question_type_classifier_path, "naivebayes.model"))
-        double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "svm.model"))
+        double_relation_classifier = NaiveBayesClassifier(os.path.join(double_relation_classifier_path, "naivebayes.model"))
 
     queryBuilder = Orchestrator(logger, question_type_classifier, double_relation_classifier, parser)
     logger.info("Starting the HTTP server")
