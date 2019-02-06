@@ -178,7 +178,7 @@ class Orchestrator:
         elif question_type == 1:
             ask_query = True
 
-        type_confidence = self.question_classifier.predict_proba([question])[0][question_type]
+        type_confidence = self.question_classifier.predict_proba([question])[0][question_type][0]
 
         double_relation = False
         # if self.double_relation_classifer is not None:
