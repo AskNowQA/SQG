@@ -177,7 +177,7 @@ class Orchestrator:
         elif question_type == 1:
             ask_query = True
 
-        type_confidence = self.question_classifier.predict_proba([question])[0][question_type][0]
+        type_confidence = self.question_classifier.predict_proba([question])[0][question_type]
 
         double_relation = False
         # if self.double_relation_classifer is not None:
@@ -191,16 +191,16 @@ class Orchestrator:
                                     sort_query=sort_query, h1_threshold=h1_threshold)
         valid_walks = query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query=ask_query,
                                                        count_query=count_query, sort_query=sort_query)
-        if question_type == 0 and len(relations) == 1:
-            double_relation = True
-            graph = Graph(self.kb)
-            query_builder = QueryBuilder()
-            graph.find_minimal_subgraph(entities, relations, double_relation=double_relation, ask_query=ask_query,
-                                        sort_query=sort_query, h1_threshold=h1_threshold)
-            valid_walks_new = query_builder.to_where_statement(graph, self.parser.parse_queryresult,
-                                                               ask_query=ask_query,
-                                                               count_query=count_query, sort_query=sort_query)
-            valid_walks.extend(valid_walks_new)
+        # if question_type == 0 and len(relations) == 1:
+        #     double_relation = True
+        #     graph = Graph(self.kb)
+        #     query_builder = QueryBuilder()
+        #     graph.find_minimal_subgraph(entities, relations, double_relation=double_relation, ask_query=ask_query,
+        #                                 sort_query=sort_query, h1_threshold=h1_threshold)
+        #     valid_walks_new = query_builder.to_where_statement(graph, self.parser.parse_queryresult,
+        #                                                        ask_query=ask_query,
+        #                                                        count_query=count_query, sort_query=sort_query)
+        #     valid_walks.extend(valid_walks_new)
         if len(valid_walks) == 0:
             return valid_walks, question_type, 0
         args = Struct()
