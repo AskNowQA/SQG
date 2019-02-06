@@ -1,17 +1,13 @@
 from kb import KB
+import config
 from pybloom import BloomFilter, ScalableBloomFilter
 import os
 
 
 class DBpedia(KB):
-    # http://kb.org/sparql
-    # http://drogon:7890/sparql
-    # http://131.220.153.66:7890/sparql
-    # 2016-04 http://sda-srv01.iai.uni-bonn.de:8164/sparql
-    # 2014 http://sda-srv01.iai.uni-bonn.de:8014/sparql
-    # http://dbpedia.org/sparql
-    def __init__(self, endpoint="http://sda-srv01.iai.uni-bonn.de:8164/sparql",
-                 one_hop_bloom_file="./data/blooms/spo1.bloom", two_hop_bloom_file="./data/blooms/spo2.bloom"):
+    def __init__(self, endpoint=config.config['general']['dbpedia']['endpoint'],
+                 one_hop_bloom_file=config.config['general']['dbpedia']['one_hop_bloom_file'],
+                 two_hop_bloom_file=config.config['general']['dbpedia']['two_hop_bloom_file']):
         super(DBpedia, self).__init__(endpoint)
         self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
         if os.path.exists(one_hop_bloom_file):
