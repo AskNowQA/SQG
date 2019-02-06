@@ -1,6 +1,6 @@
 #!flask/bin/python
 import flask
-from gevent.wsgi import WSGIServer
+from gevent.pywsgi import WSGIServer
 import argparse
 from orchestrator import Orchestrator
 from common.container.uri import Uri
