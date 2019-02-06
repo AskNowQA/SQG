@@ -1,6 +1,6 @@
 from kb.kb import KB
 import config
-#from pybloom import BloomFilter, ScalableBloomFilter
+from pybloom_live import BloomFilter, ScalableBloomFilter
 import os
 
 
@@ -11,7 +11,7 @@ class DBpedia(KB):
         super(DBpedia, self).__init__(endpoint)
         self.type_uri = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
         if False and os.path.exists(one_hop_bloom_file):
-            with open(one_hop_bloom_file) as bloom_file:
+            with open(one_hop_bloom_file, 'rb') as bloom_file:
                 self.one_hop_bloom = BloomFilter.fromfile(bloom_file)
         else:
             self.one_hop_bloom = None
