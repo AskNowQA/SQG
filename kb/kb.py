@@ -2,6 +2,8 @@ import urllib
 from multiprocessing import Pool
 from contextlib import closing
 import json
+import requests
+
 
 def query(args):
     endpoint, q, idx = args
@@ -9,11 +11,10 @@ def query(args):
     try:
         query_string = urllib.parse.urlencode(payload)
         url = endpoint + '?' + query_string
-        r = urllib.request.urlopen(url, timeout=60)
-        result = r.read()
+        r = requests.get(url)
     except:
         return 0, None, idx
-    return r.status, json.loads(result) if r.status == 200 else None, idx
+    return r.status_code, r.json() if r.status_code == 200 else None, idx
 
 
 class KB(object):
@@ -28,8 +29,8 @@ class KB(object):
         try:
             query_string = urllib.parse.urlencode(payload)
             url = self.endpoint + '?' + query_string
-            r = urllib.request.urlopen(url, timeout=60)
-            if r.status == 200:
+            r = requests.get(url)
+            if r.status_code == 200:
                 return True
         except:
             return False
@@ -40,12 +41,11 @@ class KB(object):
         try:
             query_string = urllib.parse.urlencode(payload)
             url = self.endpoint + '?' + query_string
-            r = urllib.request.urlopen(url, timeout=60)
-            result = r.read()
+            r = requests.get(url)
         except:
             return 0, None
 
-        return r.status, json.loads(result) if r.status == 200 else None
+        return r.status_code, r.json() if r.status_code == 200 else None
 
     def sparql_query(self, clauses, return_vars="*", count=False, ask=False):
         where = u"WHERE {{ {} }}".format(" .".join(clauses))
