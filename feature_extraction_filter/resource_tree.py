@@ -56,8 +56,8 @@ def remove_uris_question(question, uris_list):
 
 
 def main():
-    # data = load_json(filter_path)
-    data = load_json(filter_qald_path)
+    data = load_json(filter_path)
+    # data = load_json(filter_qald_path)
     print len(data)
     for row in data:
 
@@ -67,7 +67,7 @@ def main():
         print sparql_query
         print parse(question, sparql_query)
         print "##\n"
-        # break
+        break
 
 
 if __name__ == '__main__':

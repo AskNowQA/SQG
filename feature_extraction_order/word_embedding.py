@@ -362,7 +362,7 @@ def __experiment_three():
         # if i == 40:
         #     break
         print best_feature
-        break
+        # break
 
         results.append(tmp)
 
@@ -394,9 +394,9 @@ def main():
     print "MAIN"
     # __set_up_vocab()
     # __load_embeddings()
-    __experiment_one()
+    # __experiment_one()
     # __experiment_two()
-    # __experiment_three()
+    __experiment_three()
 
     # print W2V_MODEL["cyanic"]
 

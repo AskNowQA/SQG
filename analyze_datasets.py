@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import json, os, re, sys
+import json, os, re, sys, nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
 from classification.prepare_datasets import get_questions
 
+nltk.data.path.append("/Users/just3obad/Desktop/Thesis/Libraries/nltk_data")
 
 def load_json(path):
     with open(path) as data_file:
@@ -169,17 +170,23 @@ def basic_stats(path="data/clean_datasets/combined_datasets/"):
     print "Generating Stats"
     for f in os.listdir(path):
         data = load_json(path+f)
-        print "File: {} Total No. Questions: {:,}".format(f, len(data))
+        # print "File: {} Total No. Questions: {:,}".format(f, len(data))
         try:
-            list_, ask, count, order, filter_, agg = get_questions("", data)
+            list_, ask, count, order, filter_, agg, rest, total = get_questions("", data)
         except TypeError:
             continue
+        # total = len(list_) + len(ask) + len(count) + len(order) + len(filter_) + len(agg) + len(rest)
+        # print "Unique Questions Stats"
+        print "File: {} Total No. Questions: {:,}".format(f, len(data))
+        print "File: {} Unique No. Questions: {:,}".format(f, total)
         print "-- No. List Questions: {:,}".format(len(list_))
         print "-- No. Ask Questions: {:,}".format(len(ask))
         print "-- No. Count Questions: {:,}".format(len(count))
         print "-- No. Order Questions: {:,}".format(len(order))
         print "-- No. Filter Questions: {:,}".format(len(filter_))
         print "-- No. Agg Questions: {:,}".format(len(agg))
+        print "-- No. Rest Questions: {:,}".format(len(rest))
+        print "\n -- \n"
 
 
 def deep_stat(path="data/clean_datasets/"):
@@ -195,10 +202,12 @@ def deep_stat(path="data/clean_datasets/"):
     #          'data/clean_datasets/webqsp_dataset.json', 'data/clean_datasets/graph_dataset.json',
     #          'data/clean_datasets/wiki_data_simple_questions_dataset.json']
 
+    # files = ["data/clean_datasets/combined_datasets/order_all.json"]
+
     for f in files:
         # get_complexity(f)
-        # get_questions_stats(f)
-        get_linked_items(f)
+        get_questions_stats(f)
+        # get_linked_items(f)
 
 
 def get_complexity(path):
@@ -208,7 +217,7 @@ def get_complexity(path):
     result = {1: 0, 2: 0, 3: 0}
     data = load_json(path)
 
-    for row in data:
+    for row in tqdm(data):
 
         query = re.findall(r"{.*}", row["query"])
 
@@ -227,8 +236,8 @@ def get_complexity(path):
 
 
 def get_questions_stats(path):
-    if "dbpedia" not in path:
-        return
+    # if "dbpedia" not in path:
+    #     return
     print path
     data = load_json(path)
     no_questions = len(data)
@@ -240,7 +249,7 @@ def get_questions_stats(path):
     stopWords = set(stopwords.words('english'))
     lemmatizer = WordNetLemmatizer()
 
-    for row in data:
+    for row in tqdm(data):
         question = word_tokenize(clean_question(row["question"]))
         words_total += len(question)
         max_question = max(max_question, len(question))
@@ -251,8 +260,10 @@ def get_questions_stats(path):
                 if lemmatizer.lemmatize(word) not in words_lemmated:
                     words_lemmated.add(word)
 
+
     words_length = len(words)
     words = list(words)
+
     if no_questions > 0:
         average_question = float(words_total) / float(no_questions)
     else:
@@ -306,20 +317,16 @@ def clean_question(q):
     q = q.strip()
     return q
 
-
-
-
-
-
     # data = load_json(path)
     # for row in data
 
 
 if __name__ == '__main__':
     print "Here We Go !!!"
-    path = "data/clean_datasets/raw/"
+    path = "data/clean_datasets/combined_datasets/"
 
     basic_stats(path)
+    # deep_stat(path)
 
 
 

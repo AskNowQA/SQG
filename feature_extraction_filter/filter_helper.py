@@ -32,6 +32,7 @@ def clean_filter_questions(sparql):
 
 
 def clean_question(question):
+    # print "AA", question
     tokens = word_tokenize(question)
     new_tokens = []
     for t in tokens:
@@ -47,6 +48,7 @@ def clean_question(question):
     # Need to check filter addition keywords
     question = " ".join([t for t in new_tokens if t in additions or (t not in stop_words and t not in black_list_keywords)])
     # question = " ".join(new_tokens)
+    print "AA", question
     return question
 
 

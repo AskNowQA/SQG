@@ -68,6 +68,7 @@ def parse_sparql(sparql):
 def main():
     data = load_json("data/one_hop_ontologies_clean.json")
     for i, r in enumerate(data):
+        print r["question"]
         print parse(r["question"], r["earl_query"])
 
 

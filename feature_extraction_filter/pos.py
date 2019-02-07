@@ -143,15 +143,16 @@ def prepare_pos_tagger_hash():
 def main():
     print "MAIN"
     # sentence = u'was the siege of lille more than the one thousand nine hundred and five russian revolution'
+    sentence = u"for which label did anthony callea record his second singles"
     # prepare_pos_tagger_hash()
-    # doc = nlp(sentence)
-    # for token in doc:
+    doc = nlp(sentence)
+    for token in doc:
         # print(token.text, token.lemma_, token.pos_, token.tag_, token.dep_,
         #       token.shape_, token.is_alpha, token.is_stop)
-        # print token.text, token.tag_
-
+        print token.text, token.tag_
+    #
     # data = load_json(filter_qald_path)
-    # data = load_json(filter_path)
+    # # data = load_json(filter_path)
     # for row in data:
     #     question = row["question"]
     #     sparql = row["query"]

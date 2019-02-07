@@ -87,7 +87,7 @@ def main():
     # print model.predict(["which arts administrator won an oscar",
     #                      "was the nine years war earlier than the one thousand nine hundred and five russian revolution",
     #                      "give me all books by maria edgeworth with more than three hundred pages"])
-    print type_check_model("which chess players died in the same place they were born in")
+    print type_check_model("is david dacaulay still alive")
     # query_ = """ask where{<http://dbpedia.org/resource/List_of_Power_Rangers_Turbo_episodes> <http://dbpedia.org/ontology/numberOfEpisodes> ?a . <http://dbpedia.org/resource/Absolutely_Fabulous> <http://dbpedia.org/ontology/numberOfEpisodes> ?b . filter (?a > ?b)  }"""
     # print type_check_query(query_)
 

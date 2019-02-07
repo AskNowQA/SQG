@@ -17,6 +17,7 @@ def normalize_uri(uri):
 # Change dbo: --> www.ontology...
 def normalize_sparql(sparql):
     patterns = [i for i in re.findall(r"db\w:[^<>{} ?]+", sparql) if re.findall(r"db\w:", i)[0] in REPLACE]
+    # patterns = [i for i in re.findall(r"db\w:\S+", sparql) if re.findall(r"db\w:", i)[0] in REPLACE]
     # print patterns
     patterns_hash = {key_: normalize_uri(key_) for key_ in patterns}
     for key, value in patterns_hash.iteritems():

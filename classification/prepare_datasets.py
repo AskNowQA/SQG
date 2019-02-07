@@ -21,7 +21,7 @@ def save_json(path, results):
         json.dump(results, data_file, sort_keys=True, indent=4, separators=(',', ': '))
 
 
-def save_questions(name, list_, ask, count, order, filter_, agg):
+def save_questions(name, list_, ask, count, order, filter_, agg, rest=""):
     caller = inspect.stack()[1][3]
 
     if caller == "prepare_datasets":
@@ -31,6 +31,7 @@ def save_questions(name, list_, ask, count, order, filter_, agg):
         save_json("../data/clean_datasets/dbpedia/order_{}.json".format(name), order)
         save_json("../data/clean_datasets/dbpedia/filter_{}.json".format(name), filter_)
         save_json("../data/clean_datasets/dbpedia/agg_{}.json".format(name), agg)
+        save_json("../data/clean_datasets/dbpedia/rest_{}.json".format(name), rest)
 
     if caller == "combine_datasets":
         save_json("../data/clean_datasets/combined_datasets/list_{}.json".format(name), list_)
@@ -42,13 +43,16 @@ def save_questions(name, list_, ask, count, order, filter_, agg):
 
 
 def get_questions(name, data_set):
-    list_, ask, count, order, filter_, agg = [], [], [], [], [], []
+    list_, ask, count, order, filter_, agg, rest = [], [], [], [], [], [], []
+    questions_hash = {}
     for row in tqdm(data_set, desc="Processing Dataset: "):
         question = clean_question(row["question"])
         query = clean_query(row["query"])
 
         if not query or not question:
             continue
+
+        questions_hash[row["question"]] = ""
 
         line = {"query": query, "question": question, "dataset": name, "type": ""}
 
@@ -62,30 +66,53 @@ def get_questions(name, data_set):
         if query_head:
             query_head = query_head[0].lower()
 
+        flag = False
+
         if "select" in query_head and "count" not in query_head:
             tmp = copy.deepcopy(line)
             tmp["type"] = "list"
             list_.append(tmp)
+            flag = True
         if "ask where" in query:
             tmp = copy.deepcopy(line)
             tmp["type"] = "ask"
             ask.append(tmp)
+            flag = True
         if "select" in query_head and "count" in query_head:
             tmp = copy.deepcopy(line)
             tmp["type"] = "count"
             count.append(tmp)
+            flag = True
         if "order by" in query:
             tmp = copy.deepcopy(line)
             tmp["type"] = "order"
             order.append(tmp)
+            flag = True
         if "filter " in query:
             tmp = copy.deepcopy(line)
             tmp["type"] = "filter"
             filter_.append(tmp)
+            flag = True
         if "select sum" in query or "select avg" in query or "select max" in query or "select min" in query:
             tmp = copy.deepcopy(line)
             tmp["type"] = "agg"
             agg.append(tmp)
+            flag = True
+
+        if not flag:
+            tmp = copy.deepcopy(line)
+            tmp["type"] = "rest"
+            rest.append(tmp)
+
+    # print "Duplicate Questions Stats"
+    # print "File: {} Total No. Questions: {:,}".format(name, len(data_set))
+    # print "-- No. List Questions: {:,}".format(len(list_))
+    # print "-- No. Ask Questions: {:,}".format(len(ask))
+    # print "-- No. Count Questions: {:,}".format(len(count))
+    # print "-- No. Order Questions: {:,}".format(len(order))
+    # print "-- No. Filter Questions: {:,}".format(len(filter_))
+    # print "-- No. Agg Questions: {:,}".format(len(agg))
+    # print "-- No. Rest Questions: {:,}".format(len(rest))
 
     list_ = {v['question']: v for v in list_}.values()
     ask = {v['question']: v for v in ask}.values()
@@ -93,8 +120,9 @@ def get_questions(name, data_set):
     order = {v['question']: v for v in order}.values()
     filter_ = {v['question']: v for v in filter_}.values()
     agg = {v['question']: v for v in agg}.values()
+    rest = {v['question']: v for v in rest}.values()
 
-    return list_, ask, count, order, filter_, agg
+    return list_, ask, count, order, filter_, agg, rest, len(questions_hash.keys())
 
 
 def clean_question(q):
@@ -127,12 +155,24 @@ def prepare_datasets():
 
     # data_sets = ['../data/clean_datasets/raw/qald_dataset.json']
 
+    # data_sets = ['../data/clean_datasets/combined_datasets/count_all.json']
+
     for d in data_sets:
         print "Dataset: ", d
         data_set = load_json(d)
         name = re.findall(r"\w+.json", d)[0].replace("_dataset.json", "")
-        list_, ask, count, order, filter_, agg = get_questions(name, data_set)
-        save_questions(name, list_, ask, count, order, filter_, agg)
+        list_, ask, count, order, filter_, agg, rest, total = get_questions(name, data_set)
+
+        print "File: {} Total No. Questions: {:,}".format(d, len(data_set))
+        print "File: {} Unique No. Questions: {:,}".format(d, total)
+        print "-- No. List Questions: {:,}".format(len(list_))
+        print "-- No. Ask Questions: {:,}".format(len(ask))
+        print "-- No. Count Questions: {:,}".format(len(count))
+        print "-- No. Order Questions: {:,}".format(len(order))
+        print "-- No. Filter Questions: {:,}".format(len(filter_))
+        print "-- No. Agg Questions: {:,}".format(len(agg))
+        print "-- No. Rest Questions: {:,}".format(len(rest))
+        save_questions(name, list_, ask, count, order, filter_, agg, rest)
 
 
 def combine_datasets(path="../data/clean_datasets/dbpedia/", remove_=""):
