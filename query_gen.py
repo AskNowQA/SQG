@@ -17,12 +17,13 @@ import logging
 import sys
 import os
 
+
 def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_classifier, force_gold=True):
     logger.info(qapair.sparql)
     logger.info(qapair.question.text)
 
     # Get Answer from KB online
-    status, raw_answer_true = kb.query(str(qapair.sparql).replace("https", "http"))
+    status, raw_answer_true = kb.query(qapair.sparql.query.replace("https", "http"))
     answerset_true = AnswerSet(raw_answer_true, parser.parse_queryresult)
     qapair.answerset = answerset_true
 
@@ -30,6 +31,9 @@ def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_cla
     count_query = "COUNT(" in qapair.sparql.query
     sort_query = "order by" in qapair.sparql.raw_query.lower()
     entities, ontologies = linker.do(qapair, force_gold=force_gold)
+
+    if entities is None or ontologies is None:
+        return "-Linker_failed", []
 
     graph = Graph(kb)
     queryBuilder = QueryBuilder()
@@ -163,10 +167,6 @@ if __name__ == "__main__":
 
     for qapair in ds.qapairs:
         stats.inc("total")
-        # if "send it on" not in qapair.question.text.lower():
-        #     continue
-        if len(args.list_id) > 0 and stats["total"] - 1 not in args.list_id:
-            continue
         output_row = {"question": qapair.question.text,
                       "id": qapair.id,
                       "query": qapair.sparql.query,

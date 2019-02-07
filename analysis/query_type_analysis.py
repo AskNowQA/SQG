@@ -9,19 +9,21 @@ def run(classifier1, classifier2):
     parser = LC_QaudParser()
     query_builder = Orchestrator(None, classifier1, classifier2, parser, auto_train=False)
 
-    print "train_question_classifier"
+    print("train_question_classifier")
     scores = query_builder.train_question_classifier(file_path="../data/LC-QUAD/data_v8.json", test_size=0.5)
-    print scores
+    print(scores)
     y_pred = query_builder.question_classifier.predict(query_builder.X_test)
     print(classification_report(query_builder.y_test, y_pred))
 
-    print "double_relation_classifer"
+    print("double_relation_classifer")
     scores = query_builder.train_double_relation_classifier(file_path="../data/LC-QUAD/data_v8.json", test_size=0.5)
-    print scores
+    print(scores)
     y_pred = query_builder.double_relation_classifer.predict(query_builder.X_test)
     print(classification_report(query_builder.y_test, y_pred))
 
 
 if __name__ == "__main__":
-    run(SVMClassifier(), SVMClassifier())
-    run(NaiveBayesClassifier(), NaiveBayesClassifier())
+    run(SVMClassifier('../output/question_type_classifier/svm.model'),
+        SVMClassifier('../output/double_relation_classifier/svm.model'))
+    run(NaiveBayesClassifier('../output/question_type_classifier/naivebayes.model'),
+        NaiveBayesClassifier('../output/double_relation_classifier/naivebayes.model'))

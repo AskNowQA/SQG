@@ -1,5 +1,5 @@
-from node import Node
-from edge import Edge
+from common.graph.node import Node
+from common.graph.edge import Edge
 from common.container.uri import Uri
 from common.container.linkeditem import LinkedItem
 from common.utility.mylist import MyList
@@ -17,7 +17,7 @@ class Graph:
         self.suggest_retrieve_id = 0
 
     def create_or_get_node(self, uris, mergable=False):
-        if isinstance(uris, (int, long)):
+        if isinstance(uris, (int)):
             uris = self.__get_generic_uri(uris, 0)
             mergable = True
         new_node = Node(uris, mergable)

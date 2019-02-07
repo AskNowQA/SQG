@@ -5,7 +5,7 @@ from common.container.uri import Uri
 from common.container.answerrow import AnswerRow
 from common.container.answer import Answer
 from kb.freebase import Freebase
-from answerparser import AnswerParser
+from parser.answerparser import AnswerParser
 
 
 class WebQSP:
@@ -33,8 +33,8 @@ class WebQSP:
 
     def print_pairs(self, n=-1):
         for item in self.qapairs[0:n]:
-            print item.sparql
-            print ""
+            print(item.sparql)
+            print("")
 
 
 class WebQSPParser(AnswerParser):

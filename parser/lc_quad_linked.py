@@ -4,7 +4,7 @@ from common.container.qapair import QApair
 from common.container.uri import Uri
 from common.container.uris import URIs
 from kb.dbpedia import DBpedia
-from answerparser import AnswerParser
+from parser.answerparser import AnswerParser
 
 
 class LC_Qaud_Linked:
@@ -26,8 +26,8 @@ class LC_Qaud_Linked:
 
     def print_pairs(self, n=-1):
         for item in self.qapairs[0:n]:
-            print item
-            print ""
+            print(item)
+            print("")
 
 
 class LC_Qaud_LinkedParser(AnswerParser):

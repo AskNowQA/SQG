@@ -4,7 +4,7 @@ import json, re
 from common.container.qapair import QApair
 from common.container.uri import Uri
 from kb.dbpedia import DBpedia
-from answerparser import AnswerParser
+from parser.answerparser import AnswerParser
 
 
 class LC_Qaud:
@@ -27,8 +27,8 @@ class LC_Qaud:
 
     def print_pairs(self, n=-1):
         for item in self.qapairs[0:n]:
-            print item
-            print ""
+            print(item)
+            print("")
 
     def extract_clean_data(self, path = "../data/clean_datasets/lcquad_dataset.json"):
         result = []

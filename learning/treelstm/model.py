@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable as Var
-
-import Constants
+import learning.treelstm.Constants as Constants
 
 
 # module for childsumtreelstm

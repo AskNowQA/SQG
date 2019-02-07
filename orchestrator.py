@@ -15,6 +15,7 @@ from parser.lc_quad import LC_QaudParser
 import common.utility.utility as utility
 from learning.classifier.svmclassifier import SVMClassifier
 import ujson
+import learning.treelstm.Constants as Constants
 
 
 class Struct(object): pass
@@ -177,7 +178,7 @@ class Orchestrator:
         elif question_type == 1:
             ask_query = True
 
-        type_confidence = self.question_classifier.predict_proba([question])[0][question_type]
+        type_confidence = self.question_classifier.predict_proba([question])[0][question_type][0]
 
         double_relation = False
         # if self.double_relation_classifer is not None:
@@ -191,16 +192,16 @@ class Orchestrator:
                                     sort_query=sort_query, h1_threshold=h1_threshold)
         valid_walks = query_builder.to_where_statement(graph, self.parser.parse_queryresult, ask_query=ask_query,
                                                        count_query=count_query, sort_query=sort_query)
-        if question_type == 0 and len(relations) == 1:
-            double_relation = True
-            graph = Graph(self.kb)
-            query_builder = QueryBuilder()
-            graph.find_minimal_subgraph(entities, relations, double_relation=double_relation, ask_query=ask_query,
-                                        sort_query=sort_query, h1_threshold=h1_threshold)
-            valid_walks_new = query_builder.to_where_statement(graph, self.parser.parse_queryresult,
-                                                               ask_query=ask_query,
-                                                               count_query=count_query, sort_query=sort_query)
-            valid_walks.extend(valid_walks_new)
+        # if question_type == 0 and len(relations) == 1:
+        #     double_relation = True
+        #     graph = Graph(self.kb)
+        #     query_builder = QueryBuilder()
+        #     graph.find_minimal_subgraph(entities, relations, double_relation=double_relation, ask_query=ask_query,
+        #                                 sort_query=sort_query, h1_threshold=h1_threshold)
+        #     valid_walks_new = query_builder.to_where_statement(graph, self.parser.parse_queryresult,
+        #                                                        ask_query=ask_query,
+        #                                                        count_query=count_query, sort_query=sort_query)
+        #     valid_walks.extend(valid_walks_new)
         if len(valid_walks) == 0:
             return valid_walks, question_type, 0
         args = Struct()
@@ -211,17 +212,20 @@ class Orchestrator:
         args.hidden_dim = 50
         args.num_classes = 2
         args.input_dim = 300
-        args.sparse = ""
+        args.sparse = False
         args.lr = 0.01
         args.wd = 1e-4
         args.data = os.path.join(base_path, "data/lc_quad/")
         args.cuda = False
-        scores = self.rank(args, question, valid_walks)
+        try:
+            scores = self.rank(args, question, valid_walks)
+        except:
+            scores = []
         for idx, item in enumerate(valid_walks):
             if idx >= len(scores):
                 item["confidence"] = 0
             else:
-                item["confidence"] = scores[idx] - 1
+                item["confidence"] = float(scores[idx] - 1)
 
         return valid_walks, question_type, type_confidence
 
@@ -274,7 +278,7 @@ if __name__ == "__main__":
     #                u'?u_0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/creator>']}
     # ]
     scores = o.rank(args, question, generated_queries)
-    print scores
+    print(scores)
     generated_queries.extend(generated_queries)
     scores = o.rank(args, question, generated_queries)
-    print scores
+    print(scores)

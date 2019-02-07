@@ -1,4 +1,4 @@
-from classifier import Classifier
+from learning.classifier.classifier import Classifier
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline

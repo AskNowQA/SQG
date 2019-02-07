@@ -1,4 +1,4 @@
-from kb import KB
+from kb.kb import KB
 import re
 from itertools import chain
 

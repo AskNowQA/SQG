@@ -6,9 +6,9 @@ from copy import deepcopy
 import torch
 import torch.utils.data as data
 
-import Constants
-from tree import Tree
-from vocab import Vocab
+import learning.treelstm.Constants as Constants
+from learning.treelstm.tree import Tree
+from learning.treelstm.vocab import Vocab
 
 
 class QGDataset(data.Dataset):

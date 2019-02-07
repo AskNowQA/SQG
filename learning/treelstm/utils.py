@@ -6,8 +6,8 @@ import math
 
 import torch
 
-from tree import Tree
-from vocab import Vocab
+from learning.treelstm.tree import Tree
+from learning.treelstm.vocab import Vocab
 
 
 # loading GLOVE word vectors

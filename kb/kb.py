@@ -1,13 +1,17 @@
-import requests
+import urllib
 from multiprocessing import Pool
 from contextlib import closing
+import json
+import requests
 
 
 def query(args):
     endpoint, q, idx = args
-    payload = (('query', q), ('format', 'application/json'))
+    payload = {'query': q, 'format': 'application/json'}
     try:
-        r = requests.get(endpoint, params=payload, timeout=60)
+        query_string = urllib.parse.urlencode(payload)
+        url = endpoint + '?' + query_string
+        r = requests.get(url)
     except:
         return 0, None, idx
     return r.status_code, r.json() if r.status_code == 200 else None, idx
@@ -21,11 +25,11 @@ class KB(object):
         self.server_available = self.check_server()
 
     def check_server(self):
-        payload = (
-            ('query', 'select distinct ?Concept where {[] a ?Concept} LIMIT 1'),
-            ('format', 'application/json'))
+        payload = {'query': 'select distinct ?Concept where {[] a ?Concept} LIMIT 1', 'format': 'application/json'}
         try:
-            r = requests.get(self.endpoint, params=payload, timeout=10)
+            query_string = urllib.parse.urlencode(payload)
+            url = self.endpoint + '?' + query_string
+            r = requests.get(url)
             if r.status_code == 200:
                 return True
         except:
@@ -33,11 +37,11 @@ class KB(object):
         return False
 
     def query(self, q):
-        payload = (
-            ('query', q),
-            ('format', 'application/json'))
+        payload = {'query': q, 'format': 'application/json'}
         try:
-            r = requests.get(self.endpoint, params=payload, timeout=60)
+            query_string = urllib.parse.urlencode(payload)
+            url = self.endpoint + '?' + query_string
+            r = requests.get(url)
         except:
             return 0, None
 
