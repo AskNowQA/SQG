@@ -16,6 +16,7 @@ import common.utility.utility as utility
 from learning.classifier.svmclassifier import SVMClassifier
 import ujson
 import learning.treelstm.Constants as Constants
+import numpy as np
 
 
 class Struct(object): pass
@@ -178,7 +179,9 @@ class Orchestrator:
         elif question_type == 1:
             ask_query = True
 
-        type_confidence = self.question_classifier.predict_proba([question])[0][question_type][0]
+        type_confidence = self.question_classifier.predict_proba([question])[0][question_type]
+        if isinstance(self.question_classifier.predict_proba([question])[0][question_type], (np.ndarray, list)):
+            type_confidence = type_confidence[0]
 
         double_relation = False
         # if self.double_relation_classifer is not None:
