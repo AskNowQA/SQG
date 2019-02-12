@@ -42,8 +42,8 @@ if __name__ == "__main__":
 
     with open(args.file) as infile:
         i = 0
-        lines_in_file = 602259225L  # int(subprocess.check_output("wc -l " + args.file, shell=True).split()[0])
-        print lines_in_file
+        lines_in_file = 602259225  # int(subprocess.check_output("wc -l " + args.file, shell=True).split()[0])
+        print(lines_in_file)
         m = mmap.mmap(infile.fileno(), 0, access=mmap.ACCESS_READ)
         buffer = []
         for line in tqdm(iter(m.readline, ""), total=lines_in_file):

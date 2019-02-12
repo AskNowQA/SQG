@@ -1,5 +1,5 @@
 import json
-from goldLinker import GoldLinker
+from linker.goldLinker import GoldLinker
 from common.container.linkeditem import LinkedItem
 from common.container.uri import Uri
 from kb.dbpedia import DBpedia

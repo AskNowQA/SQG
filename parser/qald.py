@@ -4,7 +4,7 @@ from common.container.uri import Uri
 from common.container.answerrow import AnswerRow
 from common.container.answer import Answer
 from kb.dbpedia import DBpedia
-from answerparser import AnswerParser
+from parser.answerparser import AnswerParser
 from xml.dom import minidom
 import sys
 
@@ -108,8 +108,8 @@ class Qald:
 
     def print_pairs(self, n=-1):
         for item in self.qapairs[0:n]:
-            print item
-            print ""
+            print(item)
+            print("")
 
 
 class QaldParser(AnswerParser):

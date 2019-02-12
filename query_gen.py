@@ -66,7 +66,7 @@ def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_cla
         output_where[idx]["target_var"] = target_var
         sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
         if (answerset == qapair.answerset) != (sparql == qapair.sparql):
-            print "error"
+            print("error")
 
         if answerset == qapair.answerset:
             correct = True
@@ -78,14 +78,14 @@ def qg(linker, kb, parser, qapair, question_type_classifier, double_relation_cla
             else:
                 target_var = "?u_0"
             raw_answer = kb.query_where(where["where"], target_var, count_query, ask_query)
-            print "Q_H ",
-            print raw_answer
-            print "Q_"
+            print("Q_H ",)
+            print(raw_answer)
+            print("Q_")
             answerset = AnswerSet(raw_answer, parser.parse_queryresult)
 
             sparql = SPARQL(kb.sparql_query(where["where"], target_var, count_query, ask_query), ds.parser.parse_sparql)
             if (answerset == qapair.answerset) != (sparql == qapair.sparql):
-                print "error"
+                print("error")
 
             if answerset == qapair.answerset:
                 correct = True
