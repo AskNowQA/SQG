@@ -223,10 +223,10 @@ class Orchestrator:
         try:
             scores = self.rank(args, question, valid_walks)
         except:
-            scores = []
+            scores = [1 for _ in valid_walks]
         for idx, item in enumerate(valid_walks):
             if idx >= len(scores):
-                item["confidence"] = 0
+                item["confidence"] = 0.3
             else:
                 item["confidence"] = float(scores[idx] - 1)
 
