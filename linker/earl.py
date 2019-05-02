@@ -1,4 +1,4 @@
-import json
+import ujson as json
 from linker.goldLinker import GoldLinker
 from common.container.linkeditem import LinkedItem
 from common.container.uri import Uri
@@ -7,10 +7,10 @@ from common.utility.utility import closest_string
 
 
 class Earl:
-    def __init__(self, path="data/LC-QUAD/EARL/output.json"):
+    def __init__(self, path="data/LC-QUAD/EARL/output_original.json"):
         self.parser = DBpedia.parse_uri
         self.gold_linker = GoldLinker()
-        with file(path) as data_file:
+        with open(path, 'r') as data_file:
             self.raw_data = json.load(data_file)
             self.questions = {}
             for item in self.raw_data:
