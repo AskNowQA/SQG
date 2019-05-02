@@ -37,10 +37,10 @@ if __name__ == '__main__':
                     if len(items) != 4:
                         continue
                     items = items[:-1]
-                    if not all([item.startswith('<') and item.endswith('>') for item in items]):
-                        continue
 
                     for i in range(2):
+                        if not all([item.startswith('<') and item.endswith('>') for item in items[i:i + 2]]):
+                            continue
                         key = ':'.join([items[i][1:-1], items[i + 1][1:-1]])
                         bloom.add(key)
 
