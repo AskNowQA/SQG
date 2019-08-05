@@ -65,19 +65,40 @@ class KB(object):
             return response
 
     def parallel_query(self, query_templates):
-        args = []
-        for i in range(len(query_templates)):
-            args.append(
-                (self.endpoint, u"{} ASK WHERE {{ {} }}".format(self.query_prefix(), query_templates[i][1]),
-                 query_templates[i][0]))
-        with closing(Pool(len(query_templates))) as pool:
-            query_results = pool.map(query, args)
-            pool.terminate()
-            results = []
-            for i in range(len(query_results)):
-                if query_results[i][0] == 200:
-                    results.append((query_results[i][2], query_results[i][1]["boolean"]))
-            return results
+        results = []
+        if len(query_templates) > 0:
+            # query_templates = [[id, template.replace('<http://dbpedia.org/ontology/', 'dbo:').replace(
+            #     '<http://dbpedia.org/property/', 'dbp:').replace('<http://dbpedia.org/resource/', 'dbr:').replace('>',
+            #                                                                                                       '')]
+            #                    for id, template in query_templates]
+            #             query = '''PREFIX dbr: <http://dbpedia.org/resource/>
+            # PREFIX dbp: <http://dbpedia.org/property/>
+            # PREFIX dbo: <http://dbpedia.org/ontology/>'''
+            query = ''
+            query += 'SELECT DISTINCT ?type WHERE {{ {} }}'.format(
+                '\n'.join([
+                    '{{SELECT ?type WHERE {{ {1} . BIND ("{0}" as ?type)}} LIMIT 1}} UNION'.format(
+                        id, template) for id, template in query_templates])[:-5])
+            output = self.query(query)
+            if output[0] != 200:
+                print(output[1])
+            output = [int(item['type']['value']) for item in output[1]['results']['bindings']]
+            results = [(item[0], item[0] in output) for item in query_templates]
+        return results
+
+        # args = []
+        # for i in range(len(query_templates)):
+        #     args.append(
+        #         (self.endpoint, u"{} ASK WHERE {{ {} }}".format(self.query_prefix(), query_templates[i][1]),
+        #          query_templates[i][0]))
+        # with closing(Pool(len(query_templates))) as pool:
+        #     query_results = pool.map(query, args)
+        #     pool.terminate()
+        #     results = []
+        #     for i in range(len(query_results)):
+        #         if query_results[i][0] == 200:
+        #             results.append((query_results[i][2], query_results[i][1]["boolean"]))
+        #     return results
 
     def one_hop_graph(self, entity1_uri, relation_uri, entity2_uri=None):
         relation_uri = self.uri_to_sparql(relation_uri)
