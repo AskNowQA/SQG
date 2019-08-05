@@ -21,7 +21,7 @@ class DBpedia(KB):
         for item in [True, False]:
             file_path = two_hop_bloom_file.replace('spo2', 'spo2' + str(item))
             if os.path.exists(file_path):
-                with open(file_path) as bloom_file:
+                with open(file_path, 'rb') as bloom_file:
                     self.two_hop_bloom[item] = ScalableBloomFilter.fromfile(bloom_file)
             else:
                 self.two_hop_bloom[item] = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
@@ -85,7 +85,7 @@ class DBpedia(KB):
                 self.two_hop_bloom_counter = 0
                 for item in [True, False]:
                     file_path = self.two_hop_bloom_file.replace('spo2', 'spo2' + str(item))
-                    with open(file_path, 'w') as bloom_file:
+                    with open(file_path, 'wb') as bloom_file:
                         self.two_hop_bloom[item].tofile(bloom_file)
 
         return output
