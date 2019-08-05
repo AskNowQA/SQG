@@ -61,10 +61,16 @@ class Edge:
 
     def __eq__(self, other):
         if isinstance(other, Edge):
-            if hasattr(self, "__hash"):
-                return self.__hash == other.__hash
-            else:
-                return self.source_node == other.source_node and self.uri == other.uri and self.dest_node == other.dest_node
+            # if hasattr(self, "__hash"):
+            try:
+                foo = self.__hash
+            except AttributeError:
+                self.__hash = ("" if self.source_node is None else self.source_node.__str__()) + self.uri.__str__() + (
+                    "" if self.dest_node is None else self.dest_node.__str__())
+
+            return self.__hash == other.__hash
+            # else:
+            #     return self.source_node == other.source_node and self.uri == other.uri and self.dest_node == other.dest_node
 
         return NotImplemented
 
