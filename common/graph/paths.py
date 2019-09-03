@@ -1,5 +1,6 @@
-from common.graph.path import Path
+from tqdm import tqdm
 import numpy as np
+from common.graph.path import Path
 
 
 class Paths(list):
@@ -21,18 +22,24 @@ class Paths(list):
         :param ask_query:
         :return:
         """
+
         output = []
-        for batch_edges in self:
-            sparql_where = [edge.sparql_format(kb) for edge in batch_edges]
-            max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
-            if kb is None or ask_query:
+        if kb is None or ask_query:
+            for batch_edges in tqdm(self):
+                sparql_where = [edge.sparql_format(kb) for edge in batch_edges]
+                max_generic_id = max([edge.max_generic_id() for edge in batch_edges])
                 output.append({"suggested_id": max_generic_id, "where": sparql_where})
-            else:
-                result = kb.query_where(sparql_where, count=True)
-                if result is not None:
-                    result = int(result["results"]["bindings"][0]["callret-0"]["value"])
-                    if result > 0:
-                        output.append({"suggested_id": max_generic_id, "where": sparql_where})
+
+        queries = list(self)
+        for start_idx in tqdm(range(0, len(queries), 10)):
+            batch_queries = [[idx, " .".join([edge.sparql_format(kb) for edge in batch_edges])] for idx, batch_edges in
+                             enumerate(queries[start_idx:start_idx + 10])]
+            batch_output = kb.parallel_query(batch_queries)
+            for id, result in batch_output:
+                if result:
+                    max_generic_id = max([edge.max_generic_id() for edge in self[id + start_idx]])
+                    sparql_where = batch_queries[id][1]
+                    output.append({"suggested_id": max_generic_id, "where": sparql_where})
 
         return output
 

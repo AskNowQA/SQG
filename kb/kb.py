@@ -39,16 +39,16 @@ class KB(object):
     def query(self, q):
         payload = {'query': q, 'format': 'application/json'}
         try:
-            query_string = urllib.parse.urlencode(payload)
-            url = self.endpoint + '?' + query_string
-            r = requests.get(url)
+            r = requests.post(self.endpoint, payload)
         except:
             return 0, None
 
         return r.status_code, r.json() if r.status_code == 200 else None
 
     def sparql_query(self, clauses, return_vars="*", count=False, ask=False):
-        where = u"WHERE {{ {} }}".format(" .".join(clauses))
+        if isinstance(clauses, list):
+            clauses = " .".join(clauses)
+        where = u"WHERE {{ {} }}".format(clauses)
         if count:
             query = u"{} SELECT COUNT(DISTINCT {}) {}".format(self.query_prefix(), return_vars, where)
         elif ask:
