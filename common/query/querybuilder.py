@@ -11,7 +11,6 @@ class QueryBuilder:
         graph.merge_edges()
 
         paths = self.__find_paths_start_with_entities(graph, graph.entity_items, graph.relation_items, graph.edges)
-
         paths = paths.remove_duplicates()
 
         # Expand coverage by changing generic ids
@@ -61,7 +60,6 @@ class QueryBuilder:
 
         paths.sort(key=lambda x: x.confidence, reverse=True)
         output = paths.to_where(graph.kb, ask_query)
-
         # Remove queries with no answer
         filtered_output = []
         for item in output:
@@ -119,26 +117,26 @@ class QueryBuilder:
 
         return new_output_paths
 
-    def __find_paths_start_with_entities(self, graph, entity_items, relation_items, edges, output_paths=Paths(), used_edges=set()):
+    def __find_paths_start_with_entities(self, graph, entity_items, relation_items, edges, output_paths=Paths(),
+                                         used_edges=set()):
         new_output_paths = Paths([])
         for entity_item in entity_items:
+            unavailable_edges = self.find_edges_by_entities(edges, entity_item)
+            available_edges = edges - unavailable_edges
+            available_entity_items = entity_items - [entity_item]
             for entity in entity_item.uris:
                 for edge in self.find_edges_by_entity(edges, entity, used_edges):
                     if not edge.uri.is_type():
                         used_relations = [edge.uri]
                     else:
                         used_relations = edge.dest_node.uris
-                    entities = MyList()
-                    if not (edge.source_node.are_all_uris_generic() or edge.uri.is_type()):
-                        entities.extend(edge.source_node.uris)
-                    if not (edge.dest_node.are_all_uris_generic() or edge.uri.is_type()):
-                        entities.extend(edge.dest_node.uris)
 
                     new_paths = self.__find_paths(graph,
-                                                  entity_items - LinkedItem.list_contains_uris(entity_items, entities),
+                                                  available_entity_items,
+                                                  # entity_items - LinkedItem.list_contains_uris(entity_items, entities),
                                                   relation_items - LinkedItem.list_contains_uris(relation_items,
                                                                                                  used_relations),
-                                                  edges - {edge},
+                                                  edges - {edge},  # available_edges,  # ,
                                                   output_paths=output_paths.extend(edge),
                                                   used_edges=used_edges | set([edge]))
                     new_output_paths.add(new_paths, lambda path: len(path) >= len(graph.relation_items))
@@ -178,3 +176,18 @@ class QueryBuilder:
                 connected_edges.append(edge)
 
         return connected_edges
+
+    def find_edges_by_entities(self, edges, entity_item):
+        output = set()
+        entity_uris = [uri for uri in entity_item.uris]
+        for edge in edges:
+            for uri in edge.source_node.uris:
+                if uri in entity_uris:
+                    output.add(edge)
+                    break
+            for uri in edge.dest_node.uris:
+                if uri in entity_uris:
+                    output.add(edge)
+                    break
+
+        return output
