@@ -164,6 +164,9 @@ class Graph:
                             output.add(e)
                         elif item[0] == 4:
                             n_d = self.create_or_get_node(relation_uri)
+                            n_s = self.create_or_get_node(0, True)
+                            e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
+                            output.add(e)
                             n_s = self.create_or_get_node(1, True)
                             e = Edge(n_s, Uri(self.kb.type_uri, self.kb.parse_uri), n_d)
                             output.add(e)

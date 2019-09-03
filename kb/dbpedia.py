@@ -95,7 +95,7 @@ class DBpedia(KB):
                        [1, u"{ent1} {rel1} {ent2} . {ent1} {rel2} ?u1", u"{ent1}:{rel2}"],
                        [2, u"{ent1} {rel1} {ent2} . {ent2} {rel2} ?u1", u"{ent2}:{rel2}"],
                        [3, u"{ent1} {rel1} {ent2} . ?u1 {rel2} {ent2}", u"{rel2}:{ent2}"],
-                       [4, u"{ent1} {rel1} {ent2} . ?u1 {type} {rel2}", u"{type}:{rel2}"]]
+                       [4, u"{ent1} {rel1} {ent2} . {ent1} {type} {rel2}", u"{type}:{rel2}"]]
         for item in query_types:
             item.append(item[2].format(rel1=relation1_uri, ent1=entity1_uri,
                                        ent2=entity2_uri, rel2=relation2_uri,
@@ -103,7 +103,7 @@ class DBpedia(KB):
         filtered_query_types = []
         if self.one_hop_bloom is not None:
             for item in query_types:
-                if ("?" in item[3]) or self.bloom_query([item[3]]):
+                if ("?" in item[3]) or ('#type' in item[3]) or self.bloom_query([item[3]]):
                     filtered_query_types.append(item)
 
         output = [[item[0], item[1].format(rel1=relation1_uri, ent1=entity1_uri,
