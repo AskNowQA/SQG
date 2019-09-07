@@ -10,7 +10,10 @@ class QueryBuilder:
         graph.generalize_nodes()
         graph.merge_edges()
 
-        paths = self.__find_paths_start_with_entities(graph, graph.entity_items, graph.relation_items, graph.edges)
+        if ask_query:
+            paths = Paths([(Path([edge])) for edge in graph.edges])
+        else:
+            paths = self.__find_paths_start_with_entities(graph, graph.entity_items, graph.relation_items, graph.edges)
         paths = paths.remove_duplicates()
 
         # Expand coverage by changing generic ids
