@@ -134,15 +134,17 @@ class QueryBuilder:
                     else:
                         used_relations = edge.dest_node.uris
 
-                    new_paths = self.__find_paths(graph,
-                                                  available_entity_items,
-                                                  # entity_items - LinkedItem.list_contains_uris(entity_items, entities),
-                                                  relation_items - LinkedItem.list_contains_uris(relation_items,
-                                                                                                 used_relations),
-                                                  edges - {edge},  # available_edges,  # ,
-                                                  output_paths=output_paths.extend(edge),
-                                                  used_edges=used_edges | set([edge]))
-                    new_output_paths.add(new_paths, lambda path: len(path) >= len(graph.relation_items))
+                    unavailable_relations = LinkedItem.list_contains_uris(relation_items, used_relations)
+                    for unavailable_relation in unavailable_relations:
+                        available_relations = relation_items-MyList([unavailable_relation])
+                        new_paths = self.__find_paths(graph,
+                                                      available_entity_items,
+                                                      # entity_items - LinkedItem.list_contains_uris(entity_items, entities),
+                                                      available_relations,
+                                                      edges - {edge},  # available_edges,  # ,
+                                                      output_paths=output_paths.extend(edge),
+                                                      used_edges=used_edges | set([edge]))
+                        new_output_paths.add(new_paths, lambda path: len(path) >= len(graph.relation_items))
         return new_output_paths
 
     def find_edges(self, edges, uri, used_edges):

@@ -28,5 +28,4 @@ class LinkedItem:
             for item in linkeditem_list:
                 if item not in output and item.contains_uri(uri):
                     output.append(item)
-                    break
         return output
