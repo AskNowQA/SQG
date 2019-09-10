@@ -47,6 +47,7 @@ def generate_query():
     h1_threshold = int(flask.request.json['h1_threshold']) if 'h1_threshold' in flask.request.json else 9999999
     timeout_threshold = int(flask.request.json['timeout']) if 'timeout' in flask.request.json else 9999999
     use_cache = bool(flask.request.json['use_cache']) if 'use_cache' in flask.request.json else True
+    update_cache = bool(flask.request.json['update_cache']) if 'update_cache' in flask.request.json else True
 
     hash_key = hash((str(question) + str(raw_entities) + str(raw_relations) + str(h1_threshold)
                      + str(force_count_query) + str(force_bool_query) + str(force_list_query)).encode('utf-8'))
@@ -96,7 +97,7 @@ def generate_query():
                 queries]
 
             result = {'queries': queries, 'type': question_type_str, 'type_confidence': type_confidence}
-            if use_cache:
+            if use_cache or update_cache:
                 hash_list[hash_key] = result
                 hash_list.save(hash_file)
             return flask.jsonify(result), 201
